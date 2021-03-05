@@ -13,8 +13,8 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       HOST: x86_64-pc-windows-gnu
       TARGET: x86_64-pc-windows-gnu
-      BIN_NAME: slime99
-      ARCHIVE_NAME: slime99-windows-x86_64
+      BIN_NAME: orbital-decay
+      ARCHIVE_NAME: orbital-decay-windows-x86_64
       MODE: release
     - APPVEYOR_BUILD_WORKER_IMAGE: macOS
       HOST: x86_64-apple-darwin
@@ -59,7 +59,7 @@ for:
 
           cargo build %RELEASE_FLAG% --manifest-path=graphical/Cargo.toml
 
-          copy target\%TARGET_DIR%\slime99_graphical.exe tmp\%FULL_NAME%\%BIN_NAME%.exe
+          copy target\%TARGET_DIR%\orbital_decay_graphical.exe tmp\%FULL_NAME%\%BIN_NAME%.exe
 
           powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('tmp', '%FULL_NAME%.zip'); }"
 
@@ -106,11 +106,11 @@ for:
 
           cargo build $RELEASE_FLAG --manifest-path=ansi-terminal/Cargo.toml
 
-          strip -v target/$TARGET_DIR/slime99_graphical
+          strip -v target/$TARGET_DIR/orbital_decay_graphical
 
-          strip -v target/$TARGET_DIR/slime99_ansi_terminal
+          strip -v target/$TARGET_DIR/orbital_decay_ansi_terminal
 
-          MODE=$MODE ZIP_NAME=slime99-linux-x86_64$NAME_SUFFIX-$APPVEYOR_REPO_BRANCH scripts/make_zip_unix.sh
+          MODE=$MODE ZIP_NAME=orbital-decay-linux-x86_64$NAME_SUFFIX-$APPVEYOR_REPO_BRANCH scripts/make_zip_unix.sh
 
     artifacts:
     - path: '*.zip'
@@ -159,15 +159,15 @@ for:
 
           npm run build -- --mode $BUILD_MODE
 
-          mkdir slime99
+          mkdir orbital-decay
 
-          mv dist slime99/$APPVEYOR_REPO_BRANCH
+          mv dist orbital-decay/$APPVEYOR_REPO_BRANCH
 
-          zip -r slime99.zip slime99
+          zip -r orbital-decay.zip orbital-decay
 
           popd
 
-          mv web/slime99.zip .
+          mv web/orbital-decay.zip .
 
     artifacts:
     - path: '*.zip'
@@ -208,13 +208,13 @@ for:
 
           cargo build $RELEASE_FLAG --manifest-path=ansi-terminal/Cargo.toml
 
-          strip -v target/$TARGET_DIR/slime99_graphical
+          strip -v target/$TARGET_DIR/orbital_decay_graphical
 
-          strip -v target/$TARGET_DIR/slime99_ansi_terminal
+          strip -v target/$TARGET_DIR/orbital_decay_ansi_terminal
 
-          MODE=$MODE ZIP_NAME=slime99-macos-x86_64$NAME_SUFFIX-$APPVEYOR_REPO_BRANCH scripts/make_zip_unix.sh
+          MODE=$MODE ZIP_NAME=orbital-decay-macos-x86_64$NAME_SUFFIX-$APPVEYOR_REPO_BRANCH scripts/make_zip_unix.sh
 
-          MODE=$MODE APP_NAME=Slime99 DMG_NAME=Slime99-$APPVEYOR_REPO_BRANCH.dmg scripts/make_dmg_macos.sh
+          MODE=$MODE APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-$APPVEYOR_REPO_BRANCH.dmg scripts/make_dmg_macos.sh
 
     artifacts:
     - path: '*.zip'

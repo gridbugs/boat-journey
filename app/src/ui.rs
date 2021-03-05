@@ -1,6 +1,6 @@
 use chargrid::render::{ColModify, Coord, Frame, Rgb24, Style, View, ViewContext};
 use chargrid::text::StringViewSingleLine;
-use slime99_game::player::{
+use orbital_decay_game::player::{
     Ability, AbilityTable, AbilityTarget, Attack, Deck, Defend, Player, Tech, EMPTY_ATTACK,
 };
 

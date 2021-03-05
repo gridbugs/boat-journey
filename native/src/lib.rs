@@ -5,7 +5,7 @@ use general_audio_static::{
 use general_storage_static::backend::{FileStorage, IfDirectoryMissing};
 pub use general_storage_static::StaticStorage;
 pub use meap;
-use slime99_app::{AppAudioPlayer, Controls, GameConfig, Omniscient, RngSeed};
+use orbital_decay_app::{AppAudioPlayer, Controls, GameConfig, Omniscient, RngSeed};
 use std::env;
 use std::fs::File;
 use std::io::Read;

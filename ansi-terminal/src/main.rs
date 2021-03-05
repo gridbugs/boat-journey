@@ -1,7 +1,7 @@
 use chargrid_ansi_terminal::{col_encode, Context};
 use rand::Rng;
-use slime99_app::{app, AutoPlay, EnvNull, Frontend, RngSeed};
-use slime99_native::{meap, NativeCommon};
+use orbital_decay_app::{app, AutoPlay, EnvNull, Frontend, RngSeed};
+use orbital_decay_native::{meap, NativeCommon};
 
 enum ColEncodeChoice {
     TrueColour,

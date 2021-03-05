@@ -20,7 +20,7 @@ use menu::{
     fade_spec, FadeMenuInstanceView, MenuEntryStringFn, MenuEntryToRender, MenuInstanceChoose,
 };
 use render::{ColModifyDefaultForeground, ColModifyMap, Coord, Rgb24, Style};
-use slime99_game::player::Ability;
+use orbital_decay_game::player::Ability;
 use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
@@ -316,7 +316,7 @@ where
                 .with_foreground(Rgb24::new(0, 255, 0))
                 .with_bold(true),
         )
-        .view("slime99", context.add_offset(Coord::new(1, 1)), frame);
+        .view("orbital_decay", context.add_offset(Coord::new(1, 1)), frame);
         self.0
             .view(app_data, context.add_offset(Coord::new(1, 3)), frame);
     }

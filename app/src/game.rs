@@ -11,10 +11,10 @@ use general_storage_static::{format, StaticStorage};
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
-use slime99_game::{
+use orbital_decay_game::{
     player::Ability, ActionError, CharacterInfo, ExternalEvent, Game, GameControlFlow, Music,
 };
-pub use slime99_game::{AbilityChoice, Config as GameConfig, Input as GameInput, Omniscient};
+pub use orbital_decay_game::{AbilityChoice, Config as GameConfig, Input as GameInput, Omniscient};
 use std::time::Duration;
 
 const CONFIG_KEY: &str = "config.json";

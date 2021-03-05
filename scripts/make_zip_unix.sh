@@ -6,8 +6,8 @@ echo $ZIP_NAME
 
 TMP=$(mktemp -d)
 mkdir $TMP/$ZIP_NAME
-cp -v target/$MODE/slime99_graphical $TMP/$ZIP_NAME/slime99-graphical
-cp -v target/$MODE/slime99_ansi_terminal $TMP/$ZIP_NAME/slime99-terminal
+cp -v target/$MODE/orbital_decay_graphical $TMP/$ZIP_NAME/orbital-decay-graphical
+cp -v target/$MODE/orbital_decay_ansi_terminal $TMP/$ZIP_NAME/orbital-decay-terminal
 
 cp -v extras/unix/* $TMP/$ZIP_NAME
 

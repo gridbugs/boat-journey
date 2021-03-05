@@ -1,12 +1,12 @@
 [package]
-name = "slime99_ansi_terminal"
+name = "orbital_decay_ansi_terminal"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2018"
 
 [dependencies]
-slime99_native = { path = "../native" }
-slime99_app = { path = "../app" }
+orbital_decay_native = { path = "../native" }
+orbital_decay_app = { path = "../app" }
 env_logger = "0.8"
 rand = "0.8"
 chargrid_ansi_terminal = { version = "0.2", features = ["gamepad"] }

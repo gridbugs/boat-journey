@@ -5,7 +5,7 @@ fn main() {
         .desc("path to input image file")
         .with_help_default()
         .parse_env_or_exit();
-    let in_image = image::open(in_path).unwrap().to_rgb();
+    let in_image = image::open(in_path).unwrap().to_rgb8();
     for y in 0..in_image.height() {
         for x in 0..in_image.width() {
             let [r, g, b] = in_image.get_pixel(x, y).0;

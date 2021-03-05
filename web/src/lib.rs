@@ -1,7 +1,7 @@
 use chargrid_web::{Context, Size};
 use general_audio_static::{backend::WebAudioPlayer, StaticAudioPlayer};
 use general_storage_static::{backend::LocalStorage, StaticStorage};
-use slime99_app::{app, AutoPlay, Controls, EnvNull, Frontend, GameConfig, RngSeed};
+use orbital_decay_app::{app, AutoPlay, Controls, EnvNull, Frontend, GameConfig, RngSeed};
 use wasm_bindgen::prelude::*;
 
 const SAVE_KEY: &str = "save";

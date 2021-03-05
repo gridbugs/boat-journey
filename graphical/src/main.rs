@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
 use chargrid_graphical as graphical;
-use slime99_app::{app, AutoPlay, Frontend, Fullscreen};
-use slime99_native::{meap, NativeCommon};
+use orbital_decay_app::{app, AutoPlay, Frontend, Fullscreen};
+use orbital_decay_native::{meap, NativeCommon};
 
 const FULLSCREEN_SUPPORTED: bool = true;
 
@@ -10,7 +10,7 @@ const CELL_SIZE: f64 = 16.;
 #[cfg(target_os = "windows")]
 mod graphical_env {
     use super::graphical::WindowHandle;
-    use slime99_app::Env;
+    use orbital_decay_app::Env;
     use std::cell::RefCell;
     pub struct GraphicalEnv {
         window_handle: WindowHandle,
@@ -47,7 +47,7 @@ mod graphical_env {
 #[cfg(not(target_os = "windows"))]
 mod graphical_env {
     use super::graphical::WindowHandle;
-    use slime99_app::Env;
+    use orbital_decay_app::Env;
     pub struct GraphicalEnv {
         window_handle: WindowHandle,
     }
@@ -121,7 +121,7 @@ fn main() {
             normal: include_bytes!("./fonts/PxPlus_IBM_CGAthin-with-quadrant-blocks.ttf").to_vec(),
             bold: include_bytes!("./fonts/PxPlus_IBM_CGA-with-quadrant-blocks.ttf").to_vec(),
         },
-        title: "slime99".to_string(),
+        title: "orbital_decay".to_string(),
         window_dimensions: Dimensions {
             width: 960.,
             height: 640.,

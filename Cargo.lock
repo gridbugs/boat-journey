@@ -2371,6 +2371,93 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ad167a2f54e832b82dbe003a046280dceffe5227b5f79e08e363a29638cfddd"
 
 [[package]]
+name = "orbital_decay_ansi_terminal"
+version = "0.1.0"
+dependencies = [
+ "chargrid_ansi_terminal",
+ "env_logger",
+ "orbital_decay_app",
+ "orbital_decay_native",
+ "rand 0.8.3",
+]
+
+[[package]]
+name = "orbital_decay_app"
+version = "0.1.0"
+dependencies = [
+ "chargrid",
+ "direction",
+ "general_audio_static",
+ "general_storage_static",
+ "getrandom 0.2.2",
+ "line_2d",
+ "log",
+ "maplit",
+ "orbital_decay_game",
+ "rand 0.8.3",
+ "rand_isaac",
+ "serde",
+]
+
+[[package]]
+name = "orbital_decay_game"
+version = "0.1.0"
+dependencies = [
+ "direction",
+ "entity_table",
+ "grid_2d",
+ "grid_search_cardinal",
+ "line_2d",
+ "log",
+ "procgen",
+ "rand 0.8.3",
+ "rand_isaac",
+ "rand_range",
+ "rational",
+ "rgb24",
+ "serde",
+ "shadowcast",
+ "spatial_table",
+ "vector",
+]
+
+[[package]]
+name = "orbital_decay_graphical"
+version = "0.1.0"
+dependencies = [
+ "chargrid_graphical",
+ "env_logger",
+ "orbital_decay_app",
+ "orbital_decay_native",
+]
+
+[[package]]
+name = "orbital_decay_native"
+version = "0.1.0"
+dependencies = [
+ "general_audio_static",
+ "general_storage_static",
+ "log",
+ "meap",
+ "orbital_decay_app",
+ "serde_json",
+]
+
+[[package]]
+name = "orbital_decay_web"
+version = "0.1.0"
+dependencies = [
+ "chargrid_web",
+ "console_error_panic_hook",
+ "general_audio_static",
+ "general_storage_static",
+ "log",
+ "orbital_decay_app",
+ "wasm-bindgen",
+ "wasm-logger",
+]
+
+[[package]]
 name = "ordered-float"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2957,93 +3044,6 @@ name = "slab"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
-
-[[package]]
-name = "slime99_ansi_terminal"
-version = "0.1.0"
-dependencies = [
- "chargrid_ansi_terminal",
- "env_logger",
- "rand 0.8.3",
- "slime99_app",
- "slime99_native",
-]
-
-[[package]]
-name = "slime99_app"
-version = "0.1.0"
-dependencies = [
- "chargrid",
- "direction",
- "general_audio_static",
- "general_storage_static",
- "getrandom 0.2.2",
- "line_2d",
- "log",
- "maplit",
- "rand 0.8.3",
- "rand_isaac",
- "serde",
- "slime99_game",
-]
-
-[[package]]
-name = "slime99_game"
-version = "0.1.0"
-dependencies = [
- "direction",
- "entity_table",
- "grid_2d",
- "grid_search_cardinal",
- "line_2d",
- "log",
- "procgen",
- "rand 0.8.3",
- "rand_isaac",
- "rand_range",
- "rational",
- "rgb24",
- "serde",
- "shadowcast",
- "spatial_table",
- "vector",
-]
-
-[[package]]
-name = "slime99_graphical"
-version = "0.1.0"
-dependencies = [
- "chargrid_graphical",
- "env_logger",
- "slime99_app",
- "slime99_native",
-]
-
-[[package]]
-name = "slime99_native"
-version = "0.1.0"
-dependencies = [
- "general_audio_static",
- "general_storage_static",
- "log",
- "meap",
- "serde_json",
- "slime99_app",
-]
-
-[[package]]
-name = "slime99_web"
-version = "0.1.0"
-dependencies = [
- "chargrid_web",
- "console_error_panic_hook",
- "general_audio_static",
- "general_storage_static",
- "log",
- "slime99_app",
- "wasm-bindgen",
- "wasm-logger",
-]
 
 [[package]]
 name = "slotmap"

@@ -1,1 +1,1 @@
-import('./pkg/slime99_web').catch(console.error)
+import('./pkg/orbital_decay_web').catch(console.error)
