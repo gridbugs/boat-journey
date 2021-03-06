@@ -6,6 +6,7 @@ pub use crate::world::{
 };
 use direction::CardinalDirection;
 use entity_table::declare_entity_module;
+use grid_2d::coord_2d::Axis;
 use rgb24::Rgb24;
 use serde::{Deserialize, Serialize};
 
@@ -43,9 +44,10 @@ pub enum Tile {
     Player,
     Wall,
     Floor,
-    DoorClosed,
-    DoorOpen,
+    DoorClosed(Axis),
+    DoorOpen(Axis),
     Stairs,
+    Window(Axis),
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

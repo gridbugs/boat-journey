@@ -363,7 +363,7 @@ impl GameData {
                 Ok(screen_coord_of_mouse)
             } else {
                 let player_coord = GameCoord::of_player(instance.game.player_info());
-                Ok(ScreenCoord(player_coord.0 * 2))
+                Ok(ScreenCoord(player_coord.0 * 3))
             }
         } else {
             Err(NoGameInstance)
@@ -454,7 +454,7 @@ impl EventRoutine for ExamineEventRoutine {
                 match examine {
                     Examine::KeyboardDirection(direction) => {
                         *last_aim_with_mouse = false;
-                        s.screen_coord += direction.coord() * 2;
+                        s.screen_coord += direction.coord() * 3;
                         Handled::Continue(s)
                     }
                     Examine::Mouse { coord, press } => {
@@ -606,11 +606,11 @@ impl EventRoutine for AimEventRoutine {
                 match aim {
                     Aim::KeyboardFinalise => {
                         *last_aim_with_mouse = false;
-                        Handled::Return(Some(s.screen_coord.0 / 2))
+                        Handled::Return(Some(s.screen_coord.0 / 3))
                     }
                     Aim::KeyboardDirection(direction) => {
                         *last_aim_with_mouse = false;
-                        s.screen_coord.0 += direction.coord() * 2;
+                        s.screen_coord.0 += direction.coord() * 3;
                         Handled::Continue(s)
                     }
                     Aim::Mouse { coord, press } => {
@@ -618,7 +618,7 @@ impl EventRoutine for AimEventRoutine {
                             ScreenCoord(view.absolute_coord_to_game_relative_screen_coord(coord));
                         *last_aim_with_mouse = true;
                         if press {
-                            Handled::Return(Some(s.screen_coord.0 / 2))
+                            Handled::Return(Some(s.screen_coord.0 / 3))
                         } else {
                             Handled::Continue(s)
                         }

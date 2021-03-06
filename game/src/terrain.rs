@@ -6,11 +6,13 @@ use crate::{
 };
 use entity_table::{ComponentTable, Entity};
 use grid_2d::CoordIter;
-use grid_2d::{Coord, Size};
+use grid_2d::{coord_2d::Axis, Coord, Size};
 use rand::{
     seq::{IteratorRandom, SliceRandom},
-    Rng,
+    Rng, SeedableRng,
 };
+use rand_isaac::Isaac64Rng;
+
 use rgb24::Rgb24;
 
 pub struct Terrain {
@@ -47,7 +49,7 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                 }
                 '+' => {
                     world.spawn_floor(coord);
-                    world.spawn_door(coord);
+                    world.spawn_door(coord, Axis::X);
                 }
                 '>' => {
                     world.spawn_stairs(coord);
@@ -99,7 +101,12 @@ impl Item {
 const ALL_ITEMS: &[Item] = &[Item::CreditChip];
 const BALANCED_ITEMS: &[Item] = &[Item::CreditChip];
 
-pub fn space_station<R: Rng>(level: u32, player_data: EntityData, rng: &mut R) -> Terrain {
+pub fn space_station<R: Rng>(
+    star_rng_seed: u64,
+    level: u32,
+    player_data: EntityData,
+    rng: &mut R,
+) -> Terrain {
     const AREA_SIZE: Size = Size::new_u16(27, 20);
     const SHIP_SIZE: Size = Size::new_u16(20, 14);
     const SHIP_OFFSET: Coord = Coord { x: 1, y: 1 };
@@ -122,9 +129,12 @@ pub fn space_station<R: Rng>(level: u32, player_data: EntityData, rng: &mut R) -
             GameCell::Space => {}
             GameCell::Door(axis) => {
                 world.spawn_floor(coord);
-                world.spawn_door(coord);
+                world.spawn_door(coord, *axis);
             }
-            GameCell::Window(axis) => (),
+            GameCell::Window(axis) => {
+                world.spawn_floor(coord);
+                world.spawn_window(coord, *axis);
+            }
             GameCell::Stairs => {
                 world.spawn_stairs(coord);
             }

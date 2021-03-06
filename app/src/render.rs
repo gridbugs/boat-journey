@@ -1,13 +1,16 @@
-use crate::{blink::Blink, depth, game::GameStatus, ui};
+use crate::{blink::Blink, colours, depth, game::GameStatus, tile_3x3, ui};
 use chargrid::render::{
-    blend_mode, ColModify, Coord, Frame, Rgb24, Style, View, ViewCell, ViewContext,
+    blend_mode, ColModify, Coord, Frame, Rgb24, Size, Style, View, ViewCell, ViewContext,
 };
 use chargrid::text::{wrap, StringView, StringViewSingleLine};
 use direction::CardinalDirection;
 use line_2d::{Config as LineConfig, LineSegment};
 use orbital_decay_game::{
-    ActionError, CellVisibility, Game, Layer, NpcAction, Tile, ToRenderEntity, MAP_SIZE,
+    ActionError, CellVisibility, Game, Layer, NpcAction, Tile, ToRenderEntity, VisibilityGrid,
+    MAP_SIZE,
 };
+use rand::{Rng, SeedableRng};
+use rand_xorshift::XorShiftRng;
 use std::time::Duration;
 
 #[derive(Clone, Copy)]
@@ -62,10 +65,17 @@ impl GameView {
         match game_to_render.status {
             GameStatus::Playing => {
                 let mut entity_under_cursor = None;
+                let mut star_rng = XorShiftRng::seed_from_u64(game_to_render.game.star_rng_seed());
+                render_stars(
+                    game_to_render.game.visibility_grid(),
+                    &mut star_rng,
+                    context,
+                    frame,
+                );
                 for entity in game_to_render.game.to_render_entities() {
                     render_entity(&entity, game_to_render.game, context, frame);
                     if let Some(mouse_coord) = game_to_render.mouse_coord {
-                        let game_coord = mouse_coord / 2;
+                        let game_coord = mouse_coord / 3;
                         if entity.coord == game_coord {
                             let verb = match game_to_render
                                 .game
@@ -107,7 +117,7 @@ impl GameView {
                         )
                         .view(
                             &buf,
-                            context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2)),
+                            context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
                             frame,
                         );
                     }
@@ -125,7 +135,7 @@ impl GameView {
                                 "COMMANDER: The source of the slime is on the {}th floor.",
                                 orbital_decay_game::FINAL_LEVEL
                             ),
-                            context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2)),
+                            context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
                             frame,
                         );
                     } else {
@@ -138,7 +148,7 @@ impl GameView {
                             )
                             .view(
                                 "FINAL FLOOR".to_string(),
-                                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2)),
+                                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
                                 frame,
                             );
                         } else {
@@ -151,7 +161,7 @@ impl GameView {
                                     current_level,
                                     orbital_decay_game::FINAL_LEVEL
                                 ),
-                                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2)),
+                                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
                                 frame,
                             );
                         }
@@ -164,7 +174,7 @@ impl GameView {
                 }
                 StringView::new(Style::new().with_foreground(Rgb24::new(255, 0, 0)), wrap::Word::new()).view(
                     "You failed. The slimes overrun the city and CONSUME WHAT REMAINS OF HUMANITY. Press a key to continue...",
-                    context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2)),
+                    context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
                     frame,
                 );
             }
@@ -177,7 +187,7 @@ impl GameView {
             )
             .view(
                 s,
-                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2 + 1)),
+                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3 + 1)),
                 frame,
             );
         }
@@ -191,7 +201,7 @@ impl GameView {
                 blink_duration,
                 target,
             } => {
-                let aim_coord = target / 2;
+                let aim_coord = target / 3;
                 let player_coord = game_to_render.game.player_coord();
                 if aim_coord != player_coord {
                     for node in
@@ -203,8 +213,8 @@ impl GameView {
                         if !node.coord.is_valid(orbital_decay_game::MAP_SIZE) {
                             break;
                         }
-                        for &offset in &quad::OFFSETS {
-                            let output_coord = node.coord * 2 + offset;
+                        for &offset in &tile_3x3::OFFSETS {
+                            let output_coord = node.coord * 3 + offset;
                             frame.blend_cell_background_relative(
                                 output_coord,
                                 depth::GAME_MAX,
@@ -217,9 +227,9 @@ impl GameView {
                     }
                 }
                 if aim_coord.is_valid(orbital_decay_game::MAP_SIZE) {
-                    for &offset in &quad::OFFSETS {
+                    for &offset in &tile_3x3::OFFSETS {
                         let alpha = self.blink.alpha(blink_duration);
-                        let output_coord = aim_coord * 2 + offset;
+                        let output_coord = aim_coord * 3 + offset;
                         frame.blend_cell_background_relative(
                             output_coord,
                             depth::GAME_MAX,
@@ -232,11 +242,11 @@ impl GameView {
                 }
             }
             Mode::Examine { target } => {
-                let game_coord = target / 2;
+                let game_coord = target / 3;
                 if game_coord.is_valid(MAP_SIZE) {
-                    for &offset in &quad::OFFSETS {
+                    for &offset in &tile_3x3::OFFSETS {
                         let alpha = 127;
-                        let output_coord = game_coord * 2 + offset;
+                        let output_coord = game_coord * 3 + offset;
                         frame.blend_cell_background_relative(
                             output_coord,
                             depth::GAME_MAX,
@@ -249,17 +259,17 @@ impl GameView {
                 }
                 StringViewSingleLine::new(Style::new().with_foreground(Rgb24::new_grey(127))).view(
                     "Examining (escape to return to game)",
-                    context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2 + 1)),
+                    context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3 + 1)),
                     frame,
                 );
             }
         }
         if let Some(mouse_coord) = game_to_render.mouse_coord {
-            let game_coord = mouse_coord / 2;
+            let game_coord = mouse_coord / 3;
             if game_coord.is_valid(MAP_SIZE) {
-                for &offset in &quad::OFFSETS {
+                for &offset in &tile_3x3::OFFSETS {
                     let alpha = 63;
-                    let output_coord = game_coord * 2 + offset;
+                    let output_coord = game_coord * 3 + offset;
                     frame.blend_cell_background_relative(
                         output_coord,
                         depth::GAME_MAX,
@@ -466,7 +476,9 @@ impl Quad {
 fn entity_to_quad_visible(entity: &ToRenderEntity, game: &Game, game_over: bool) -> Quad {
     match entity.tile {
         Tile::Player => Quad::new_player(Rgb24::new(255, 255, 255)),
-        Tile::Floor => Quad::new_floor(Rgb24::new(0, 187, 187), Rgb24::new(0, 127, 127)),
+        Tile::Window(_) | Tile::Floor => {
+            Quad::new_floor(Rgb24::new(0, 187, 187), Rgb24::new(0, 127, 127))
+        }
         Tile::Wall => {
             let below = entity.coord + Coord::new(0, 1);
             if game.contains_wall(below)
@@ -477,10 +489,12 @@ fn entity_to_quad_visible(entity: &ToRenderEntity, game: &Game, game_over: bool)
                 Quad::new_wall_front(Rgb24::new(127, 0, 127), Rgb24::new(255, 0, 255))
             }
         }
-        Tile::DoorClosed => {
+        Tile::DoorClosed(_) => {
             Quad::new_door_closed(Rgb24::new(255, 127, 255), Rgb24::new(127, 0, 127))
         }
-        Tile::DoorOpen => Quad::new_door_open(Rgb24::new(255, 127, 255), Rgb24::new(0, 127, 127)),
+        Tile::DoorOpen(_) => {
+            Quad::new_door_open(Rgb24::new(255, 127, 255), Rgb24::new(0, 127, 127))
+        }
         Tile::Stairs => Quad::new_stairs(Rgb24::new(255, 255, 255), Rgb24::new(0, 127, 127)),
     }
 }
@@ -489,7 +503,7 @@ fn entity_to_quad_remembered(entity: &ToRenderEntity, game: &Game) -> Option<Qua
     let foreground = Rgb24::new_grey(63);
     let background = Rgb24::new_grey(15);
     let quad = match entity.tile {
-        Tile::Floor => Quad::new_floor(foreground, background),
+        Tile::Window(_) | Tile::Floor => Quad::new_floor(foreground, background),
         Tile::Wall => {
             if game.contains_wall(entity.coord + Coord::new(0, 1)) {
                 Quad::new_wall_top(foreground)
@@ -497,8 +511,8 @@ fn entity_to_quad_remembered(entity: &ToRenderEntity, game: &Game) -> Option<Qua
                 Quad::new_wall_front(background, foreground)
             }
         }
-        Tile::DoorClosed => Quad::new_door_closed(foreground, background),
-        Tile::DoorOpen => Quad::new_door_closed(foreground, background),
+        Tile::DoorClosed(_) => Quad::new_door_closed(foreground, background),
+        Tile::DoorOpen(_) => Quad::new_door_closed(foreground, background),
         Tile::Stairs => Quad::new_stairs(foreground, background),
         Tile::Player => Quad::new_player(foreground),
     };
@@ -525,8 +539,150 @@ fn render_quad<F: Frame, C: ColModify>(
     frame: &mut F,
 ) {
     for (offset, view_cell) in quad.enumerate() {
-        let output_coord = coord * 2 + offset;
+        let output_coord = coord * 3 + offset;
         frame.set_cell_relative(output_coord, depth, view_cell, context);
+    }
+}
+
+fn render_stars<R: Rng, F: Frame, C: ColModify>(
+    visibility_grid: &VisibilityGrid,
+    star_rng: &mut R,
+    context: ViewContext<C>,
+    frame: &mut F,
+) {
+    enum Star {
+        None,
+        Dim,
+        Bright,
+    }
+    for coord in context.size.coord_iter_row_major() {
+        let visibility = visibility_grid.cell_visibility(coord / 3);
+        let star = if star_rng.gen::<u32>() % 60 == 0 {
+            Star::Bright
+        } else if star_rng.gen::<u32>() % 60 == 0 {
+            Star::Dim
+        } else {
+            Star::None
+        };
+        match visibility {
+            CellVisibility::NeverVisible => {
+                frame.set_cell_relative(
+                    coord,
+                    0,
+                    ViewCell::new()
+                        .with_character(' ')
+                        .with_background(Rgb24::new_grey(0)),
+                    context,
+                );
+            }
+            CellVisibility::PreviouslyVisible => {
+                let num = 1;
+                let denom = 4;
+                let (ch, style) = match star {
+                    Star::None => (
+                        ' ',
+                        Style::new()
+                            .with_foreground(
+                                colours::SPACE_FOREGROUND_DIM.saturating_scalar_mul_div(num, denom),
+                            )
+                            .with_background(
+                                colours::SPACE_BACKGROUND.saturating_scalar_mul_div(num, denom),
+                            ),
+                    ),
+                    Star::Dim => (
+                        '.',
+                        Style::new()
+                            .with_foreground(
+                                colours::SPACE_FOREGROUND_DIM.saturating_scalar_mul_div(num, denom),
+                            )
+                            .with_background(
+                                colours::SPACE_BACKGROUND.saturating_scalar_mul_div(num, denom),
+                            ),
+                    ),
+                    Star::Bright => (
+                        '.',
+                        Style::new()
+                            .with_bold(true)
+                            .with_foreground(
+                                colours::SPACE_FOREGROUND_DIM.saturating_scalar_mul_div(num, denom),
+                            )
+                            .with_background(
+                                colours::SPACE_BACKGROUND.saturating_scalar_mul_div(num, denom),
+                            ),
+                    ),
+                };
+                frame.set_cell_relative(
+                    coord,
+                    0,
+                    ViewCell::new().with_character(ch).with_style(style),
+                    context,
+                );
+            }
+            CellVisibility::CurrentlyVisibleWithLightColour(_) => {
+                let (ch, style) = match star {
+                    Star::None => (' ', Style::new().with_background(colours::SPACE_BACKGROUND)),
+                    Star::Dim => (
+                        '.',
+                        Style::new()
+                            .with_bold(false)
+                            .with_foreground(colours::SPACE_FOREGROUND_DIM)
+                            .with_background(colours::SPACE_BACKGROUND),
+                    ),
+                    Star::Bright => (
+                        '.',
+                        Style::new()
+                            .with_bold(true)
+                            .with_foreground(colours::SPACE_FOREGROUND)
+                            .with_background(colours::SPACE_BACKGROUND),
+                    ),
+                };
+                frame.set_cell_relative(
+                    coord,
+                    0,
+                    ViewCell::new().with_character(ch).with_style(style),
+                    context,
+                );
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ColModifyLightBlend {
+    light_colour: Rgb24,
+}
+
+impl ColModifyLightBlend {
+    fn apply_lighting(&self, colour: Rgb24) -> Rgb24 {
+        let base_colour = colour;
+        base_colour.normalised_mul(self.light_colour)
+    }
+}
+
+impl ColModify for ColModifyLightBlend {
+    fn foreground(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+    fn background(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ColModifyRemembered;
+impl ColModifyRemembered {
+    fn apply_lighting(&self, colour: Rgb24) -> Rgb24 {
+        let mean = colour.weighted_mean_u16(rgb24::WeightsU16::new(1, 1, 1));
+        Rgb24::new_grey(mean).saturating_scalar_mul_div(1, 2)
+    }
+}
+
+impl ColModify for ColModifyRemembered {
+    fn foreground(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+    fn background(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
     }
 }
 
@@ -538,16 +694,18 @@ fn render_entity<F: Frame, C: ColModify>(
 ) {
     match game.visibility_grid().cell_visibility(entity.coord) {
         CellVisibility::CurrentlyVisibleWithLightColour(Some(light_colour)) => {
-            let mut quad = entity_to_quad_visible(entity, game, false);
+            let context = context.compose_col_modify(ColModifyLightBlend { light_colour });
             let depth = layer_depth(entity.layer);
+            tile_3x3::render_3x3(entity, game, context.add_depth(depth), frame);
+            /*
+            let mut quad = entity_to_quad_visible(entity, game, false);
             quad.apply_lighting(light_colour);
-            render_quad(entity.coord, depth, &quad, context, frame);
+            render_quad(entity.coord, depth, &quad, context, frame); */
         }
         CellVisibility::PreviouslyVisible => {
-            if let Some(quad) = entity_to_quad_remembered(entity, game) {
-                let depth = layer_depth(entity.layer);
-                render_quad(entity.coord, depth, &quad, context, frame);
-            }
+            let context = context.compose_col_modify(ColModifyRemembered);
+            let depth = layer_depth(entity.layer);
+            tile_3x3::render_3x3(entity, game, context.add_depth(depth), frame);
         }
         CellVisibility::NeverVisible | CellVisibility::CurrentlyVisibleWithLightColour(None) => (),
     }
@@ -568,9 +726,10 @@ fn render_entity_game_over<F: Frame, C: ColModify>(
 fn tile_str(tile: Tile) -> Option<&'static str> {
     match tile {
         Tile::Player => Some("yourself"),
-        Tile::DoorClosed | Tile::DoorOpen => Some("a door"),
+        Tile::DoorClosed(_) | Tile::DoorOpen(_) => Some("a door"),
         Tile::Wall => Some("a wall"),
         Tile::Floor => Some("the floor"),
+        Tile::Window(_) => Some("a window"),
         Tile::Stairs => Some("a staircase leading further down"),
     }
 }

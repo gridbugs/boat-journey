@@ -84,19 +84,21 @@ pub struct Game {
     dead_player: Option<EntityData>,
     turn_during_animation: Option<Turn>,
     gameplay_music: Vec<Music>,
+    star_rng_seed: u64,
 }
 
 impl Game {
     pub fn new<R: Rng>(config: &Config, base_rng: &mut R) -> Self {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
+        let star_rng_seed = base_rng.gen();
         //let Terrain { world, agents, player } =
         //    terrain::from_str(include_str!("terrain.txt"), make_player(&mut rng), &mut rng);
         let Terrain {
             world,
             agents,
             player,
-        } = terrain::space_station(0, make_player(&mut rng), &mut rng);
+        } = terrain::space_station(star_rng_seed, 0, make_player(&mut rng), &mut rng);
         let last_player_info = world
             .character_info(player)
             .expect("couldn't get info for player");
@@ -123,10 +125,14 @@ impl Game {
             dead_player: None,
             turn_during_animation: None,
             gameplay_music,
+            star_rng_seed,
         };
         game.update_visibility(config);
         game.prime_npcs();
         game
+    }
+    pub fn star_rng_seed(&self) -> u64 {
+        self.star_rng_seed
     }
     pub fn size(&self) -> Size {
         self.world.size()
@@ -355,7 +361,12 @@ impl Game {
             world,
             agents,
             player,
-        } = terrain::space_station(self.world.level + 1, player_data, &mut self.rng);
+        } = terrain::space_station(
+            self.star_rng_seed,
+            self.world.level + 1,
+            player_data,
+            &mut self.rng,
+        );
         self.visibility_grid = VisibilityGrid::new(world.size());
         self.world = world;
         self.agents = agents;
@@ -409,6 +420,9 @@ impl Game {
     }
     pub fn contains_wall(&self, coord: Coord) -> bool {
         self.world.is_wall_at_coord(coord)
+    }
+    pub fn contains_floor(&self, coord: Coord) -> bool {
+        self.world.is_floor_at_coord(coord)
     }
     fn update_last_player_info(&mut self) {
         if let Some(character_info) = self.world.character_info(self.player) {

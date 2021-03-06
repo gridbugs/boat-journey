@@ -115,7 +115,16 @@ impl World {
     fn open_door(&mut self, door: Entity) {
         self.components.solid.remove(door);
         self.components.opacity.remove(door);
-        self.components.tile.insert(door, Tile::DoorOpen);
+        let axis = match self
+            .components
+            .tile
+            .get(door)
+            .expect("door lacks tile component")
+        {
+            Tile::DoorClosed(axis) | Tile::DoorOpen(axis) => *axis,
+            _ => panic!("unexpecgted tile on door"),
+        };
+        self.components.tile.insert(door, Tile::DoorOpen(axis));
     }
 
     pub fn character_fire_bullet(&mut self, character: Entity, target: Coord) {

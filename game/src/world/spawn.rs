@@ -15,6 +15,7 @@ use crate::{
     },
 };
 use entity_table::Entity;
+use grid_2d::coord_2d::Axis;
 use grid_2d::Coord;
 use rand::Rng;
 use rational::Rational;
@@ -28,11 +29,11 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
         character: Some(()),
         player: Some(player::Player {}),
         light: Some(Light {
-            colour: Rgb24::new(200, 187, 150),
-            vision_distance: Circle::new_squared(60),
+            colour: Rgb24::new_grey(255),
+            vision_distance: Circle::new_squared(120),
             diminish: Rational {
                 numerator: 1,
-                denominator: 30,
+                denominator: 8,
             },
         }),
         ..Default::default()
@@ -453,7 +454,7 @@ impl World {
         panic!("missing tiles")
     }
 
-    pub fn spawn_door(&mut self, coord: Coord) -> Entity {
+    pub fn spawn_door(&mut self, coord: Coord, axis: Axis) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -464,10 +465,26 @@ impl World {
                 },
             )
             .unwrap();
-        self.components.tile.insert(entity, Tile::DoorClosed);
+        self.components.tile.insert(entity, Tile::DoorClosed(axis));
         self.components.opacity.insert(entity, 255);
         self.components.solid.insert(entity, ());
         self.components.door_state.insert(entity, DoorState::Closed);
+        entity
+    }
+
+    pub fn spawn_window(&mut self, coord: Coord, axis: Axis) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Feature),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Window(axis));
+        self.components.solid.insert(entity, ());
         entity
     }
 

@@ -25,7 +25,26 @@ impl World {
     pub fn is_wall_at_coord(&self, coord: Coord) -> bool {
         if let Some(spatial_cell) = self.spatial_table.layers_at(coord) {
             if let Some(entity) = spatial_cell.feature {
-                self.components.tile.get(entity) == Some(&Tile::Wall)
+                if let Some(tile) = self.components.tile.get(entity) {
+                    match tile {
+                        Tile::Window(_) | Tile::Wall => true,
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    pub fn is_floor_at_coord(&self, coord: Coord) -> bool {
+        if let Some(spatial_cell) = self.spatial_table.layers_at(coord) {
+            if let Some(entity) = spatial_cell.floor {
+                self.components.tile.get(entity) == Some(&Tile::Floor)
             } else {
                 false
             }
