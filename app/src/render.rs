@@ -146,7 +146,11 @@ impl GameView {
                                 Style::new().with_foreground(Rgb24::new_grey(255)),
                             )
                             .view(
-                                format!("Floor {}/{}", current_level, orbital_decay_game::FINAL_LEVEL),
+                                format!(
+                                    "Floor {}/{}",
+                                    current_level,
+                                    orbital_decay_game::FINAL_LEVEL
+                                ),
                                 context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 2)),
                                 frame,
                             );
@@ -478,107 +482,6 @@ fn entity_to_quad_visible(entity: &ToRenderEntity, game: &Game, game_over: bool)
         }
         Tile::DoorOpen => Quad::new_door_open(Rgb24::new(255, 127, 255), Rgb24::new(0, 127, 127)),
         Tile::Stairs => Quad::new_stairs(Rgb24::new(255, 255, 255), Rgb24::new(0, 127, 127)),
-        Tile::Sludge0 => {
-            let background = entity.colour_hint.unwrap_or_else(|| Rgb24::new(255, 0, 0));
-            let foreground = background.scalar_div(2);
-            Quad::new_repeating(
-                ViewCell::new()
-                    .with_character('~')
-                    .with_foreground(foreground)
-                    .with_background(background),
-            )
-        }
-        Tile::Sludge1 => {
-            let background = entity.colour_hint.unwrap_or_else(|| Rgb24::new(255, 0, 0));
-            let foreground = background.scalar_div(2);
-            Quad::new_repeating(
-                ViewCell::new()
-                    .with_character('≈')
-                    .with_foreground(foreground)
-                    .with_background(background),
-            )
-        }
-        Tile::Bridge => {
-            let character = if game.contains_bridge(entity.coord + Coord::new(0, 1))
-                || game.contains_bridge(entity.coord - Coord::new(0, 1))
-            {
-                '║'
-            } else {
-                '═'
-            };
-            Quad::new_repeating(
-                ViewCell::new()
-                    .with_character(character)
-                    .with_foreground(Rgb24::new(127, 127, 0))
-                    .with_background(Rgb24::new(200, 127, 0)),
-            )
-        }
-        Tile::SlimeDivide => Quad::new_slime(
-            'd',
-            Rgb24::new(255, 63, 63),
-            Rgb24::new(31, 15, 15),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeSwap => Quad::new_slime(
-            's',
-            Rgb24::new(127, 127, 255),
-            Rgb24::new(15, 15, 31),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeTeleport => Quad::new_slime(
-            't',
-            Rgb24::new(187, 63, 255),
-            Rgb24::new(15, 0, 31),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeGoo => Quad::new_slime(
-            'g',
-            Rgb24::new(0, 255, 0),
-            Rgb24::new(0, 63, 0),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeBoss => Quad::new_slime(
-            '?',
-            Rgb24::new(127, 127, 127),
-            Rgb24::new(0, 0, 0),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeAttackUpgrade => Quad::new_slime(
-            'A',
-            Rgb24::new(255, 255, 255),
-            Rgb24::new(31, 31, 31),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeDefendUpgrade => Quad::new_slime(
-            'D',
-            Rgb24::new(255, 255, 255),
-            Rgb24::new(31, 31, 31),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::SlimeTechUpgrade => Quad::new_slime(
-            'T',
-            Rgb24::new(255, 255, 255),
-            Rgb24::new(31, 31, 31),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
-        Tile::AttackItem { special } => Quad::new_attack(Rgb24::new_grey(255), special),
-        Tile::DefendItem { special } => Quad::new_defend(Rgb24::new_grey(255), special),
-        Tile::TechItem { special } => Quad::new_tech(Rgb24::new_grey(255), special),
-        Tile::SlimeCurse => Quad::new_slime(
-            'c',
-            Rgb24::new(187, 187, 187),
-            Rgb24::new(31, 31, 31),
-            entity.hit_points.map(|hp| hp.current).unwrap_or(0),
-            entity.next_action.unwrap_or(NpcAction::Wait),
-        ),
     }
 }
 
@@ -597,28 +500,7 @@ fn entity_to_quad_remembered(entity: &ToRenderEntity, game: &Game) -> Option<Qua
         Tile::DoorClosed => Quad::new_door_closed(foreground, background),
         Tile::DoorOpen => Quad::new_door_closed(foreground, background),
         Tile::Stairs => Quad::new_stairs(foreground, background),
-        Tile::Sludge0 | Tile::Sludge1 => Quad::new_repeating(
-            ViewCell::new()
-                .with_character('~')
-                .with_foreground(foreground)
-                .with_background(background),
-        ),
-        Tile::Bridge => {
-            let character = if game.contains_bridge(entity.coord + Coord::new(0, 1))
-                || game.contains_bridge(entity.coord - Coord::new(0, 1))
-            {
-                '║'
-            } else {
-                '═'
-            };
-            Quad::new_repeating(
-                ViewCell::new()
-                    .with_character(character)
-                    .with_foreground(foreground)
-                    .with_background(background),
-            )
-        }
-        _ => return None,
+        Tile::Player => Quad::new_player(foreground),
     };
     Some(quad)
 }
@@ -686,42 +568,15 @@ fn render_entity_game_over<F: Frame, C: ColModify>(
 fn tile_str(tile: Tile) -> Option<&'static str> {
     match tile {
         Tile::Player => Some("yourself"),
-        Tile::Sludge0 | Tile::Sludge1 => Some("some toxic sludge"),
-        Tile::Bridge => Some("a bridge over toxic sludge"),
         Tile::DoorClosed | Tile::DoorOpen => Some("a door"),
         Tile::Wall => Some("a wall"),
         Tile::Floor => Some("the floor"),
         Tile::Stairs => Some("a staircase leading further down"),
-        Tile::SlimeDivide => Some("a Divide Slime"),
-        Tile::SlimeSwap => Some("a Swap Slime"),
-        Tile::SlimeTeleport => Some("a Teleport Slime"),
-        Tile::SlimeGoo => Some("a Goo Slime"),
-        Tile::SlimeBoss => Some("the Source of Slime"),
-        Tile::SlimeAttackUpgrade => Some("an Attack Upgrade Slime"),
-        Tile::SlimeDefendUpgrade => Some("a Defend Upgrade Slime"),
-        Tile::SlimeTechUpgrade => Some("a Tech Upgrade Slime"),
-        Tile::SlimeCurse => Some("a Curse Slime"),
-        Tile::AttackItem { special: false } => Some("an Attack"),
-        Tile::AttackItem { special: true } => Some("a Special Attack"),
-        Tile::DefendItem { special: false } => Some("a Defend"),
-        Tile::DefendItem { special: true } => Some("a Special Defend"),
-        Tile::TechItem { special: false } => Some("a Tech"),
-        Tile::TechItem { special: true } => Some("a Special Tech"),
     }
 }
 
 fn action_error_str(action_error: ActionError) -> &'static str {
     match action_error {
-        ActionError::BlinkToNonVisibleCell => "Can't blink to non-visible location",
-        ActionError::BlinkToSolidCell => "Can't blink to solid cell",
-        ActionError::NoTechToApply => "Tech stack is empty",
-        ActionError::BlinkWithoutDestination => "Can't blink without destination",
-        ActionError::AttackDeckFull => "Attack stack is full",
-        ActionError::DefendDeckFull => "Defend stack is full",
         ActionError::WalkIntoSolidCell => "You can't walk there",
-        ActionError::NoAbilityInSlot => "No ability in slot",
-        ActionError::NotEnoughAttacks => "Too few attacks",
-        ActionError::NotEnoughDefends => "Too few defends",
-        ActionError::NotEnoughTechs => "Too few techs",
     }
 }

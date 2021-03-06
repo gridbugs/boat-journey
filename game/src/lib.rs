@@ -14,7 +14,6 @@ mod world;
 use behaviour::{Agent, BehaviourContext};
 use entity_table::ComponentTable;
 pub use entity_table::Entity;
-use procgen::SewerSpec;
 use terrain::Terrain;
 pub use terrain::FINAL_LEVEL;
 pub use visibility::{CellVisibility, Omniscient, VisibilityGrid};
@@ -24,7 +23,7 @@ pub use world::{
     ToRenderEntity,
 };
 
-pub const MAP_SIZE: Size = Size::new_u16(19, 19);
+pub const MAP_SIZE: Size = Size::new_u16(27, 20);
 
 pub struct Config {
     pub omniscient: Option<Omniscient>,
@@ -46,23 +45,16 @@ pub enum ExternalEvent {
     LoopMusic(Music),
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct AbilityChoice(pub Vec<player::Ability>);
-
 pub enum GameControlFlow {
     GameOver,
     Win,
-    LevelChange(AbilityChoice),
+    LevelChange,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub enum Input {
     Walk(CardinalDirection),
-    Tech,
-    TechWithCoord(Coord),
     Wait,
-    Ability(u8),
-    GrantAbility(player::Ability),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -104,12 +96,7 @@ impl Game {
             world,
             agents,
             player,
-        } = terrain::sewer(
-            0,
-            SewerSpec { size: MAP_SIZE },
-            make_player(&mut rng),
-            &mut rng,
-        );
+        } = terrain::space_station(0, make_player(&mut rng), &mut rng);
         let last_player_info = world
             .character_info(player)
             .expect("couldn't get info for player");
@@ -176,9 +163,7 @@ impl Game {
             if countdown.as_millis() == 0 {
                 self.generate_level(config);
                 self.generate_frame_countdown = None;
-                return Some(GameControlFlow::LevelChange(AbilityChoice(
-                    self.world.ability_choice(self.player, &mut self.rng),
-                )));
+                return Some(GameControlFlow::LevelChange);
             } else {
                 *countdown = if let Some(remaining) = countdown.checked_sub(since_last_tick) {
                     remaining
@@ -307,20 +292,8 @@ impl Game {
                 self.world
                     .character_walk_in_direction(self.player, direction, &mut self.rng)
             }
-            Input::Tech => self.world.apply_tech(self.player, &mut self.rng),
-            Input::TechWithCoord(coord) => self.world.apply_tech_with_coord(
-                self.player,
-                coord,
-                &self.visibility_grid,
-                &mut self.rng,
-            ),
             Input::Wait => {
                 self.world.wait(self.player, &mut self.rng);
-                Ok(())
-            }
-            Input::Ability(n) => self.world.apply_ability(self.player, n, &mut self.rng),
-            Input::GrantAbility(ability) => {
-                self.world.grant_ability(self.player, ability);
                 Ok(())
             }
         };
@@ -382,14 +355,7 @@ impl Game {
             world,
             agents,
             player,
-        } = terrain::sewer(
-            self.world.level + 1,
-            SewerSpec {
-                size: self.world.size(),
-            },
-            player_data,
-            &mut self.rng,
-        );
+        } = terrain::space_station(self.world.level + 1, player_data, &mut self.rng);
         self.visibility_grid = VisibilityGrid::new(world.size());
         self.world = world;
         self.agents = agents;
@@ -417,7 +383,6 @@ impl Game {
                 self.agents.insert(entity, Agent::new(self.world.size()));
             }
         }
-        self.world.sludge_damage(&mut self.rng);
         self.cleanup();
     }
     pub fn is_generating(&self) -> bool {
@@ -444,9 +409,6 @@ impl Game {
     }
     pub fn contains_wall(&self, coord: Coord) -> bool {
         self.world.is_wall_at_coord(coord)
-    }
-    pub fn contains_bridge(&self, coord: Coord) -> bool {
-        self.world.is_bridge_at_coord(coord)
     }
     fn update_last_player_info(&mut self) {
         if let Some(character_info) = self.world.character_info(self.player) {

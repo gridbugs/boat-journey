@@ -1,7 +1,7 @@
 use crate::visibility::Light;
 pub use crate::world::{
     explosion_spec,
-    player::{AbilityTarget, Player},
+    player::Player,
     spatial::{Layer, Location},
 };
 use direction::CardinalDirection;
@@ -31,12 +31,8 @@ declare_entity_module! {
         stairs: (),
         next_action: NpcAction,
         to_remove: (),
-        sludge: (),
-        safe_on_sludge: (),
-        on_damage: OnDamage,
         move_half_speed: MoveHalfSpeed,
         item: Item,
-        drop_item_on_death: DropItemOnDeath,
     }
 }
 pub use components::Components;
@@ -50,21 +46,6 @@ pub enum Tile {
     DoorClosed,
     DoorOpen,
     Stairs,
-    Sludge0,
-    Sludge1,
-    Bridge,
-    SlimeDivide,
-    SlimeTeleport,
-    SlimeSwap,
-    SlimeGoo,
-    SlimeCurse,
-    SlimeAttackUpgrade,
-    SlimeDefendUpgrade,
-    SlimeTechUpgrade,
-    SlimeBoss,
-    AttackItem { special: bool },
-    DefendItem { special: bool },
-    TechItem { special: bool },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -137,27 +118,7 @@ pub enum NpcAction {
     Wait,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum OnDamage {
-    Sludge,
-    Divide,
-    DivideAndSpawn,
-    Teleport,
-    Swap,
-    Upgrade {
-        level: u32,
-        ability_target: AbilityTarget,
-    },
-    Curse,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct MoveHalfSpeed {
     pub skip_next_move: bool,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum DropItemOnDeath {
-    GuaranteeSpecial,
-    RandomNormal,
 }

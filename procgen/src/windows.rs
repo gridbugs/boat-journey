@@ -1,12 +1,7 @@
 use crate::doors::DoorCell;
-use crate::hull::HullCell;
-use direction::CardinalDirections;
 use grid_2d::{coord_2d::Axis, Coord, Grid};
 use rand::seq::SliceRandom;
 use rand::Rng;
-use std::collections::{BTreeSet, HashSet};
-
-type WindowCandidateId = usize;
 
 #[derive(Debug)]
 struct WindowCandidate {

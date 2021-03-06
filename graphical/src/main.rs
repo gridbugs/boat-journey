@@ -5,7 +5,7 @@ use orbital_decay_native::{meap, NativeCommon};
 
 const FULLSCREEN_SUPPORTED: bool = true;
 
-const CELL_SIZE: f64 = 16.;
+const CELL_SIZE: f64 = 12.;
 
 #[cfg(target_os = "windows")]
 mod graphical_env {
@@ -124,7 +124,7 @@ fn main() {
         title: "orbital_decay".to_string(),
         window_dimensions: Dimensions {
             width: 960.,
-            height: 640.,
+            height: 720.,
         },
         cell_dimensions: Dimensions {
             width: CELL_SIZE,

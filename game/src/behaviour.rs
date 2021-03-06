@@ -158,32 +158,6 @@ enum Behaviour {
     Flee,
 }
 
-fn can_enter_wrt_sludge(world: &World, step: Step, entity: Entity) -> bool {
-    if world.components.safe_on_sludge.contains(entity) {
-        return true;
-    }
-    if let Some(to_cell) = world.spatial_table.layers_at(step.to_coord()) {
-        if let Some(character) = to_cell.character {
-            if world.components.player.contains(character) {
-                return true;
-            }
-        }
-        if let Some(to_floor) = to_cell.floor {
-            if world.components.sludge.contains(to_floor) {
-                let from_cell = world.spatial_table.layers_at_checked(step.from_coord());
-                if let Some(from_floor) = from_cell.floor {
-                    if !world.components.sludge.contains(from_floor) {
-                        return false;
-                    }
-                }
-            }
-        }
-    } else {
-        return false;
-    }
-    true
-}
-
 struct Wander<'a, R> {
     world: &'a World,
     last_seen_grid: &'a LastSeenGrid,
@@ -231,8 +205,7 @@ impl<'a, R: Rng> BestSearch for Wander<'a, R> {
         }
     }
     fn can_step_updating_best(&mut self, step: Step) -> bool {
-        can_enter_wrt_sludge(&self.world, step, self.entity)
-            && self.can_enter_initial_updating_best(step.to_coord)
+        self.can_enter_initial_updating_best(step.to_coord)
     }
     fn best_coord(&self) -> Option<Coord> {
         self.min_last_seen_coord
@@ -259,7 +232,7 @@ impl<'a> CanEnter for WorldCanEnterAvoidNpcs<'a> {
         self.world.can_npc_traverse_feature_at_coord(coord) && !self.world.is_npc_at_coord(coord)
     }
     fn can_step(&self, step: Step) -> bool {
-        can_enter_wrt_sludge(&self.world, step, self.entity) && self.can_enter(step.to_coord)
+        self.can_enter(step.to_coord)
     }
 }
 

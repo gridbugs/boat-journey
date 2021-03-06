@@ -172,17 +172,6 @@ impl World {
     pub fn clone_entity_data(&self, entity: Entity) -> EntityData {
         self.components.clone_entity_data(entity)
     }
-    pub fn ability_choice<R: Rng>(&self, player: Entity, rng: &mut R) -> Vec<player::Ability> {
-        let player = self.components.player.get(player).unwrap();
-        let current_abilities = player.ability.iter().cloned().collect::<HashSet<_>>();
-        let mut choices = player::Ability::all()
-            .iter()
-            .filter(|a| !current_abilities.contains(a))
-            .cloned()
-            .choose_multiple(rng, 3);
-        choices.shuffle(rng);
-        choices
-    }
     pub fn is_won(&self) -> bool {
         self.level == terrain::FINAL_LEVEL && self.components.npc.is_empty()
     }

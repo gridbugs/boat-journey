@@ -16,6 +16,7 @@ pub enum GameCell {
     Spawn,
 }
 
+#[derive(Debug)]
 pub struct Spec {
     pub size: Size,
 }

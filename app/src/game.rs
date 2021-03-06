@@ -8,13 +8,11 @@ use chargrid::input::*;
 use direction::{CardinalDirection, Direction};
 use general_audio_static::{AudioHandle, AudioPlayer};
 use general_storage_static::{format, StaticStorage};
+use orbital_decay_game::{ActionError, CharacterInfo, ExternalEvent, Game, GameControlFlow, Music};
+pub use orbital_decay_game::{Config as GameConfig, Input as GameInput, Omniscient};
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
-use orbital_decay_game::{
-    player::Ability, ActionError, CharacterInfo, ExternalEvent, Game, GameControlFlow, Music,
-};
-pub use orbital_decay_game::{AbilityChoice, Config as GameConfig, Input as GameInput, Omniscient};
 use std::time::Duration;
 
 const CONFIG_KEY: &str = "config.json";
@@ -135,8 +133,7 @@ fn loop_music(
 }
 
 pub enum InjectedInput {
-    Tech(Coord),
-    LevelChange(Ability),
+    Fire(Coord),
 }
 
 #[derive(Clone, Copy)]
@@ -160,7 +157,6 @@ pub struct GameInstance {
     game: Game,
     screen_shake: Option<ScreenShake>,
     current_music: Option<Music>,
-    level_change: Option<AbilityChoice>,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -182,7 +178,6 @@ impl GameInstance {
             rng,
             screen_shake: None,
             current_music: None,
-            level_change: None,
         }
     }
     pub fn game(&self) -> &Game {
@@ -429,9 +424,7 @@ impl EventRoutine for ExamineEventRoutine {
                                         Examine::KeyboardDirection(direction)
                                     }
                                     AppInput::Examine => Examine::Cancel,
-                                    AppInput::Wait | AppInput::Tech | AppInput::Ability(_) => {
-                                        Examine::Ignore
-                                    }
+                                    AppInput::Wait => Examine::Ignore,
                                 }
                             } else {
                                 match keyboard_input {
@@ -582,10 +575,7 @@ impl EventRoutine for AimEventRoutine {
                             if let Some(app_input) = controls.get(keyboard_input) {
                                 match app_input {
                                     AppInput::Move(direction) => Aim::KeyboardDirection(direction),
-                                    AppInput::Wait
-                                    | AppInput::Tech
-                                    | AppInput::Ability(_)
-                                    | AppInput::Examine => Aim::Ignore,
+                                    AppInput::Wait | AppInput::Examine => Aim::Ignore,
                                 }
                             } else {
                                 match keyboard_input {
@@ -715,7 +705,6 @@ pub enum GameReturn {
     Aim,
     GameOver,
     Win,
-    LevelChange(AbilityChoice),
     Examine,
 }
 
@@ -744,53 +733,10 @@ impl EventRoutine for GameEventRoutine {
             let player_coord = GameCoord::of_player(instance.game.player_info());
             for injected_input in self.injected_inputs.drain(..) {
                 match injected_input {
-                    InjectedInput::Tech(coord) => {
-                        let game_control_flow = instance
-                            .game
-                            .handle_input(GameInput::TechWithCoord(coord), game_config);
-                        match game_control_flow {
-                            Err(error) => self.action_error = Some(error),
-                            Ok(None) => self.action_error = None,
-                            Ok(Some(game_control_flow)) => match game_control_flow {
-                                GameControlFlow::Win => return Handled::Return(GameReturn::Win),
-                                GameControlFlow::GameOver => {
-                                    return Handled::Return(GameReturn::GameOver)
-                                }
-                                GameControlFlow::LevelChange(ability_choice) => {
-                                    instance.level_change = Some(ability_choice.clone());
-                                    return Handled::Return(GameReturn::LevelChange(
-                                        ability_choice,
-                                    ));
-                                }
-                            },
-                        }
-                    }
-                    InjectedInput::LevelChange(ability) => {
-                        instance.level_change = None;
-                        let game_control_flow = instance
-                            .game
-                            .handle_input(GameInput::GrantAbility(ability), game_config);
-                        match game_control_flow {
-                            Err(error) => self.action_error = Some(error),
-                            Ok(None) => self.action_error = None,
-                            Ok(Some(game_control_flow)) => match game_control_flow {
-                                GameControlFlow::Win => return Handled::Return(GameReturn::Win),
-                                GameControlFlow::GameOver => {
-                                    return Handled::Return(GameReturn::GameOver)
-                                }
-                                GameControlFlow::LevelChange(ability_choice) => {
-                                    instance.level_change = Some(ability_choice.clone());
-                                    return Handled::Return(GameReturn::LevelChange(
-                                        ability_choice,
-                                    ));
-                                }
-                            },
-                        }
+                    InjectedInput::Fire(coord) => {
+                        todo!()
                     }
                 }
-            }
-            if let Some(ability_choice) = instance.level_change.as_ref() {
-                return Handled::Return(GameReturn::LevelChange(ability_choice.clone()));
             }
             let controls = &data.controls;
             event_or_peek_with_handled(event_or_peek, self, |mut s, event| match event {
@@ -824,14 +770,8 @@ impl EventRoutine for GameEventRoutine {
                                                             GameReturn::GameOver,
                                                         )
                                                     }
-                                                    GameControlFlow::LevelChange(
-                                                        ability_choice,
-                                                    ) => {
-                                                        instance.level_change =
-                                                            Some(ability_choice.clone());
-                                                        return Handled::Return(
-                                                            GameReturn::LevelChange(ability_choice),
-                                                        );
+                                                    GameControlFlow::LevelChange => {
+                                                        return Handled::Continue(s);
                                                     }
                                                 }
                                             }
@@ -850,27 +790,9 @@ impl EventRoutine for GameEventRoutine {
                                         AppInput::Move(direction) => instance
                                             .game
                                             .handle_input(GameInput::Walk(direction), game_config),
-                                        AppInput::Tech => {
-                                            if let Some(&next_tech) =
-                                                instance.game.player().tech.peek()
-                                            {
-                                                if next_tech.requires_aim() {
-                                                    return Handled::Return(GameReturn::Aim);
-                                                } else {
-                                                    instance
-                                                        .game
-                                                        .handle_input(GameInput::Tech, game_config)
-                                                }
-                                            } else {
-                                                return Handled::Continue(s);
-                                            }
-                                        }
                                         AppInput::Wait => {
                                             instance.game.handle_input(GameInput::Wait, game_config)
                                         }
-                                        AppInput::Ability(n) => instance
-                                            .game
-                                            .handle_input(GameInput::Ability(n), game_config),
                                         AppInput::Examine => {
                                             return Handled::Return(GameReturn::Examine)
                                         }
@@ -885,12 +807,8 @@ impl EventRoutine for GameEventRoutine {
                                             GameControlFlow::GameOver => {
                                                 return Handled::Return(GameReturn::GameOver)
                                             }
-                                            GameControlFlow::LevelChange(ability_choice) => {
-                                                instance.level_change =
-                                                    Some(ability_choice.clone());
-                                                return Handled::Return(GameReturn::LevelChange(
-                                                    ability_choice,
-                                                ));
+                                            GameControlFlow::LevelChange => {
+                                                return Handled::Continue(s);
                                             }
                                         },
                                     }
@@ -928,9 +846,8 @@ impl EventRoutine for GameEventRoutine {
                             GameControlFlow::GameOver => {
                                 return Handled::Return(GameReturn::GameOver)
                             }
-                            GameControlFlow::LevelChange(ability_choice) => {
-                                instance.level_change = Some(ability_choice.clone());
-                                return Handled::Return(GameReturn::LevelChange(ability_choice));
+                            GameControlFlow::LevelChange => {
+                                return Handled::Continue(s);
                             }
                         }
                     }
