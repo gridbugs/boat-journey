@@ -7,6 +7,7 @@ fn main() {
         .parse_env_or_exit();
     let in_image = image::open(in_path).unwrap().to_rgb8();
     for y in 0..in_image.height() {
+        print!("\"");
         for x in 0..in_image.width() {
             let [r, g, b] = in_image.get_pixel(x, y).0;
             let ch = match (r, g, b) {
@@ -18,6 +19,7 @@ fn main() {
             };
             print!("{}", ch);
         }
+        print!("\",");
         println!("");
     }
 }
