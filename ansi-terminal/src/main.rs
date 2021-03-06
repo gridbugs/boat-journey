@@ -1,7 +1,7 @@
 use chargrid_ansi_terminal::{col_encode, Context};
-use rand::Rng;
 use orbital_decay_app::{app, AutoPlay, EnvNull, Frontend, RngSeed};
 use orbital_decay_native::{meap, NativeCommon};
+use rand::Rng;
 
 enum ColEncodeChoice {
     TrueColour,
@@ -76,7 +76,7 @@ fn main() {
         save_file,
         audio_player,
         RngSeed::U64(rng_seed_u64),
-        Some(AutoPlay),
+        None,
         None,
         Box::new(EnvNull),
     );

@@ -519,7 +519,7 @@ fn entity_to_quad_remembered(entity: &ToRenderEntity, game: &Game) -> Option<Qua
     Some(quad)
 }
 
-fn layer_depth(layer: Option<Layer>) -> i8 {
+pub fn layer_depth(layer: Option<Layer>) -> i8 {
     if let Some(layer) = layer {
         match layer {
             Layer::Floor => 0,
@@ -544,7 +544,7 @@ fn render_quad<F: Frame, C: ColModify>(
     }
 }
 
-fn render_stars<R: Rng, F: Frame, C: ColModify>(
+pub fn render_stars<R: Rng, F: Frame, C: ColModify>(
     visibility_grid: &VisibilityGrid,
     star_rng: &mut R,
     context: ViewContext<C>,
@@ -686,7 +686,7 @@ impl ColModify for ColModifyRemembered {
     }
 }
 
-fn render_entity<F: Frame, C: ColModify>(
+pub fn render_entity<F: Frame, C: ColModify>(
     entity: &ToRenderEntity,
     game: &Game,
     context: ViewContext<C>,
@@ -697,10 +697,6 @@ fn render_entity<F: Frame, C: ColModify>(
             let context = context.compose_col_modify(ColModifyLightBlend { light_colour });
             let depth = layer_depth(entity.layer);
             tile_3x3::render_3x3(entity, game, context.add_depth(depth), frame);
-            /*
-            let mut quad = entity_to_quad_visible(entity, game, false);
-            quad.apply_lighting(light_colour);
-            render_quad(entity.coord, depth, &quad, context, frame); */
         }
         CellVisibility::PreviouslyVisible => {
             let context = context.compose_col_modify(ColModifyRemembered);

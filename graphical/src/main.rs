@@ -152,7 +152,7 @@ fn main() {
         save_file,
         audio_player,
         rng_seed,
-        Some(AutoPlay),
+        None,
         fullscreen,
         Box::new(env),
     );

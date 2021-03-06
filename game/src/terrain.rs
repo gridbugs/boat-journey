@@ -136,6 +136,7 @@ pub fn space_station<R: Rng>(
                 world.spawn_window(coord, *axis);
             }
             GameCell::Stairs => {
+                world.spawn_floor(coord);
                 world.spawn_stairs(coord);
             }
             GameCell::Spawn => {

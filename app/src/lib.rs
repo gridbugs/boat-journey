@@ -6,6 +6,7 @@ mod controls;
 mod depth;
 mod frontend;
 mod game;
+mod menu_background;
 mod render;
 mod tile_3x3;
 mod ui;

@@ -1,4 +1,5 @@
 use crate::audio::{AppAudioPlayer, Audio};
+use crate::colours;
 use crate::controls::Controls;
 use crate::depth;
 use crate::frontend::Frontend;
@@ -7,6 +8,7 @@ use crate::game::{
     GameReturn, GameStatus, InjectedInput, ScreenCoord,
 };
 pub use crate::game::{GameConfig, Omniscient, RngSeed};
+use crate::menu_background::MenuBackgroundData;
 use crate::render::{GameToRender, GameView, Mode};
 use crate::ui;
 use chargrid::input::*;
@@ -121,7 +123,7 @@ struct AppData {
     options_menu: menu::MenuInstanceChooseOrEscape<OrBack<OptionsMenuEntry>>,
     last_mouse_coord: Coord,
     env: Box<dyn Env>,
-    won: bool,
+    menu_background_data: MenuBackgroundData,
 }
 
 struct AppView {
@@ -159,6 +161,7 @@ impl AppData {
             env.set_fullscreen_init(config.fullscreen);
             game_data.set_config(config);
         }
+        let menu_background_data = MenuBackgroundData::new();
         Self {
             options_menu: OptionsMenuEntry::instance(&env),
             frontend,
@@ -167,7 +170,7 @@ impl AppData {
             main_menu_type: MainMenuType::Init,
             last_mouse_coord: Coord::new(0, 0),
             env,
-            won: false,
+            menu_background_data,
         }
     }
 }
@@ -178,31 +181,28 @@ impl AppView {
         let spec = Spec {
             normal: Style {
                 to: To {
-                    foreground: Rgb24::new(127, 127, 127),
-                    background: Rgb24::new(0, 0, 0),
+                    foreground: colours::STRIPE,
+                    background: colours::SPACE_BACKGROUND,
                     bold: false,
                     underline: false,
                 },
                 from: From::current(),
                 durations: Durations {
-                    foreground: Duration::from_millis(127),
-                    background: Duration::from_millis(127),
+                    foreground: Duration::from_millis(128),
+                    background: Duration::from_millis(128),
                 },
             },
             selected: Style {
                 to: To {
-                    foreground: Rgb24::new(255, 255, 255),
-                    background: Rgb24::new(87, 87, 87),
+                    foreground: colours::WALL_TOP,
+                    background: colours::STRIPE,
                     bold: true,
                     underline: false,
                 },
-                from: From {
-                    foreground: FromCol::Rgb24(Rgb24::new(0, 0, 0)),
-                    background: FromCol::Rgb24(Rgb24::new(255, 255, 255)),
-                },
+                from: From::current(),
                 durations: Durations {
-                    foreground: Duration::from_millis(63),
-                    background: Duration::from_millis(127),
+                    foreground: Duration::from_millis(128),
+                    background: Duration::from_millis(128),
                 },
             },
         };
@@ -281,21 +281,22 @@ where
     ) {
         text::StringViewSingleLine::new(
             Style::new()
-                .with_foreground(Rgb24::new(0, 255, 0))
+                .with_foreground(colours::WALL_FRONT)
                 .with_bold(true),
         )
-        .view("orbital_decay", context.add_offset(Coord::new(1, 1)), frame);
+        .view("Orbital Decay", context, frame);
         self.0
-            .view(app_data, context.add_offset(Coord::new(1, 3)), frame);
+            .view(app_data, context.add_offset(Coord::new(0, 4)), frame);
     }
 }
 
 struct TextOverlay {
+    height: u32,
     text: Vec<text::RichTextPartOwned>,
 }
 impl TextOverlay {
-    fn new(text: Vec<text::RichTextPartOwned>) -> Self {
-        Self { text }
+    fn new(height: u32, text: Vec<text::RichTextPartOwned>) -> Self {
+        Self { height, text }
     }
 }
 impl EventRoutine for TextOverlay {
@@ -334,14 +335,14 @@ impl EventRoutine for TextOverlay {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: Rgb24::new_grey(0),
+                    rgb24: colours::SPACE_BACKGROUND,
                     view: BorderView {
                         style: &BorderStyle {
                             padding: BorderPadding::all(1),
                             ..Default::default()
                         },
                         view: BoundView {
-                            size: Size::new(40, 16),
+                            size: Size::new(40, self.height),
                             view: text::RichTextView::new(text::wrap::Word::new()),
                         },
                     },
@@ -368,12 +369,13 @@ impl EventRoutine for TextOverlay {
                 frame,
             );
         } else {
-            AlignView {
-                alignment: Alignment::centre(),
-                view: FillBackgroundView {
-                    rgb24: Rgb24::new_grey(0),
+            data.menu_background_data.render(context, frame);
+            BoundView {
+                size: Size::new(43, 60),
+                view: AlignView {
+                    alignment: Alignment::centre(),
                     view: BoundView {
-                        size: Size::new(50, 20),
+                        size: Size::new(37, self.height),
                         view: text::RichTextView::new(text::wrap::Word::new()),
                     },
                 },
@@ -405,7 +407,7 @@ impl Decorate for DecorateMainMenu {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: Rgb24::new_grey(0),
+                    rgb24: colours::SPACE_BACKGROUND,
                     view: BorderView {
                         style: &BorderStyle::new(),
                         view: &mut event_routine_view,
@@ -429,11 +431,12 @@ impl Decorate for DecorateMainMenu {
                 frame,
             );
         } else {
-            AlignView {
-                view: InitMenu(event_routine_view),
-                alignment: Alignment::centre(),
-            }
-            .view(&data, context, frame);
+            data.menu_background_data.render(context, frame);
+            InitMenu(event_routine_view).view(
+                &data,
+                context.add_offset(Coord { x: 14, y: 24 }).add_depth(100),
+                frame,
+            );
         }
     }
 }
@@ -598,7 +601,7 @@ impl Decorate for DecorateOptionsMenu {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: Rgb24::new_grey(0),
+                    rgb24: colours::SPACE_BACKGROUND,
                     view: BorderView {
                         style: &BorderStyle::new(),
                         view: &mut event_routine_view,
@@ -622,11 +625,12 @@ impl Decorate for DecorateOptionsMenu {
                 frame,
             );
         } else {
-            AlignView {
-                view: InitMenu(event_routine_view),
-                alignment: Alignment::centre(),
-            }
-            .view(&data, context, frame);
+            data.menu_background_data.render(context, frame);
+            InitMenu(event_routine_view).view(
+                &data,
+                context.add_offset(Coord { x: 14, y: 24 }).add_depth(100),
+                frame,
+            );
         }
     }
 }
@@ -728,7 +732,7 @@ fn main_menu(
     View = AppView,
     Event = CommonEvent,
 > {
-    make_either!(Ei = A | B | C | D);
+    make_either!(Ei = A | B | C | D | E);
     SideEffectThen::new_with_view(move |data: &mut AppData, _: &_| {
         if auto_play.is_some() {
             if first_run.is_some() {
@@ -755,7 +759,7 @@ fn main_menu(
                     MainMenuType::Pause => (),
                 }
             } else {
-                if data.won {
+                if data.game.config().won {
                     data.main_menu = MainMenuEntry::won(data.frontend).into_choose_or_escape();
                     data.main_menu_type = MainMenuType::Init;
                 } else {
@@ -772,28 +776,31 @@ fn main_menu(
                     }
                 }
             }
-            Ei::B(
-                menu::FadeMenuInstanceRoutine::new(MenuEntryStringFn::new(
-                    |entry: MenuEntryToRender<MainMenuEntry>, buf: &mut String| {
-                        use std::fmt::Write;
-                        let s = match entry.entry {
-                            MainMenuEntry::NewGame => "(n) New Game",
-                            MainMenuEntry::Resume => "(r) Resume",
-                            MainMenuEntry::Quit => "(q) Quit",
-                            MainMenuEntry::SaveQuit => "(q) Save and Quit",
-                            MainMenuEntry::Save => "(s) Save",
-                            MainMenuEntry::Clear => "(c) Clear",
-                            MainMenuEntry::Options => "(o) Options",
-                            MainMenuEntry::Story => "(b) Back Story",
-                            MainMenuEntry::Keybindings => "(k) Keybindings",
-                            MainMenuEntry::EndText => "(e) End Text",
-                        };
-                        write!(buf, "{}", s).unwrap();
-                    },
-                ))
-                .select(SelectMainMenu)
-                .decorated(DecorateMainMenu),
-            )
+            let menu = menu::FadeMenuInstanceRoutine::new(MenuEntryStringFn::new(
+                |entry: MenuEntryToRender<MainMenuEntry>, buf: &mut String| {
+                    use std::fmt::Write;
+                    let s = match entry.entry {
+                        MainMenuEntry::NewGame => "(n) New Game",
+                        MainMenuEntry::Resume => "(r) Resume",
+                        MainMenuEntry::Quit => "(q) Quit",
+                        MainMenuEntry::SaveQuit => "(q) Save and Quit",
+                        MainMenuEntry::Save => "(s) Save",
+                        MainMenuEntry::Clear => "(c) Clear",
+                        MainMenuEntry::Options => "(o) Options",
+                        MainMenuEntry::Story => "(p) Prologue",
+                        MainMenuEntry::Keybindings => "(k) Keybindings",
+                        MainMenuEntry::EndText => "(e) Epilogue",
+                    };
+                    write!(buf, "{}", s).unwrap();
+                },
+            ))
+            .select(SelectMainMenu)
+            .decorated(DecorateMainMenu);
+            if first_run.is_some() {
+                Ei::E(story().then(|| menu))
+            } else {
+                Ei::B(menu)
+            }
         }
     })
 }
@@ -822,99 +829,144 @@ fn game_over() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
 
 fn win_text() -> TextOverlay {
     let bold = Style::new()
-        .with_foreground(Rgb24::new(255, 0, 0))
+        .with_foreground(colours::STRIPE)
         .with_bold(true);
-    let normal = Style::new().with_foreground(Rgb24::new_grey(255));
-    let faint = Style::new().with_foreground(Rgb24::new_grey(127));
-    TextOverlay::new(vec![
-        text::RichTextPartOwned::new("The murky remains of the ".to_string(), normal),
-        text::RichTextPartOwned::new("SOURCE OF SLIME".to_string(), bold),
-        text::RichTextPartOwned::new(" drain into the stygian depths below. ".to_string(), normal),
-        text::RichTextPartOwned::new("YOU HAVE WON.".to_string(), bold),
-        text::RichTextPartOwned::new(" You emerge from the sewers into ".to_string(), normal),
-        text::RichTextPartOwned::new("THE CITY ABOVE.".to_string(), bold),
-        text::RichTextPartOwned::new(
-            "\n\nThe city which you saved. Repairs to a ".to_string(),
-            normal,
-        ),
-        text::RichTextPartOwned::new("WAR-TORN WORLD".to_string(), bold),
-        text::RichTextPartOwned::new(" are progressing smoothly, and a ".to_string(), normal),
-        text::RichTextPartOwned::new("NEW MILLENNIUM".to_string(), bold),
-        text::RichTextPartOwned::new(
-            " is just around the corner. Things are finally looking up.".to_string(),
-            normal,
-        ),
-        text::RichTextPartOwned::new(
-            "\n\nExcept for you. After all, what's a ".to_string(),
-            normal,
-        ),
-        text::RichTextPartOwned::new(
-            "GENETICALLY-MODIFIED PRECOG SUPER-SOLDIER".to_string(),
-            bold,
-        ),
-        text::RichTextPartOwned::new(
-            " to do during peace time. You long for the day when more ".to_string(),
-            normal,
-        ),
-        text::RichTextPartOwned::new("RADIOACTIVE MUTANT SLIMES".to_string(), bold),
-        text::RichTextPartOwned::new(" appear in the sewers...".to_string(), normal),
-        text::RichTextPartOwned::new("\n\n\n\n\n\nPress any key...".to_string(), faint),
-    ])
+    let normal = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let faint = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let t = |text: &str, style| text::RichTextPartOwned::new(text.to_string(), style);
+    TextOverlay::new(
+        30,
+        vec![
+            t(
+                "With its fuel supply restored, the station flies back into orbit. \
+            On autopilot. Shame about the crew, but these things happen. Nobody said \
+            space was a safe place to work.\n\n\
+            You undock your shuttle and make for Earth. Easy does it. Gotta make it \
+            back in one piece and collect on that ",
+                normal,
+            ),
+            t("hefty wager", bold),
+            t(
+                " you placed on yourself. \
+            Serves those suckers right for betting against you!\n\n\
+            No doubt there'll be a ton of paperwork to complete before you can go home. \
+            The company can't have this getting out. It's gonna be all NDA this and \
+            sworn to secrecy that. Don't go running to the press about the ",
+                normal,
+            ),
+            t(
+                "undead space \
+            station crew",
+                bold,
+            ),
+            t(" you just put down. Now sign here.", normal),
+            t("\n\n\n\n\n\nPress any key...", faint),
+        ],
+    )
+}
+
+fn win_text2() -> TextOverlay {
+    let bold = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(true);
+    let normal = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let faint = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let t = |text: &str, style| text::RichTextPartOwned::new(text.to_string(), style);
+    TextOverlay::new(
+        35,
+        vec![
+            t(
+                "Now that you have time to think, something gives you pause. \
+            Pretty big coincidence, the station running out of fuel at the ",
+                normal,
+            ),
+            t("same time", bold),
+            t(
+                " that its crew transforms into a horde of ravenous bloodthirsty monsters. \
+                The next scheduled resupply wasn't for months. They should have had plenty \
+                of fuel!\n\n\
+                And those words in the airlock: \"Don't open! Dead inside!\" Were they meant \
+                for you? Who wrote them? How did they know the company would send a shuttle? The airlock was \
+                deserted, so whoever wrote it must have gone back inside.\n\n\
+                The airlock ",
+                normal,
+            ),
+            t("was", bold),
+            t(" empty. Yes. It was empty and you sealed the door behind you. There's no way any of those "
+               , normal),
+            t("things", bold),
+            t(" could have snuck aboard your shuttle.\n\n\
+            Everything is fine."
+               , normal),
+            t("\n\n\n\n\n\nPress any key...", faint),
+        ],
+    )
 }
 
 fn win() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent> {
     SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
         data.game.loop_music(Audio::EndText, 0.2);
-        data.won = true;
-        win_text()
+        let mut config = data.game.config();
+        config.won = true;
+        data.game.set_config(config);
+        win_text().then(|| win_text2())
     })
 }
 
 fn story() -> TextOverlay {
     let bold = Style::new()
-        .with_foreground(Rgb24::new(0, 255, 255))
+        .with_foreground(colours::STRIPE)
         .with_bold(true);
-    let normal = Style::new().with_foreground(Rgb24::new_grey(255));
-    let faint = Style::new().with_foreground(Rgb24::new_grey(127));
-    TextOverlay::new(vec![
-        text::RichTextPartOwned::new("In the not-too-distant future, ".to_string(), normal),
-        text::RichTextPartOwned::new("THE YEAR 1999,".to_string(), bold),
-        text::RichTextPartOwned::new(" fallout from ".to_string(), normal),
-        text::RichTextPartOwned::new("THE WAR".to_string(), bold),
-        text::RichTextPartOwned::new(" has caused ".to_string(), normal),
-        text::RichTextPartOwned::new("RADIOACTIVE MUTANT SLIMES".to_string(), bold),
-        text::RichTextPartOwned::new(" to appear in the sewers of ".to_string(), normal),
-        text::RichTextPartOwned::new("THE CITY.".to_string(), bold),
-        text::RichTextPartOwned::new(" You are a ".to_string(), normal),
-        text::RichTextPartOwned::new(
-            "GENETICALLY-MODIFIED PRECOG SUPER-SOLDIER,".to_string(),
-            bold,
-        ),
-        text::RichTextPartOwned::new(
-            " whose free-will was in-part traded for the power to ".to_string(),
-            normal,
-        ),
-        text::RichTextPartOwned::new(
-            "PREDICT THE OUTCOME OF COMBAT ENCOUNTERS.".to_string(),
-            bold,
-        ),
-        text::RichTextPartOwned::new(" Go into the sewers and ".to_string(), normal),
-        text::RichTextPartOwned::new("ELIMINATE THE SOURCE OF SLIME!".to_string(), bold),
-        text::RichTextPartOwned::new("\n\n\n\n\n\nPress any key...".to_string(), faint),
+    let normal = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let faint = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let t = |text: &str, style| text::RichTextPartOwned::new(text.to_string(), style);
+    TextOverlay::new(40, vec![
+        t("You tape over the flashing warning light. An overheating engine is the least of your worries. \
+        Gotta focus.\n\n\
+        The space station looms ahead. It's out of fuel, and about to come crashing down to Earth. \
+        Unless you get to it first. \
+        Special delivery: 1 hydrogen fuel cell with enough juice to kick the station out of this pesky \
+        atmosphere and back into space where it belongs.\n\n\
+        Back home your buddies are placing bets on whether you'll make it back alive. \
+        Last you heard, odds were 5 to 1 against.\n\n\
+        \"Docking complete,\" sounds a lifeless mechanical voice. No word yet from the station crew. Comms must be down. Figures. \
+        Shouldering your pack containing the fuel cell, you trudge into the airlock. \
+        Gotta lug this thing down the five flights of stairs to the fuel bay. Who designed this place?\n\n\
+        A dim light flickers on in the airlock revealing words smeared in blood on the opposite door:\n", normal),
+        t("DON'T OPEN! DEAD INSIDE!", bold),
+        t("\n\n\
+        Better make those odds 6 to 1...", normal),
+        t("\n\n\n\n\n\nPress any key...", faint),
     ])
 }
 
 fn keybindings() -> TextOverlay {
-    let normal = Style::new().with_foreground(Rgb24::new_grey(255));
-    let faint = Style::new().with_foreground(Rgb24::new_grey(127));
-    TextOverlay::new(vec![
-        text::RichTextPartOwned::new("Movement/Aim: arrows/VI keys/WASD\n\n".to_string(), normal),
-        text::RichTextPartOwned::new("Cancel Aim: escape\n\n".to_string(), normal),
-        text::RichTextPartOwned::new("Wait: space\n\n".to_string(), normal),
-        text::RichTextPartOwned::new("Use Tech: t\n\n".to_string(), normal),
-        text::RichTextPartOwned::new("Examine: x\n\n".to_string(), normal),
-        text::RichTextPartOwned::new("\n\n\n\n\nPress any key...".to_string(), faint),
-    ])
+    let normal = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(true);
+    let faint = Style::new().with_foreground(colours::STRIPE);
+    TextOverlay::new(
+        20,
+        vec![
+            text::RichTextPartOwned::new("Movement/Aim: arrows/WASD/HJKL\n\n".to_string(), normal),
+            text::RichTextPartOwned::new("Cancel Aim: escape\n\n".to_string(), normal),
+            text::RichTextPartOwned::new("Wait: space\n\n".to_string(), normal),
+            text::RichTextPartOwned::new("Examine: x\n\n".to_string(), normal),
+            text::RichTextPartOwned::new("\n\n\n\n\nPress any key...".to_string(), faint),
+        ],
+    )
 }
 
 fn aim(
@@ -1051,7 +1103,7 @@ fn main_menu_cycle(
         Ok(MainMenuEntry::Options) => Ei::G(options_menu_cycle().map(|_| None)),
         Ok(MainMenuEntry::Story) => Ei::H(story().map(|()| None)),
         Ok(MainMenuEntry::Keybindings) => Ei::I(keybindings().map(|()| None)),
-        Ok(MainMenuEntry::EndText) => Ei::J(win_text().map(|()| None)),
+        Ok(MainMenuEntry::EndText) => Ei::J(win_text().then(|| win_text2()).map(|()| None)),
     })
 }
 

@@ -28,6 +28,7 @@ pub struct Config {
     pub sfx: bool,
     pub fullscreen: bool,
     pub first_run: bool,
+    pub won: bool,
 }
 
 impl Default for Config {
@@ -37,6 +38,7 @@ impl Default for Config {
             sfx: true,
             fullscreen: false,
             first_run: true,
+            won: false,
         }
     }
 }

@@ -23,7 +23,7 @@ pub fn run() -> Result<(), JsValue> {
         SAVE_KEY.to_string(),
         audio_player,
         RngSeed::Random,
-        Some(AutoPlay),
+        None,
         None,
         Box::new(EnvNull),
     );
