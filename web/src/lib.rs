@@ -14,7 +14,7 @@ pub fn run() -> Result<(), JsValue> {
         "video/ogg",
     )));
     let storage = StaticStorage::new(LocalStorage::new());
-    let context = Context::new(Size::new(60, 40), "content");
+    let context = Context::new(Size::new(80, 60), "content");
     let app = app(
         GameConfig { omniscient: None },
         Frontend::Web,
