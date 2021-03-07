@@ -1,9 +1,12 @@
-use crate::{terrain, visibility::Light, ExternalEvent};
+use crate::{visibility::Light, ExternalEvent};
 use entity_table::{Entity, EntityAllocator};
 use grid_2d::{Coord, Size};
 use rand::Rng;
 use rgb24::Rgb24;
 use serde::{Deserialize, Serialize};
+
+mod air;
+pub use air::Air;
 
 mod spatial;
 use spatial::SpatialTable;
@@ -40,6 +43,7 @@ pub struct World {
     pub components: Components,
     pub realtime_components: RealtimeComponents,
     pub spatial_table: SpatialTable,
+    pub air: Air,
 }
 
 impl World {
@@ -48,12 +52,14 @@ impl World {
         let components = Components::default();
         let realtime_components = RealtimeComponents::default();
         let spatial_table = SpatialTable::new(size);
+        let air = Air::new(size);
         Self {
             entity_allocator,
             components,
             realtime_components,
             spatial_table,
             level,
+            air,
         }
     }
 }

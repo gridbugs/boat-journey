@@ -98,7 +98,7 @@ impl Game {
         let star_rng_seed = base_rng.gen();
         let debug = false;
         let Terrain {
-            world,
+            mut world,
             agents,
             player,
         } = if debug {
@@ -111,6 +111,7 @@ impl Game {
                 &mut rng,
             )
         };
+        world.air.init(&world.spatial_table, &world.components);
         let last_player_info = world
             .character_info(player)
             .expect("couldn't get info for player");
@@ -363,7 +364,7 @@ impl Game {
     fn generate_level(&mut self, config: &Config) {
         let player_data = self.world.clone_entity_data(self.player);
         let Terrain {
-            world,
+            mut world,
             agents,
             player,
         } = terrain::space_station(
@@ -372,6 +373,7 @@ impl Game {
             &SpaceStationSpec { demo: config.demo },
             &mut self.rng,
         );
+        world.air.init(&world.spatial_table, &world.components);
         self.visibility_grid = VisibilityGrid::new(world.size());
         self.world = world;
         self.agents = agents;
@@ -389,6 +391,16 @@ impl Game {
     }
 
     fn after_turn(&mut self) {
+        let to_move = self
+            .world
+            .air
+            .update(&self.world.spatial_table, &self.world.components);
+        for (entity, direction) in to_move {
+            let _ = self
+                .world
+                .character_walk_in_direction(entity, direction, &mut self.rng);
+        }
+        self.update_last_player_info();
         self.world.process_door_close_countdown();
         if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
             if layers.floor.is_none() {
