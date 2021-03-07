@@ -23,7 +23,7 @@ pub use world::{
     ToRenderEntity,
 };
 
-pub const MAP_SIZE: Size = Size::new_u16(27, 20);
+pub const MAP_SIZE: Size = Size::new_u16(20, 14);
 
 pub struct Config {
     pub omniscient: Option<Omniscient>,
@@ -336,6 +336,7 @@ impl Game {
                 NpcAction::Wait => (),
             }
         }
+        self.update_last_player_info();
         for entity in self.agents_to_remove.drain(..) {
             self.agents.remove(entity);
         }
@@ -429,6 +430,9 @@ impl Game {
         }
     }
     pub fn player_coord(&self) -> Coord {
+        self.last_player_info.coord
+    }
+    pub fn player_hit_points(&self) -> Coord {
         self.last_player_info.coord
     }
     pub fn current_level(&self) -> u32 {

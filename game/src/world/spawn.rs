@@ -3,7 +3,7 @@ use crate::{
     world::{
         data::{
             Armour, CollidesWith, Disposition, DoorState, EntityData, HitPoints, Item, Layer,
-            Location, MoveHalfSpeed, Npc, OnCollision, Tile,
+            Location, MoveHalfSpeed, Npc, OnCollision, Oxygen, Tile,
         },
         explosion, player,
         realtime_periodic::{
@@ -27,7 +27,9 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
     EntityData {
         tile: Some(Tile::Player),
         character: Some(()),
-        player: Some(player::Player {}),
+        player: Some(player::Player {
+            melee_weapon: player::Weapon::new_bare_hands(),
+        }),
         light: Some(Light {
             colour: Rgb24::new_grey(255),
             vision_distance: Circle::new_squared(120),
@@ -36,6 +38,8 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
                 denominator: 8,
             },
         }),
+        hit_points: Some(HitPoints::new_full(10)),
+        oxygen: Some(Oxygen::new_full(10)),
         ..Default::default()
     }
 }
@@ -527,6 +531,7 @@ impl World {
             .hit_points
             .insert(entity, HitPoints::new_full(4));
         self.components.armour.insert(entity, Armour::new(2));
+        self.components.damage.insert(entity, 1);
         entity
     }
 }

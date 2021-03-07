@@ -25,6 +25,7 @@ declare_entity_module! {
         collides_with: CollidesWith,
         projectile_damage: ProjectileDamage,
         hit_points: HitPoints,
+        oxygen: Oxygen,
         armour: Armour,
         blood: (),
         player: Player,
@@ -36,6 +37,7 @@ declare_entity_module! {
         to_remove: (),
         move_half_speed: MoveHalfSpeed,
         item: Item,
+        damage: u32,
     }
 }
 pub use components::Components;
@@ -106,6 +108,18 @@ pub struct HitPoints {
 }
 
 impl HitPoints {
+    pub fn new_full(max: u32) -> Self {
+        Self { current: max, max }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Oxygen {
+    pub current: u32,
+    pub max: u32,
+}
+
+impl Oxygen {
     pub fn new_full(max: u32) -> Self {
         Self { current: max, max }
     }

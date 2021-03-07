@@ -27,8 +27,7 @@ pub fn render_3x3<F: Frame, C: ColModify>(
     match entity.tile {
         Tile::Wall => {
             let below = entity.coord + Coord::new(0, 1);
-            if game.contains_wall(below) && (!game.visibility_grid().is_coord_never_visible(below))
-            {
+            if game.contains_wall(below) {
                 wall_top(view_context, frame);
             } else {
                 wall_front(view_context, frame);

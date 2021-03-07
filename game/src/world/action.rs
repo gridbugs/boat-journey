@@ -81,20 +81,39 @@ impl World {
         direction: CardinalDirection,
         rng: &mut R,
     ) {
-        let player = self.components.player.get_mut(attacker).unwrap();
-        self.apply_attack(attacker, victim, direction, rng);
+        let player = self.components.player.get(attacker).unwrap();
+        let pen = player.melee_pen();
+        if pen
+            >= self
+                .components
+                .armour
+                .get(victim)
+                .expect("npc lacks armour")
+                .value
+        {
+            let dmg = player.melee_dmg();
+            self.damage_character(victim, dmg, rng);
+        }
+        let player = self.components.player.get(attacker).unwrap();
+        for ability in player.melee_weapon.abilities.clone() {
+            use player::WeaponAbility;
+            match ability {
+                WeaponAbility::KnockBack => {
+                    self.character_push_in_direction(victim, direction.direction());
+                    self.character_push_in_direction(victim, direction.direction());
+                }
+            }
+        }
         self.wait(attacker, rng);
     }
 
-    fn npc_melee_attack<R: Rng>(&mut self, _attacker: Entity, victim: Entity, rng: &mut R) {}
-
-    fn apply_attack<R: Rng>(
-        &mut self,
-        attacker: Entity,
-        victim: Entity,
-        direction: CardinalDirection,
-        rng: &mut R,
-    ) {
+    fn npc_melee_attack<R: Rng>(&mut self, attacker: Entity, victim: Entity, rng: &mut R) {
+        let &damage = self
+            .components
+            .damage
+            .get(attacker)
+            .expect("npc lacks damage component");
+        self.damage_character(victim, damage, rng);
     }
 
     fn melee_attack<R: Rng>(
@@ -277,7 +296,9 @@ impl World {
         }
     }
 
-    fn character_die<R: Rng>(&mut self, character: Entity, rng: &mut R) {}
+    fn character_die<R: Rng>(&mut self, character: Entity, rng: &mut R) {
+        self.components.to_remove.insert(character, ());
+    }
 
     pub fn damage_character<R: Rng>(
         &mut self,
@@ -285,6 +306,17 @@ impl World {
         hit_points_to_lose: u32,
         rng: &mut R,
     ) {
+        let hit_points = self
+            .components
+            .hit_points
+            .get_mut(character)
+            .expect("character lacks hit_points");
+        if hit_points_to_lose >= hit_points.current {
+            hit_points.current = 0;
+            self.character_die(character, rng);
+        } else {
+            hit_points.current -= hit_points_to_lose;
+        }
     }
 
     fn apply_projectile_damage<R: Rng>(

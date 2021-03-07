@@ -62,10 +62,10 @@ impl GameView {
         context: ViewContext<C>,
         frame: &mut F,
     ) {
+        let mut star_rng = XorShiftRng::seed_from_u64(game_to_render.game.star_rng_seed());
         match game_to_render.status {
             GameStatus::Playing => {
                 let mut entity_under_cursor = None;
-                let mut star_rng = XorShiftRng::seed_from_u64(game_to_render.game.star_rng_seed());
                 render_stars(
                     game_to_render.game.visibility_grid(),
                     &mut star_rng,
@@ -115,11 +115,7 @@ impl GameView {
                         StringViewSingleLine::new(
                             Style::new().with_foreground(Rgb24::new_grey(255)),
                         )
-                        .view(
-                            &buf,
-                            context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
-                            frame,
-                        );
+                        .view(&buf, context, frame);
                     }
                 } else {
                     let current_level = game_to_render.game.current_level();
@@ -135,7 +131,7 @@ impl GameView {
                                 "COMMANDER: The source of the slime is on the {}th floor.",
                                 orbital_decay_game::FINAL_LEVEL
                             ),
-                            context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
+                            context,
                             frame,
                         );
                     } else {
@@ -148,7 +144,7 @@ impl GameView {
                             )
                             .view(
                                 "FINAL FLOOR".to_string(),
-                                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
+                                context,
                                 frame,
                             );
                         } else {
@@ -161,7 +157,7 @@ impl GameView {
                                     current_level,
                                     orbital_decay_game::FINAL_LEVEL
                                 ),
-                                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
+                                context,
                                 frame,
                             );
                         }
@@ -169,29 +165,32 @@ impl GameView {
                 }
             }
             GameStatus::Over => {
+                render_stars_all(
+                    &mut star_rng,
+                    context.compose_col_modify(ColModifyDead),
+                    frame,
+                );
+                for entity in game_to_render.game.to_render_entities() {
+                    let depth = layer_depth(entity.layer);
+                    tile_3x3::render_3x3(
+                        &entity,
+                        game_to_render.game,
+                        context.add_depth(depth).compose_col_modify(ColModifyDead),
+                        frame,
+                    );
+                }
                 StringView::new(Style::new().with_foreground(Rgb24::new(255, 0, 0)), wrap::Word::new()).view(
                     "You failed. The slimes overrun the city and CONSUME WHAT REMAINS OF HUMANITY. Press a key to continue...",
-                    context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
+                    context,
                     frame,
                 );
             }
         }
-        if let Some(action_error) = game_to_render.action_error {
-            let s = action_error_str(action_error);
-            StringView::new(
-                Style::new().with_foreground(Rgb24::new(255, 255, 255)),
-                wrap::Word::new(),
-            )
-            .view(
-                s,
-                context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3 + 1)),
-                frame,
-            );
-        }
         let ui = ui::Ui {
             player: game_to_render.game.player(),
+            player_info: game_to_render.game.player_info(),
         };
-        ui::UiView.view(ui, context.add_offset(Coord::new(39, 0)), frame);
+        ui::UiView.view(ui, context.add_offset(Coord::new(65, 4)), frame);
         match game_to_render.mode {
             Mode::Normal => (),
             Mode::Aim {
@@ -290,6 +289,50 @@ pub fn layer_depth(layer: Option<Layer>) -> i8 {
         }
     } else {
         depth::GAME_MAX - 1
+    }
+}
+
+pub fn render_stars_all<R: Rng, F: Frame, C: ColModify>(
+    star_rng: &mut R,
+    context: ViewContext<C>,
+    frame: &mut F,
+) {
+    enum Star {
+        None,
+        Dim,
+        Bright,
+    }
+    for coord in context.size.coord_iter_row_major() {
+        let star = if star_rng.gen::<u32>() % 60 == 0 {
+            Star::Bright
+        } else if star_rng.gen::<u32>() % 60 == 0 {
+            Star::Dim
+        } else {
+            Star::None
+        };
+        let (ch, style) = match star {
+            Star::None => (' ', Style::new().with_background(colours::SPACE_BACKGROUND)),
+            Star::Dim => (
+                '.',
+                Style::new()
+                    .with_bold(false)
+                    .with_foreground(colours::SPACE_FOREGROUND_DIM)
+                    .with_background(colours::SPACE_BACKGROUND),
+            ),
+            Star::Bright => (
+                '.',
+                Style::new()
+                    .with_bold(true)
+                    .with_foreground(colours::SPACE_FOREGROUND)
+                    .with_background(colours::SPACE_BACKGROUND),
+            ),
+        };
+        frame.set_cell_relative(
+            coord,
+            0,
+            ViewCell::new().with_character(ch).with_style(style),
+            context,
+        );
     }
 }
 
@@ -427,6 +470,24 @@ impl ColModifyRemembered {
 }
 
 impl ColModify for ColModifyRemembered {
+    fn foreground(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+    fn background(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ColModifyDead;
+impl ColModifyDead {
+    fn apply_lighting(&self, colour: Rgb24) -> Rgb24 {
+        let mean = colour.weighted_mean_u16(rgb24::WeightsU16::new(1, 1, 1));
+        Rgb24::new(mean, 0, 0).saturating_scalar_mul_div(3, 2)
+    }
+}
+
+impl ColModify for ColModifyDead {
     fn foreground(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
         rgb24.map(|rgb24| self.apply_lighting(rgb24))
     }

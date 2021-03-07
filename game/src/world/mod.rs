@@ -11,7 +11,9 @@ use spatial::SpatialTable;
 pub mod player;
 
 mod data;
-pub use data::{Armour, Disposition, EntityData, HitPoints, Layer, Location, NpcAction, Tile};
+pub use data::{
+    Armour, Disposition, EntityData, HitPoints, Layer, Location, NpcAction, Oxygen, Tile,
+};
 use data::{Components, Npc};
 
 mod realtime_periodic;
@@ -109,7 +111,13 @@ impl World {
 
     pub fn character_info(&self, entity: Entity) -> Option<CharacterInfo> {
         let coord = self.spatial_table.coord_of(entity)?;
-        Some(CharacterInfo { coord })
+        let &hit_points = self.components.hit_points.get(entity)?;
+        let &oxygen = self.components.oxygen.get(entity)?;
+        Some(CharacterInfo {
+            coord,
+            hit_points,
+            oxygen,
+        })
     }
 
     pub fn cleanup(&mut self) -> Option<PlayerDied> {
@@ -192,4 +200,6 @@ pub struct ToRenderEntity {
 #[derive(Serialize, Deserialize)]
 pub struct CharacterInfo {
     pub coord: Coord,
+    pub hit_points: HitPoints,
+    pub oxygen: Oxygen,
 }
