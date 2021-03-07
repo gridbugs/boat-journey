@@ -20,7 +20,7 @@ pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, Vis
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
     player, ActionError, CharacterInfo, EntityData, HitPoints, Layer, NpcAction, PlayerDied, Tile,
-    ToRenderEntity,
+    ToRenderEntity, ToRenderEntityRealtime,
 };
 
 pub const MAP_SIZE: Size = Size::new_u16(20, 14);
@@ -56,6 +56,7 @@ pub enum GameControlFlow {
 pub enum Input {
     Walk(CardinalDirection),
     Wait,
+    Fire(CardinalDirection),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -307,6 +308,13 @@ impl Game {
                 self.world.wait(self.player, &mut self.rng);
                 Ok(())
             }
+            Input::Fire(direction) => {
+                self.world.character_fire_bullet(
+                    self.player,
+                    self.player_coord() + (direction.coord() * 100),
+                );
+                Ok(())
+            }
         };
         if result.is_ok() {
             if self.is_gameplay_blocked() {
@@ -411,6 +419,11 @@ impl Game {
     }
     pub fn to_render_entities<'a>(&'a self) -> impl 'a + Iterator<Item = ToRenderEntity> {
         self.world.to_render_entities()
+    }
+    pub fn to_render_entities_realtime<'a>(
+        &'a self,
+    ) -> impl 'a + Iterator<Item = ToRenderEntityRealtime> {
+        self.world.to_render_entities_realtime()
     }
     pub fn visibility_grid(&self) -> &VisibilityGrid {
         &self.visibility_grid

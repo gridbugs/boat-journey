@@ -262,9 +262,7 @@ impl World {
                     }
                 }
                 if let Some(entity_in_cell) = spatial_cell.feature.or(spatial_cell.character) {
-                    if (collides_with.solid
-                        && (self.components.solid.contains(entity_in_cell)
-                            || self.components.stairs.contains(entity_in_cell)))
+                    if (collides_with.solid && self.components.solid.contains(entity_in_cell))
                         || (collides_with.character
                             && self.components.character.contains(entity_in_cell))
                     {
@@ -322,15 +320,31 @@ impl World {
     fn apply_projectile_damage<R: Rng>(
         &mut self,
         projectile_entity: Entity,
-        projectile_damage: ProjectileDamage,
+        mut projectile_damage: ProjectileDamage,
         projectile_movement_direction: Direction,
         entity_to_damage: Entity,
         rng: &mut R,
     ) {
-        self.damage_character(entity_to_damage, projectile_damage.hit_points, rng);
-        if projectile_damage.push_back {
-            self.character_push_in_direction(entity_to_damage, projectile_movement_direction);
+        if let Some(armour) = self.components.armour.get(entity_to_damage).cloned() {
+            if let Some(remaining_pen) = projectile_damage.pen.checked_sub(armour.value) {
+                self.damage_character(entity_to_damage, projectile_damage.hit_points, rng);
+                if projectile_damage.push_back {
+                    self.character_push_in_direction(
+                        entity_to_damage,
+                        projectile_movement_direction,
+                    );
+                }
+                if remaining_pen > 0 {
+                    projectile_damage.pen = remaining_pen;
+                    self.components
+                        .projectile_damage
+                        .insert(projectile_entity, projectile_damage);
+                } else {
+                    self.components.remove_entity(projectile_entity);
+                }
+            } else {
+                self.components.remove_entity(projectile_entity);
+            }
         }
-        self.components.remove_entity(projectile_entity);
     }
 }

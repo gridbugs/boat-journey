@@ -135,6 +135,37 @@ impl World {
         })
     }
 
+    pub fn to_render_entities_realtime<'a>(
+        &'a self,
+    ) -> impl 'a + Iterator<Item = ToRenderEntityRealtime> {
+        let tile_component = &self.components.tile;
+        let spatial_table = &self.spatial_table;
+        let realtime_fade_component = &self.realtime_components.fade;
+        let colour_hint_component = &self.components.colour_hint;
+        let particle_component = &self.components.particle;
+        let realtime_component = &self.components.realtime;
+        realtime_component.iter().filter_map(move |(entity, &())| {
+            if let Some(location) = spatial_table.location_of(entity) {
+                let fade = realtime_fade_component
+                    .get(entity)
+                    .and_then(|f| f.state.fading());
+                let tile = tile_component.get(entity).cloned();
+                let colour_hint = colour_hint_component.get(entity).cloned();
+                let particle = particle_component.contains(entity);
+                Some(ToRenderEntityRealtime {
+                    coord: location.coord,
+                    layer: location.layer,
+                    tile,
+                    fade,
+                    colour_hint,
+                    particle,
+                })
+            } else {
+                None
+            }
+        })
+    }
+
     pub fn all_lights_by_coord<'a>(&'a self) -> impl 'a + Iterator<Item = (Coord, &'a Light)> {
         self.components
             .light
@@ -216,6 +247,15 @@ impl World {
     pub fn clone_entity_data(&self, entity: Entity) -> EntityData {
         self.components.clone_entity_data(entity)
     }
+}
+
+pub struct ToRenderEntityRealtime {
+    pub coord: Coord,
+    pub layer: Option<Layer>,
+    pub tile: Option<Tile>,
+    pub fade: Option<u8>,
+    pub colour_hint: Option<Rgb24>,
+    pub particle: bool,
 }
 
 pub struct ToRenderEntity {

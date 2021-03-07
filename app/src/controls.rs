@@ -1,12 +1,14 @@
 use chargrid::input::{GamepadButton, KeyboardInput};
 use direction::CardinalDirection;
 use maplit::hashmap;
+use orbital_decay_game::player::RangedWeaponSlot;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum AppInput {
     Move(CardinalDirection),
+    Aim(RangedWeaponSlot),
     Wait,
     Examine,
 }
@@ -33,6 +35,8 @@ impl Controls {
             KeyboardInput::Char('k') => AppInput::Move(CardinalDirection::North),
             KeyboardInput::Char('j') => AppInput::Move(CardinalDirection::South),
             KeyboardInput::Char('x') => AppInput::Examine,
+            KeyboardInput::Char('1') => AppInput::Aim(RangedWeaponSlot::Slot1),
+            KeyboardInput::Char('2') => AppInput::Aim(RangedWeaponSlot::Slot2),
             KeyboardInput::Char(' ') => AppInput::Wait,
         ];
         let gamepad = hashmap![

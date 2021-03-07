@@ -53,6 +53,7 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
         Tile::DoorClosed(Axis::X) => door_closed_x(view_context, frame),
         Tile::DoorClosed(Axis::Y) => door_closed_y(view_context, frame),
         Tile::Stairs => stairs(view_context, frame),
+        Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => {
             if let Some(entity) = game.to_render_entity(entity) {
                 zombie(&entity, view_context, frame);
@@ -107,6 +108,7 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
         Tile::DoorClosed(Axis::X) => door_closed_x(view_context, frame),
         Tile::DoorClosed(Axis::Y) => door_closed_y(view_context, frame),
         Tile::Stairs => stairs(view_context, frame),
+        Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => (),
     };
     let tile_layers = visibility_cell.tile_layers();
@@ -118,6 +120,19 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
     }
     if let Some(EntityTile { entity: _, tile }) = tile_layers.character {
         render_tile(tile, view_context.add_depth(2));
+    }
+}
+
+pub fn render_3x3_tile<F: Frame, C: ColModify>(
+    coord: Coord,
+    tile: Tile,
+    view_context: ViewContext<C>,
+    frame: &mut F,
+) {
+    let view_context = view_context.add_offset(coord * 3);
+    match tile {
+        Tile::Bullet => bullet(view_context, frame),
+        _ => (),
     }
 }
 
@@ -156,6 +171,7 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::DoorClosed(Axis::X) => door_closed_x(view_context, frame),
         Tile::DoorClosed(Axis::Y) => door_closed_y(view_context, frame),
         Tile::Stairs => stairs(view_context, frame),
+        Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => zombie(entity, view_context, frame),
     }
 }
@@ -952,5 +968,16 @@ pub fn zombie<F: Frame, C: ColModify>(
         format!("♥{:02}", entity.hit_points.unwrap().current).as_str(),
         view_context.add_offset(Coord { x: 0, y: 2 }),
         frame,
+    );
+}
+
+pub fn bullet<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        1,
+        ViewCell::new()
+            .with_character(' ')
+            .with_background(colours::BULLET),
+        view_context,
     );
 }

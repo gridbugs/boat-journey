@@ -38,6 +38,7 @@ declare_entity_module! {
         move_half_speed: MoveHalfSpeed,
         item: Item,
         damage: u32,
+        particle: (),
     }
 }
 pub use components::Components;
@@ -60,6 +61,7 @@ pub enum Tile {
     FuelText0,
     FuelText1,
     FuelHatch,
+    Bullet,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -106,6 +108,7 @@ impl Default for CollidesWith {
 pub struct ProjectileDamage {
     pub hit_points: u32,
     pub push_back: bool,
+    pub pen: u32,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

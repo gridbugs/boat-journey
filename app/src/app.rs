@@ -10,17 +10,18 @@ use crate::game::{
 pub use crate::game::{GameConfig, Omniscient, RngSeed};
 use crate::menu_background::MenuBackgroundData;
 use crate::render::{GameToRender, GameView, Mode};
-use crate::ui;
 use chargrid::input::*;
 use chargrid::*;
 use common_event::*;
 use decorator::*;
+use direction::CardinalDirection;
 use event_routine::*;
 use general_storage_static::StaticStorage;
 use maplit::hashmap;
 use menu::{
     fade_spec, FadeMenuInstanceView, MenuEntryStringFn, MenuEntryToRender, MenuInstanceChoose,
 };
+use orbital_decay_game::player::RangedWeaponSlot;
 use render::{ColModifyDefaultForeground, ColModifyMap, Coord, Rgb24, Style};
 
 #[derive(Clone, Copy)]
@@ -987,14 +988,19 @@ fn keybindings() -> TextOverlay {
 }
 
 fn aim(
-) -> impl EventRoutine<Return = Option<Coord>, Data = AppData, View = AppView, Event = CommonEvent>
-{
+    slot: RangedWeaponSlot,
+) -> impl EventRoutine<
+    Return = Option<CardinalDirection>,
+    Data = AppData,
+    View = AppView,
+    Event = CommonEvent,
+> {
     make_either!(Ei = A | B);
-    SideEffectThen::new_with_view(|data: &mut AppData, _view: &AppView| {
+    SideEffectThen::new_with_view(move |data: &mut AppData, _view: &AppView| {
         let game_relative_mouse_coord = ScreenCoord(data.last_mouse_coord);
         if let Ok(initial_aim_coord) = data.game.initial_aim_coord(game_relative_mouse_coord) {
             Ei::A(
-                AimEventRoutine::new(initial_aim_coord)
+                AimEventRoutine::new(initial_aim_coord, slot)
                     .select(SelectGame)
                     .decorated(DecorateGame),
             )
@@ -1040,14 +1046,16 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                     GameReturn::Pause => Handled::Return(GameLoopBreak::Pause),
                     GameReturn::GameOver => Handled::Return(GameLoopBreak::GameOver),
                     GameReturn::Win => Handled::Return(GameLoopBreak::Win),
-                    GameReturn::Aim => Handled::Continue(Ei::B(aim().and_then(|maybe_coord| {
-                        make_either!(Ei = A | B);
-                        if let Some(coord) = maybe_coord {
-                            Ei::A(game_injecting_inputs(vec![InjectedInput::Fire(coord)]))
-                        } else {
-                            Ei::B(game())
-                        }
-                    }))),
+                    GameReturn::Aim(slot) => {
+                        Handled::Continue(Ei::B(aim(slot).and_then(|maybe_direction| {
+                            make_either!(Ei = A | B);
+                            if let Some(direction) = maybe_direction {
+                                Ei::A(game_injecting_inputs(vec![InjectedInput::Fire(direction)]))
+                            } else {
+                                Ei::B(game())
+                            }
+                        })))
+                    }
                 })
                 .and_then(|game_loop_break| {
                     make_either!(Ei = A | B | C);

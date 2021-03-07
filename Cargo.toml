@@ -13,8 +13,8 @@ members = [
     "web",
 ]
 
-[profile.release]
-lto = true
+#[profile.release]
+#lto = true
 
 [patch.crates-io]
 # I forked rodio to fix a bug where the dedicated audio thread overflows its stack when the track changes.

@@ -45,3 +45,9 @@ impl Weapon {
         }
     }
 }
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub enum RangedWeaponSlot {
+    Slot1,
+    Slot2,
+}

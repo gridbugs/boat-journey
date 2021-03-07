@@ -8,7 +8,10 @@ use chargrid::input::*;
 use direction::{CardinalDirection, Direction};
 use general_audio_static::{AudioHandle, AudioPlayer};
 use general_storage_static::{format, StaticStorage};
-use orbital_decay_game::{ActionError, CharacterInfo, ExternalEvent, Game, GameControlFlow, Music};
+use orbital_decay_game::{
+    player::RangedWeaponSlot, ActionError, CharacterInfo, ExternalEvent, Game, GameControlFlow,
+    Music,
+};
 pub use orbital_decay_game::{Config as GameConfig, Input as GameInput, Omniscient};
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
@@ -135,7 +138,7 @@ fn loop_music(
 }
 
 pub enum InjectedInput {
-    Fire(Coord),
+    Fire(CardinalDirection),
 }
 
 #[derive(Clone, Copy)]
@@ -426,7 +429,7 @@ impl EventRoutine for ExamineEventRoutine {
                                         Examine::KeyboardDirection(direction)
                                     }
                                     AppInput::Examine => Examine::Cancel,
-                                    AppInput::Wait => Examine::Ignore,
+                                    AppInput::Wait | AppInput::Aim(_) => Examine::Ignore,
                                 }
                             } else {
                                 match keyboard_input {
@@ -525,21 +528,23 @@ impl EventRoutine for ExamineEventRoutine {
 }
 
 pub struct AimEventRoutine {
-    screen_coord: ScreenCoord,
+    screen_coord: Option<ScreenCoord>,
     duration: Duration,
+    slot: RangedWeaponSlot,
 }
 
 impl AimEventRoutine {
-    pub fn new(screen_coord: ScreenCoord) -> Self {
+    pub fn new(screen_coord: ScreenCoord, slot: RangedWeaponSlot) -> Self {
         Self {
-            screen_coord,
+            screen_coord: None,
             duration: Duration::from_millis(0),
+            slot,
         }
     }
 }
 
 impl EventRoutine for AimEventRoutine {
-    type Return = Option<Coord>;
+    type Return = Option<CardinalDirection>;
     type Data = GameData;
     type View = GameView;
     type Event = CommonEvent;
@@ -554,9 +559,8 @@ impl EventRoutine for AimEventRoutine {
         EP: EventOrPeek<Event = Self::Event>,
     {
         enum Aim {
-            Mouse { coord: Coord, press: bool },
             KeyboardDirection(CardinalDirection),
-            KeyboardFinalise,
+            KeyboardFinalise(CardinalDirection),
             Cancel,
             Ignore,
             Frame(Duration),
@@ -576,54 +580,36 @@ impl EventRoutine for AimEventRoutine {
                         Input::Keyboard(keyboard_input) => {
                             if let Some(app_input) = controls.get(keyboard_input) {
                                 match app_input {
-                                    AppInput::Move(direction) => Aim::KeyboardDirection(direction),
+                                    AppInput::Move(direction) => Aim::KeyboardFinalise(direction),
                                     AppInput::Wait | AppInput::Examine => Aim::Ignore,
+                                    AppInput::Aim(slot) => {
+                                        s.slot = slot;
+                                        Aim::Ignore
+                                    }
                                 }
                             } else {
                                 match keyboard_input {
-                                    keys::RETURN => Aim::KeyboardFinalise,
                                     keys::ESCAPE => Aim::Cancel,
                                     _ => Aim::Ignore,
                                 }
                             }
                         }
-                        Input::Mouse(mouse_input) => match mouse_input {
-                            MouseInput::MouseMove { coord, .. } => Aim::Mouse {
-                                coord,
-                                press: false,
-                            },
-                            MouseInput::MousePress {
-                                coord,
-                                button: MouseButton::Left,
-                            } => Aim::Mouse { coord, press: true },
-                            MouseInput::MousePress {
-                                button: MouseButton::Right,
-                                ..
-                            } => Aim::Cancel,
-                            _ => Aim::Ignore,
-                        },
+                        Input::Mouse(MouseInput::MouseMove { coord, .. }) => {
+                            s.screen_coord = Some(ScreenCoord(coord));
+                            Aim::Ignore
+                        }
+                        Input::Mouse(_) => Aim::Ignore,
                     },
                     CommonEvent::Frame(since_last) => Aim::Frame(since_last),
                 };
                 match aim {
-                    Aim::KeyboardFinalise => {
+                    Aim::KeyboardFinalise(direction) => {
                         *last_aim_with_mouse = false;
-                        Handled::Return(Some(s.screen_coord.0 / 3))
+                        Handled::Return(Some(direction))
                     }
                     Aim::KeyboardDirection(direction) => {
                         *last_aim_with_mouse = false;
-                        s.screen_coord.0 += direction.coord() * 3;
                         Handled::Continue(s)
-                    }
-                    Aim::Mouse { coord, press } => {
-                        s.screen_coord =
-                            ScreenCoord(view.absolute_coord_to_game_relative_screen_coord(coord));
-                        *last_aim_with_mouse = true;
-                        if press {
-                            Handled::Return(Some(s.screen_coord.0 / 3))
-                        } else {
-                            Handled::Continue(s)
-                        }
                     }
                     Aim::Cancel => Handled::Return(None),
                     Aim::Ignore => Handled::Continue(s),
@@ -669,11 +655,8 @@ impl EventRoutine for AimEventRoutine {
                 GameToRender {
                     game: &instance.game,
                     status: GameStatus::Playing,
-                    mouse_coord: Some(self.screen_coord.0),
-                    mode: Mode::Aim {
-                        blink_duration: self.duration,
-                        target: self.screen_coord.0,
-                    },
+                    mouse_coord: self.screen_coord.map(|s| s.0),
+                    mode: Mode::Aim { slot: self.slot },
                     action_error: None,
                 },
                 context,
@@ -704,7 +687,7 @@ impl GameEventRoutine {
 
 pub enum GameReturn {
     Pause,
-    Aim,
+    Aim(RangedWeaponSlot),
     GameOver,
     Win,
     Examine,
@@ -735,8 +718,10 @@ impl EventRoutine for GameEventRoutine {
             let player_coord = GameCoord::of_player(instance.game.player_info());
             for injected_input in self.injected_inputs.drain(..) {
                 match injected_input {
-                    InjectedInput::Fire(coord) => {
-                        todo!()
+                    InjectedInput::Fire(direction) => {
+                        let _ = instance
+                            .game
+                            .handle_input(GameInput::Fire(direction), game_config);
                     }
                 }
             }
@@ -758,7 +743,6 @@ impl EventRoutine for GameEventRoutine {
                                             }
                                             _ => Ok(None),
                                         };
-
                                         match game_control_flow {
                                             Err(error) => s.action_error = Some(error),
                                             Ok(None) => s.action_error = None,
@@ -797,6 +781,9 @@ impl EventRoutine for GameEventRoutine {
                                         }
                                         AppInput::Examine => {
                                             return Handled::Return(GameReturn::Examine)
+                                        }
+                                        AppInput::Aim(slot) => {
+                                            return Handled::Return(GameReturn::Aim(slot))
                                         }
                                     };
                                     match game_control_flow {

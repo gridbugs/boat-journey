@@ -3,7 +3,7 @@ use crate::{
     world::{
         data::{
             Armour, CollidesWith, Disposition, DoorState, EntityData, HitPoints, Item, Layer,
-            Location, MoveHalfSpeed, Npc, OnCollision, Oxygen, Tile,
+            Location, MoveHalfSpeed, Npc, OnCollision, Oxygen, ProjectileDamage, Tile,
         },
         explosion, player,
         realtime_periodic::{
@@ -31,7 +31,7 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
             melee_weapon: player::Weapon::new_bare_hands(),
         }),
         light: Some(Light {
-            colour: Rgb24::new_grey(255),
+            colour: Rgb24::new_grey(200),
             vision_distance: Circle::new_squared(120),
             diminish: Rational {
                 numerator: 1,
@@ -193,7 +193,7 @@ impl World {
         self.components.light.insert(
             entity,
             Light {
-                colour: Rgb24::new(17, 17, 17),
+                colour: Rgb24::new_grey(100),
                 vision_distance: Circle::new_squared(90),
                 diminish: Rational {
                     numerator: 1,
@@ -205,7 +205,7 @@ impl World {
         self.realtime_components.fade.insert(
             entity,
             ScheduledRealtimePeriodicState {
-                state: FadeState::new(Duration::from_millis(32)),
+                state: FadeState::new(Duration::from_millis(100)),
                 until_next_event: Duration::from_millis(0),
             },
         );
@@ -233,7 +233,7 @@ impl World {
             ScheduledRealtimePeriodicState {
                 state: movement::spec::Movement {
                     path: target - start,
-                    cardinal_step_duration: Duration::from_millis(1),
+                    cardinal_step_duration: Duration::from_millis(50),
                     repeat: movement::spec::Repeat::Once,
                 }
                 .build(),
@@ -270,10 +270,19 @@ impl World {
             entity,
             CollidesWith {
                 solid: true,
-                character: true,
+                character: false,
             },
         );
-        panic!("missing tiles")
+        self.components.tile.insert(entity, Tile::Bullet);
+        self.components.projectile_damage.insert(
+            entity,
+            ProjectileDamage {
+                hit_points: 2,
+                push_back: false,
+                pen: 3,
+            },
+        );
+        entity
     }
 
     pub fn spawn_rocket(&mut self, start: Coord, target: Coord) -> Entity {

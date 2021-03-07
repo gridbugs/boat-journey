@@ -203,6 +203,7 @@ impl RealtimePeriodicState for ParticleEmitterState {
                 d.choose(rng).map(|d| ProjectileDamage {
                     hit_points: d.range.choose(rng),
                     push_back: d.push_back,
+                    pen: 0,
                 })
             }),
         };
@@ -237,6 +238,7 @@ impl RealtimePeriodicState for ParticleEmitterState {
             .spatial_table
             .update_coord(particle_entity, coord)
             .unwrap();
+        world.components.particle.insert(particle_entity, ());
         if let Some(tile) = spawn_particle.tile {
             world.components.tile.insert(particle_entity, tile);
         }
