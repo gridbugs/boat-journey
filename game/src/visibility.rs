@@ -1,13 +1,13 @@
 use crate::world::{Tile, World};
 use crate::Entity;
-use grid_2d::{Coord, CoordIter, Grid, GridEnumerate, GridIter, Size};
+use grid_2d::{Coord, CoordIter, Grid, GridEnumerate, Size};
 use rational::Rational;
 use rgb24::Rgb24;
 use serde::{Deserialize, Serialize};
 use shadowcast::{vision_distance, Context as ShadowcastContext, DirectionBitmap, InputGrid};
 
 const AMBIENT_COL: Rgb24 = Rgb24::new_grey(31);
-const VISION_DISTANCE_SQUARED: u32 = 600;
+const VISION_DISTANCE_SQUARED: u32 = 70;
 pub const VISION_DISTANCE: vision_distance::Circle =
     vision_distance::Circle::new_squared(VISION_DISTANCE_SQUARED);
 

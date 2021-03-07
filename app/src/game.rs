@@ -167,7 +167,8 @@ pub struct GameInstance {
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum GameStatus {
     Playing,
-    Over,
+    Dead,
+    Adrift,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -953,10 +954,15 @@ impl EventRoutine for GameOverEventRoutine {
         C: ColModify,
     {
         if let Some(instance) = data.instance.as_ref() {
+            let status = if instance.game.is_adrift() {
+                GameStatus::Adrift
+            } else {
+                GameStatus::Dead
+            };
             view.view(
                 GameToRender {
                     game: &instance.game,
-                    status: GameStatus::Over,
+                    status,
                     mouse_coord: None,
                     mode: Mode::Normal,
                     action_error: None,

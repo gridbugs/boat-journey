@@ -88,6 +88,7 @@ pub struct Game {
     gameplay_music: Vec<Music>,
     star_rng_seed: u64,
     won: bool,
+    adrift: bool,
 }
 
 impl Game {
@@ -138,10 +139,14 @@ impl Game {
             gameplay_music,
             star_rng_seed,
             won: false,
+            adrift: false,
         };
         game.update_visibility(config);
         game.prime_npcs();
         game
+    }
+    pub fn is_adrift(&self) -> bool {
+        self.adrift
     }
     pub fn star_rng_seed(&self) -> u64 {
         self.star_rng_seed
@@ -290,7 +295,6 @@ impl Game {
     }
     pub fn handle_npc_turn(&mut self) {
         if !self.is_gameplay_blocked() {
-            self.world.process_door_close_countdown();
             self.npc_turn();
         }
     }
@@ -323,7 +327,6 @@ impl Game {
             }
             self.turn_during_animation = Some(Turn::Player);
         }
-        self.world.process_door_close_countdown();
         result
     }
 
@@ -384,7 +387,15 @@ impl Game {
             ));
         }
     }
+
     fn after_turn(&mut self) {
+        self.world.process_door_close_countdown();
+        if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
+            if layers.floor.is_none() {
+                self.world.components.to_remove.insert(self.player, ());
+                self.adrift = true;
+            }
+        }
         self.cleanup();
         if let Some(player_coord) = self.world.entity_coord(self.player) {
             if let Some(_stairs_entity) = self.world.get_stairs_at_coord(player_coord) {

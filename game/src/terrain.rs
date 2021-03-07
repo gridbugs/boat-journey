@@ -150,11 +150,10 @@ pub fn space_station_first_floor<R: Rng>(
                 world.spawn_window(coord, *axis);
             }
             GameCell::Stairs => {
-                if spec.demo {
-                    world.spawn_floor(coord);
-                } else {
+                if !spec.demo {
                     world.spawn_stairs(coord);
                 }
+                world.spawn_floor(coord);
             }
             GameCell::Spawn => {
                 world.spawn_floor(coord);

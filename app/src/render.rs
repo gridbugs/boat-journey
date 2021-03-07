@@ -214,7 +214,7 @@ impl GameView {
                     }
                 }
             }
-            GameStatus::Over => {
+            GameStatus::Dead => {
                 render_stars_all(
                     &mut star_rng,
                     context.compose_col_modify(ColModifyDead),
@@ -234,6 +234,31 @@ impl GameView {
                     wrap::Word::new(),
                 )
                 .view("You are dead! Press any key...", context, frame);
+            }
+            GameStatus::Adrift => {
+                render_stars_all(
+                    &mut star_rng,
+                    context.compose_col_modify(ColModifyAdrift),
+                    frame,
+                );
+                for entity in game_to_render.game.to_render_entities() {
+                    let depth = layer_depth(entity.layer);
+                    tile_3x3::render_3x3(
+                        &entity,
+                        game_to_render.game,
+                        context.add_depth(depth).compose_col_modify(ColModifyAdrift),
+                        frame,
+                    );
+                }
+                StringView::new(
+                    Style::new().with_foreground(Rgb24::new(255, 0, 0)),
+                    wrap::Word::new(),
+                )
+                .view(
+                    "You drift in space forever! Press any key...",
+                    context,
+                    frame,
+                );
             }
         }
         let ui = ui::Ui {
@@ -511,6 +536,24 @@ impl ColModifyDead {
 }
 
 impl ColModify for ColModifyDead {
+    fn foreground(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+    fn background(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
+        rgb24.map(|rgb24| self.apply_lighting(rgb24))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ColModifyAdrift;
+impl ColModifyAdrift {
+    fn apply_lighting(&self, colour: Rgb24) -> Rgb24 {
+        let mean = colour.weighted_mean_u16(rgb24::WeightsU16::new(1, 1, 1));
+        Rgb24::new(0, 0, mean).saturating_scalar_mul_div(3, 2)
+    }
+}
+
+impl ColModify for ColModifyAdrift {
     fn foreground(&self, rgb24: Option<Rgb24>) -> Option<Rgb24> {
         rgb24.map(|rgb24| self.apply_lighting(rgb24))
     }

@@ -28,8 +28,12 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
     let mut render_tile = |entity, tile, view_context| match tile {
         Tile::Wall => {
             let below = coord + Coord::new(0, 1);
-            if game.contains_wall_like(below) {
-                wall_top(view_context, frame);
+            if let Some(view_cell) = game.visibility_grid().get_cell(below) {
+                if view_cell.tile_layers().feature.is_some() {
+                    wall_top(view_context, frame);
+                } else {
+                    wall_front(view_context, frame);
+                }
             } else {
                 wall_front(view_context, frame);
             }
