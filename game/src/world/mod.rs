@@ -59,6 +59,43 @@ impl World {
 }
 
 impl World {
+    pub fn to_render_entity(&self, entity: Entity) -> Option<ToRenderEntity> {
+        let tile_component = &self.components.tile;
+        let spatial_table = &self.spatial_table;
+        let realtime_fade_component = &self.realtime_components.fade;
+        let colour_hint_component = &self.components.colour_hint;
+        let blood_component = &self.components.blood;
+        let ignore_lighting_component = &self.components.ignore_lighting;
+        let hit_points = &self.components.hit_points;
+        let armour = &self.components.armour;
+        let next_action = &self.components.next_action;
+        let fade = realtime_fade_component
+            .get(entity)
+            .and_then(|f| f.state.fading());
+        let colour_hint = colour_hint_component.get(entity).cloned();
+        let blood = blood_component.contains(entity);
+        let ignore_lighting = ignore_lighting_component.contains(entity);
+        let hit_points = hit_points.get(entity).cloned();
+        let armour = armour.get(entity).cloned();
+        let next_action = next_action.get(entity).cloned();
+        let tile = tile_component.get(entity).cloned()?;
+        if let Some(location) = spatial_table.location_of(entity) {
+            Some(ToRenderEntity {
+                coord: location.coord,
+                layer: location.layer,
+                tile,
+                fade,
+                colour_hint,
+                blood,
+                ignore_lighting,
+                hit_points,
+                armour,
+                next_action,
+            })
+        } else {
+            None
+        }
+    }
     pub fn to_render_entities<'a>(&'a self) -> impl 'a + Iterator<Item = ToRenderEntity> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
@@ -178,9 +215,6 @@ impl World {
     }
     pub fn clone_entity_data(&self, entity: Entity) -> EntityData {
         self.components.clone_entity_data(entity)
-    }
-    pub fn is_won(&self) -> bool {
-        self.level == terrain::FINAL_LEVEL && self.components.npc.is_empty()
     }
 }
 

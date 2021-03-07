@@ -72,38 +72,62 @@ impl GameView {
                     context,
                     frame,
                 );
-                for entity in game_to_render.game.to_render_entities() {
-                    render_entity(&entity, game_to_render.game, context, frame);
-                    if let Some(mouse_coord) = game_to_render.mouse_coord {
-                        let game_coord = mouse_coord / 3;
-                        if entity.coord == game_coord {
-                            let verb = match game_to_render
-                                .game
-                                .visibility_grid()
-                                .cell_visibility(entity.coord)
+                let vis_count = game_to_render.game.visibility_grid().count();
+                for (coord, visibility_cell) in game_to_render.game.visibility_grid().enumerate() {
+                    match visibility_cell.visibility(vis_count) {
+                        CellVisibility::CurrentlyVisibleWithLightColour(Some(light_colour)) => {
+                            tile_3x3::render_3x3_from_visibility(
+                                coord,
+                                visibility_cell,
+                                game_to_render.game,
+                                context.compose_col_modify(ColModifyLightBlend { light_colour }),
+                                frame,
+                            );
+                        }
+                        CellVisibility::PreviouslyVisible => {
+                            tile_3x3::render_3x3_from_visibility_remembered(
+                                coord,
+                                visibility_cell,
+                                game_to_render.game,
+                                context.compose_col_modify(ColModifyRemembered),
+                                frame,
+                            );
+                        }
+                        CellVisibility::NeverVisible
+                        | CellVisibility::CurrentlyVisibleWithLightColour(None) => (),
+                    }
+                }
+                if let Some(mouse_coord) = game_to_render.mouse_coord {
+                    let game_coord = mouse_coord / 3;
+                    if let Some(visibility_cell_under_cursor) =
+                        game_to_render.game.visibility_grid().get_cell(game_coord)
+                    {
+                        let verb = match visibility_cell_under_cursor.visibility(vis_count) {
+                            CellVisibility::CurrentlyVisibleWithLightColour(Some(_)) => {
+                                Some(MessageVerb::See)
+                            }
+                            CellVisibility::PreviouslyVisible => Some(MessageVerb::Remember),
+                            CellVisibility::NeverVisible
+                            | CellVisibility::CurrentlyVisibleWithLightColour(None) => None,
+                        };
+                        if let Some(verb) = verb {
+                            if let Some(floor) = visibility_cell_under_cursor.tile_layers().floor {
+                                entity_under_cursor = Some((floor.tile, verb));
+                            }
+                            if let Some(feature) =
+                                visibility_cell_under_cursor.tile_layers().feature
                             {
-                                CellVisibility::CurrentlyVisibleWithLightColour(Some(_)) => {
-                                    Some(MessageVerb::See)
-                                }
-                                CellVisibility::PreviouslyVisible => Some(MessageVerb::Remember),
-                                CellVisibility::NeverVisible
-                                | CellVisibility::CurrentlyVisibleWithLightColour(None) => None,
-                            };
-                            if let Some(verb) = verb {
-                                if let Some((max_depth, _tile, _verb)) = entity_under_cursor {
-                                    let depth = layer_depth(entity.layer);
-                                    if depth > max_depth {
-                                        entity_under_cursor = Some((depth, entity.tile, verb));
-                                    }
-                                } else {
-                                    entity_under_cursor =
-                                        Some((layer_depth(entity.layer), entity.tile, verb));
-                                }
+                                entity_under_cursor = Some((feature.tile, verb));
+                            }
+                            if let Some(character) =
+                                visibility_cell_under_cursor.tile_layers().character
+                            {
+                                entity_under_cursor = Some((character.tile, verb));
                             }
                         }
                     }
                 }
-                if let Some((_depth, tile, verb)) = entity_under_cursor {
+                if let Some((tile, verb)) = entity_under_cursor {
                     if let Some(description) = tile_str(tile) {
                         let verb_str = match verb {
                             MessageVerb::Remember => "remember seeing",
@@ -128,7 +152,7 @@ impl GameView {
                         )
                         .view(
                             format!(
-                                "COMMANDER: The source of the slime is on the {}th floor.",
+                                "Gotta get to the fuel bay on the {}th floor...",
                                 orbital_decay_game::FINAL_LEVEL
                             ),
                             context,
@@ -143,7 +167,7 @@ impl GameView {
                                 wrap::Word::new(),
                             )
                             .view(
-                                "FINAL FLOOR".to_string(),
+                                "FINAL FLOOR. Get to the fuel bay!".to_string(),
                                 context,
                                 frame,
                             );
@@ -179,11 +203,11 @@ impl GameView {
                         frame,
                     );
                 }
-                StringView::new(Style::new().with_foreground(Rgb24::new(255, 0, 0)), wrap::Word::new()).view(
-                    "You failed. The slimes overrun the city and CONSUME WHAT REMAINS OF HUMANITY. Press a key to continue...",
-                    context,
-                    frame,
-                );
+                StringView::new(
+                    Style::new().with_foreground(Rgb24::new(255, 0, 0)),
+                    wrap::Word::new(),
+                )
+                .view("You are dead! Press any key...", context, frame);
             }
         }
         let ui = ui::Ui {
@@ -446,8 +470,9 @@ struct ColModifyLightBlend {
 
 impl ColModifyLightBlend {
     fn apply_lighting(&self, colour: Rgb24) -> Rgb24 {
-        let base_colour = colour;
-        base_colour.normalised_mul(self.light_colour)
+        colour
+            .normalised_mul(self.light_colour)
+            .saturating_add(self.light_colour.saturating_scalar_mul_div(1, 10))
     }
 }
 
@@ -521,8 +546,11 @@ fn tile_str(tile: Tile) -> Option<&'static str> {
     match tile {
         Tile::Player => Some("yourself"),
         Tile::DoorClosed(_) | Tile::DoorOpen(_) => Some("a door"),
-        Tile::Wall => Some("a wall"),
-        Tile::Floor => Some("the floor"),
+        Tile::Wall | Tile::WallText0 | Tile::WallText1 | Tile::WallText2 | Tile::WallText3 => {
+            Some("a wall")
+        }
+        Tile::Floor | Tile::FuelText0 | Tile::FuelText1 => Some("the floor"),
+        Tile::FuelHatch => Some("the fuel bay"),
         Tile::Window(_) => Some("a window"),
         Tile::Stairs => Some("a staircase leading further down"),
         Tile::Zombie => Some("a zombie"),

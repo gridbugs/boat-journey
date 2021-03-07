@@ -53,6 +53,13 @@ pub enum Tile {
     Stairs,
     Window(Axis),
     Zombie,
+    WallText0,
+    WallText1,
+    WallText2,
+    WallText3,
+    FuelText0,
+    FuelText1,
+    FuelHatch,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

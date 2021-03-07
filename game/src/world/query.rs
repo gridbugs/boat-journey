@@ -41,6 +41,27 @@ impl World {
         }
     }
 
+    pub fn is_wall_like_at_coord(&self, coord: Coord) -> bool {
+        if let Some(spatial_cell) = self.spatial_table.layers_at(coord) {
+            if let Some(entity) = spatial_cell.feature {
+                if let Some(tile) = self.components.tile.get(entity) {
+                    match tile {
+                        Tile::Window(_) | Tile::Wall | Tile::DoorClosed(_) | Tile::DoorOpen(_) => {
+                            true
+                        }
+                        _ => false,
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
     pub fn is_floor_at_coord(&self, coord: Coord) -> bool {
         if let Some(spatial_cell) = self.spatial_table.layers_at(coord) {
             if let Some(entity) = spatial_cell.floor {

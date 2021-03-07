@@ -1055,7 +1055,11 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                         GameLoopBreak::Win => Ei::C(SideEffectThen::new_with_view(
                             |data: &mut AppData, _: &_| {
                                 data.game.clear_instance();
-                                win()
+                                win().on_event(|data, event| {
+                                    if let CommonEvent::Frame(since_prev) = event {
+                                        data.menu_background_data.tick(*since_prev);
+                                    }
+                                })
                             },
                         )),
                         GameLoopBreak::Pause => Ei::A(Value::new(())),

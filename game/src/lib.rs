@@ -16,7 +16,7 @@ use entity_table::ComponentTable;
 pub use entity_table::Entity;
 pub use terrain::FINAL_LEVEL;
 use terrain::{SpaceStationSpec, Terrain};
-pub use visibility::{CellVisibility, Omniscient, VisibilityGrid};
+pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
     player, ActionError, CharacterInfo, EntityData, HitPoints, Layer, NpcAction, PlayerDied, Tile,
@@ -86,6 +86,7 @@ pub struct Game {
     turn_during_animation: Option<Turn>,
     gameplay_music: Vec<Music>,
     star_rng_seed: u64,
+    won: bool,
 }
 
 impl Game {
@@ -135,6 +136,7 @@ impl Game {
             turn_during_animation: None,
             gameplay_music,
             star_rng_seed,
+            won: false,
         };
         game.update_visibility(config);
         game.prime_npcs();
@@ -176,6 +178,10 @@ impl Game {
     ) -> Option<GameControlFlow> {
         if let Some(countdown) = self.generate_frame_countdown.as_mut() {
             if countdown.as_millis() == 0 {
+                if self.world.level == terrain::FINAL_LEVEL {
+                    self.won = true;
+                    return Some(GameControlFlow::Win);
+                }
                 self.generate_level(config);
                 self.generate_frame_countdown = None;
                 return Some(GameControlFlow::LevelChange);
@@ -248,7 +254,7 @@ impl Game {
         self.update_last_player_info();
         if self.is_game_over() {
             Some(GameControlFlow::GameOver)
-        } else if self.is_game_won() {
+        } else if self.won {
             Some(GameControlFlow::Win)
         } else {
             None
@@ -275,7 +281,7 @@ impl Game {
         }
         if self.is_game_over() {
             Ok(Some(GameControlFlow::GameOver))
-        } else if self.is_game_won() {
+        } else if self.won {
             Ok(Some(GameControlFlow::Win))
         } else {
             Ok(None)
@@ -309,6 +315,7 @@ impl Game {
             }
             self.turn_during_animation = Some(Turn::Player);
         }
+        self.world.process_door_close_countdown();
         result
     }
 
@@ -399,6 +406,9 @@ impl Game {
     pub fn world_size(&self) -> Size {
         self.world.size()
     }
+    pub fn to_render_entity(&self, entity: Entity) -> Option<ToRenderEntity> {
+        self.world.to_render_entity(entity)
+    }
     pub fn to_render_entities<'a>(&'a self) -> impl 'a + Iterator<Item = ToRenderEntity> {
         self.world.to_render_entities()
     }
@@ -407,6 +417,9 @@ impl Game {
     }
     pub fn contains_wall(&self, coord: Coord) -> bool {
         self.world.is_wall_at_coord(coord)
+    }
+    pub fn contains_wall_like(&self, coord: Coord) -> bool {
+        self.world.is_wall_like_at_coord(coord)
     }
     pub fn contains_floor(&self, coord: Coord) -> bool {
         self.world.is_floor_at_coord(coord)
@@ -418,9 +431,6 @@ impl Game {
     }
     fn is_game_over(&self) -> bool {
         self.dead_player.is_some()
-    }
-    fn is_game_won(&self) -> bool {
-        self.world.is_won()
     }
     pub fn player(&self) -> &player::Player {
         if let Some(player) = self.world.entity_player(self.player) {

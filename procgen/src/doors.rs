@@ -58,6 +58,12 @@ impl DoorCandidate {
         self.top_left + offset_coord
     }
 
+    fn door_coord_small<R: Rng>(&self, rng: &mut R) -> Coord {
+        let offset = rng.gen_range(4..(self.length as i32));
+        let offset_coord = self.axis.new_coord(0, offset);
+        self.top_left + offset_coord
+    }
+
     fn next_coord(&self) -> Coord {
         self.top_left + self.axis.new_coord(0, self.length as i32)
     }
@@ -209,6 +215,26 @@ fn choose_stairs_coord<R: Rng>(grid: &Grid<DoorCell>, rng: &mut R) -> Option<Coo
     candidates.pop()
 }
 
+fn choose_stairs_coord_small(grid: &Grid<DoorCell>) -> Option<Coord> {
+    let mut candidates = grid
+        .enumerate()
+        .filter(|(coord, &cell)| {
+            cell == DoorCell::Floor
+                && CardinalDirections
+                    .into_iter()
+                    .map(|d| coord + d.coord())
+                    .all(|coord| {
+                        grid.get(coord)
+                            .map(|&cell| cell == DoorCell::Floor)
+                            .unwrap_or(false)
+                    })
+        })
+        .map(|(coord, _)| coord)
+        .collect::<Vec<_>>();
+    candidates.sort_by_key(|c| -c.y);
+    candidates.pop()
+}
+
 fn choose_spawn_coord<R: Rng>(
     grid: &Grid<DoorCell>,
     floor: &Grid<Option<FloorCell>>,
@@ -243,7 +269,11 @@ fn choose_spawn_coord<R: Rng>(
     }
 }
 
-pub fn add_doors<R: Rng>(hull: &Grid<HullCell>, rng: &mut R) -> Option<Grid<DoorCell>> {
+pub fn add_doors<R: Rng>(
+    hull: &Grid<HullCell>,
+    small: bool,
+    rng: &mut R,
+) -> Option<Grid<DoorCell>> {
     let floor = classify_floor_cells_into_rooms(hull);
     let door_candidates_x = identify_door_candidates_in_axis(hull, &floor, Axis::X);
     let door_candidates_y = identify_door_candidates_in_axis(hull, &floor, Axis::Y);
@@ -263,16 +293,28 @@ pub fn add_doors<R: Rng>(hull: &Grid<HullCell>, rng: &mut R) -> Option<Grid<Door
         .collect::<Vec<_>>();
     extra_door_candidates.shuffle(rng);
     let num_extra_door_candidates = (extra_door_candidates.len() + 1) / 2;
+    let stairs_coord = if small {
+        choose_stairs_coord_small(&door_grid)?
+    } else {
+        choose_stairs_coord(&door_grid, rng)?
+    };
     for door_candidate_id in mst.into_iter().chain(
         extra_door_candidates
             .into_iter()
             .take(num_extra_door_candidates),
     ) {
         let door_candidate = &room_graph.door_candidates[door_candidate_id];
-        *door_grid.get_checked_mut(door_candidate.door_coord(rng)) =
-            DoorCell::Door(door_candidate.axis);
+        if small {
+            if door_candidate.length < 5 {
+                return None;
+            }
+            *door_grid.get_checked_mut(door_candidate.door_coord_small(rng)) =
+                DoorCell::Door(door_candidate.axis);
+        } else {
+            *door_grid.get_checked_mut(door_candidate.door_coord(rng)) =
+                DoorCell::Door(door_candidate.axis);
+        }
     }
-    let stairs_coord = choose_stairs_coord(&door_grid, rng)?;
     *door_grid.get_checked_mut(stairs_coord) = DoorCell::Stairs;
     let spawn_coord = choose_spawn_coord(
         &door_grid,

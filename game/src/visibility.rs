@@ -1,5 +1,6 @@
-use crate::world::World;
-use grid_2d::{Coord, CoordIter, Grid, Size};
+use crate::world::{Tile, World};
+use crate::Entity;
+use grid_2d::{Coord, CoordIter, Grid, GridEnumerate, GridIter, Size};
 use rational::Rational;
 use rgb24::Rgb24;
 use serde::{Deserialize, Serialize};
@@ -33,13 +34,27 @@ impl InputGrid for Visibility {
 #[derive(Debug, Clone, Copy)]
 pub struct Omniscient;
 
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub struct EntityTile {
+    pub entity: Entity,
+    pub tile: Tile,
+}
+
 #[derive(Serialize, Deserialize)]
-struct VisibilityCell {
+pub struct TileLayers {
+    pub floor: Option<EntityTile>,
+    pub feature: Option<EntityTile>,
+    pub character: Option<EntityTile>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct VisibilityCell {
     last_seen: u64,
     last_seen_next: u64,
     last_lit: u64,
     visible_directions: DirectionBitmap,
     light_colour: Rgb24,
+    tile_layers: TileLayers,
 }
 
 impl Default for VisibilityCell {
@@ -50,6 +65,31 @@ impl Default for VisibilityCell {
             last_lit: 0,
             visible_directions: DirectionBitmap::empty(),
             light_colour: Rgb24::new(0, 0, 0),
+            tile_layers: TileLayers {
+                floor: None,
+                feature: None,
+                character: None,
+            },
+        }
+    }
+}
+
+impl VisibilityCell {
+    pub fn tile_layers(&self) -> &TileLayers {
+        &self.tile_layers
+    }
+    pub fn visibility(&self, count: u64) -> CellVisibility {
+        if self.last_seen == count {
+            let light_colour = if self.last_lit == count {
+                Some(self.light_colour)
+            } else {
+                None
+            };
+            CellVisibility::CurrentlyVisibleWithLightColour(light_colour)
+        } else if self.last_seen == 0 {
+            CellVisibility::NeverVisible
+        } else {
+            CellVisibility::PreviouslyVisible
         }
     }
 }
@@ -72,6 +112,15 @@ impl VisibilityGrid {
             grid: Grid::new_default(size),
             count: 1,
         }
+    }
+    pub fn count(&self) -> u64 {
+        self.count
+    }
+    pub fn enumerate(&self) -> GridEnumerate<VisibilityCell> {
+        self.grid.enumerate()
+    }
+    pub fn get_cell(&self, coord: Coord) -> Option<&VisibilityCell> {
+        self.grid.get(coord)
     }
     pub fn cell_visibility(&self, coord: Coord) -> CellVisibility {
         if let Some(cell) = self.grid.get(coord) {
@@ -135,6 +184,28 @@ impl VisibilityGrid {
                     cell.visible_directions = visible_directions;
                     cell.last_lit = count;
                     cell.light_colour = AMBIENT_COL;
+                    let layers = world.spatial_table.layers_at_checked(coord);
+                    if let Some(entity) = layers.floor {
+                        if let Some(&tile) = world.components.tile.get(entity) {
+                            cell.tile_layers.floor = Some(EntityTile { entity, tile });
+                        }
+                    } else {
+                        cell.tile_layers.floor = None;
+                    }
+                    if let Some(entity) = layers.feature {
+                        if let Some(&tile) = world.components.tile.get(entity) {
+                            cell.tile_layers.feature = Some(EntityTile { entity, tile });
+                        }
+                    } else {
+                        cell.tile_layers.feature = None;
+                    }
+                    if let Some(entity) = layers.character {
+                        if let Some(&tile) = world.components.tile.get(entity) {
+                            cell.tile_layers.character = Some(EntityTile { entity, tile });
+                        }
+                    } else {
+                        cell.tile_layers.character = None;
+                    }
                 },
             );
         }
