@@ -25,10 +25,12 @@ declare_entity_module! {
         collides_with: CollidesWith,
         projectile_damage: ProjectileDamage,
         hit_points: HitPoints,
+        armour: Armour,
         blood: (),
         player: Player,
         ignore_lighting: (),
         door_state: DoorState,
+        door_close_countdown: u32,
         stairs: (),
         next_action: NpcAction,
         to_remove: (),
@@ -48,6 +50,7 @@ pub enum Tile {
     DoorOpen(Axis),
     Stairs,
     Window(Axis),
+    Zombie,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -105,6 +108,17 @@ pub struct HitPoints {
 impl HitPoints {
     pub fn new_full(max: u32) -> Self {
         Self { current: max, max }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Armour {
+    pub value: u32,
+}
+
+impl Armour {
+    pub fn new(value: u32) -> Self {
+        Self { value }
     }
 }
 

@@ -39,10 +39,6 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                 '.' => {
                     world.spawn_floor(coord);
                 }
-                '*' => {
-                    world.spawn_floor(coord);
-                    world.spawn_light(coord, Rgb24::new(187, 187, 187));
-                }
                 '#' => {
                     world.spawn_floor(coord);
                     world.spawn_wall(coord);
@@ -53,6 +49,11 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                 }
                 '>' => {
                     world.spawn_stairs(coord);
+                }
+                'z' => {
+                    let entity = world.spawn_zombie(coord, rng);
+                    agents.insert(entity, Agent::new(size));
+                    world.spawn_floor(coord);
                 }
                 '@' => {
                     world.spawn_floor(coord);
@@ -101,10 +102,14 @@ impl Item {
 const ALL_ITEMS: &[Item] = &[Item::CreditChip];
 const BALANCED_ITEMS: &[Item] = &[Item::CreditChip];
 
+pub struct SpaceStationSpec {
+    pub demo: bool,
+}
+
 pub fn space_station<R: Rng>(
-    star_rng_seed: u64,
     level: u32,
     player_data: EntityData,
+    spec: &SpaceStationSpec,
     rng: &mut R,
 ) -> Terrain {
     const AREA_SIZE: Size = Size::new_u16(27, 20);
@@ -115,6 +120,7 @@ pub fn space_station<R: Rng>(
     let mut agents = ComponentTable::default();
     let mut player_data = Some(player_data);
     let mut player = None;
+    let mut empty_coords = Vec::new();
     for (coord, cell) in grid.enumerate() {
         let coord = coord + SHIP_OFFSET;
         use procgen::GameCell;
@@ -124,6 +130,7 @@ pub fn space_station<R: Rng>(
                 world.spawn_wall(coord);
             }
             GameCell::Floor => {
+                empty_coords.push(coord);
                 world.spawn_floor(coord);
             }
             GameCell::Space => {}
@@ -136,17 +143,36 @@ pub fn space_station<R: Rng>(
                 world.spawn_window(coord, *axis);
             }
             GameCell::Stairs => {
-                world.spawn_floor(coord);
-                world.spawn_stairs(coord);
+                if spec.demo {
+                    world.spawn_floor(coord);
+                } else {
+                    world.spawn_stairs(coord);
+                }
             }
             GameCell::Spawn => {
                 world.spawn_floor(coord);
-                let location = Location {
-                    coord,
-                    layer: Some(Layer::Character),
-                };
-                player = Some(world.insert_entity_data(location, player_data.take().unwrap()));
+                if spec.demo {
+                    let location = Location {
+                        coord: Coord::new(10000, 10000),
+                        layer: None,
+                    };
+                    player = Some(world.insert_entity_data(location, player_data.take().unwrap()));
+                } else {
+                    let location = Location {
+                        coord,
+                        layer: Some(Layer::Character),
+                    };
+                    player = Some(world.insert_entity_data(location, player_data.take().unwrap()));
+                }
             }
+        }
+    }
+    empty_coords.shuffle(rng);
+    let num_npcs = if spec.demo { 2 } else { level * 3 + 3 };
+    for _ in 0..num_npcs {
+        if let Some(coord) = empty_coords.pop() {
+            let entity = world.spawn_zombie(coord, rng);
+            agents.insert(entity, Agent::new(AREA_SIZE));
         }
     }
     let player = player.expect("didn't create player");

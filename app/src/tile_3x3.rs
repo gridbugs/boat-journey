@@ -1,7 +1,8 @@
 use crate::colours;
 use chargrid::render::{
-    grid_2d::coord_2d::Axis, ColModify, Coord, Frame, Size, ViewCell, ViewContext,
+    grid_2d::coord_2d::Axis, ColModify, Coord, Frame, Size, Style, View, ViewCell, ViewContext,
 };
+use chargrid::text::StringViewSingleLine;
 use orbital_decay_game::{Game, Tile, ToRenderEntity};
 
 pub const OFFSETS: [Coord; 9] = [
@@ -45,6 +46,7 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::DoorClosed(Axis::X) => door_closed_x(view_context, frame),
         Tile::DoorClosed(Axis::Y) => door_closed_y(view_context, frame),
         Tile::Stairs => stairs(view_context, frame),
+        Tile::Zombie => zombie(entity, view_context, frame),
     }
 }
 
@@ -667,5 +669,48 @@ pub fn stairs<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut 
             .with_character(' ')
             .with_background(colours::STAIRS_2),
         view_context,
+    );
+}
+
+pub fn zombie<F: Frame, C: ColModify>(
+    entity: &ToRenderEntity,
+    view_context: ViewContext<C>,
+    frame: &mut F,
+) {
+    for offset in Size::new_u16(3, 3).coord_iter_row_major() {
+        frame.set_cell_relative(
+            offset,
+            0,
+            ViewCell::new()
+                .with_character(' ')
+                .with_background(colours::FLOOR_BACKGROUND),
+            view_context,
+        );
+    }
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::ZOMBIE)
+            .with_bold(true),
+    )
+    .view("Zmb", view_context, frame);
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::ZOMBIE)
+            .with_bold(false),
+    )
+    .view(
+        format!("♦{:02}", entity.armour.unwrap().value).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 1 }),
+        frame,
+    );
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::ZOMBIE)
+            .with_bold(false),
+    )
+    .view(
+        format!("♥{:02}", entity.hit_points.unwrap().current).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 2 }),
+        frame,
     );
 }

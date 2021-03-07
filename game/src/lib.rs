@@ -14,8 +14,8 @@ mod world;
 use behaviour::{Agent, BehaviourContext};
 use entity_table::ComponentTable;
 pub use entity_table::Entity;
-use terrain::Terrain;
 pub use terrain::FINAL_LEVEL;
+use terrain::{SpaceStationSpec, Terrain};
 pub use visibility::{CellVisibility, Omniscient, VisibilityGrid};
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
@@ -27,6 +27,7 @@ pub const MAP_SIZE: Size = Size::new_u16(27, 20);
 
 pub struct Config {
     pub omniscient: Option<Omniscient>,
+    pub demo: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
@@ -92,13 +93,21 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        //let Terrain { world, agents, player } =
-        //    terrain::from_str(include_str!("terrain.txt"), make_player(&mut rng), &mut rng);
+        let debug = false;
         let Terrain {
             world,
             agents,
             player,
-        } = terrain::space_station(star_rng_seed, 0, make_player(&mut rng), &mut rng);
+        } = if debug {
+            terrain::from_str(include_str!("terrain.txt"), make_player(&mut rng), &mut rng)
+        } else {
+            terrain::space_station(
+                0,
+                make_player(&mut rng),
+                &SpaceStationSpec { demo: config.demo },
+                &mut rng,
+            )
+        };
         let last_player_info = world
             .character_info(player)
             .expect("couldn't get info for player");
@@ -274,22 +283,12 @@ impl Game {
     }
     pub fn handle_npc_turn(&mut self) {
         if !self.is_gameplay_blocked() {
+            self.world.process_door_close_countdown();
             self.npc_turn();
         }
     }
     fn prime_npcs(&mut self) {
         self.update_behaviour();
-        for (entity, agent) in self.agents.iter_mut() {
-            let next_action = agent.act(
-                entity,
-                &self.world,
-                self.player,
-                &mut self.behaviour_context,
-                &mut self.shadowcast_context,
-                &mut self.rng,
-            );
-            self.world.commit_to_next_action(entity, next_action);
-        }
     }
 
     fn player_turn(&mut self, input: Input) -> Result<(), ActionError> {
@@ -315,31 +314,12 @@ impl Game {
 
     fn npc_turn(&mut self) {
         self.update_behaviour();
-        for entity in self.agents.entities() {
+        for (entity, agent) in self.agents.iter_mut() {
             if !self.world.entity_exists(entity) {
                 self.agents_to_remove.push(entity);
                 continue;
             }
-            let current_action = self
-                .world
-                .next_npc_action(entity)
-                .unwrap_or(NpcAction::Wait);
-            match current_action {
-                NpcAction::Wait => (),
-                NpcAction::Walk(direction) => {
-                    let _ =
-                        self.world
-                            .character_walk_in_direction(entity, direction, &mut self.rng);
-                }
-            }
-        }
-        for entity in self.agents_to_remove.drain(..) {
-            self.agents.remove(entity);
-        }
-        self.cleanup();
-        self.update_behaviour();
-        for (entity, agent) in self.agents.iter_mut() {
-            let next_action = agent.act(
+            let input = agent.act(
                 entity,
                 &self.world,
                 self.player,
@@ -347,13 +327,19 @@ impl Game {
                 &mut self.shadowcast_context,
                 &mut self.rng,
             );
-            self.world.commit_to_next_action(entity, next_action);
+            match input {
+                NpcAction::Walk(direction) => {
+                    let _ =
+                        self.world
+                            .character_walk_in_direction(entity, direction, &mut self.rng);
+                }
+                NpcAction::Wait => (),
+            }
         }
-        if self.is_gameplay_blocked() {
-            self.turn_during_animation = Some(Turn::Npc);
-        } else {
-            self.after_turn();
+        for entity in self.agents_to_remove.drain(..) {
+            self.agents.remove(entity);
         }
+        self.after_turn();
     }
     fn generate_level(&mut self, config: &Config) {
         let player_data = self.world.clone_entity_data(self.player);
@@ -362,9 +348,9 @@ impl Game {
             agents,
             player,
         } = terrain::space_station(
-            self.star_rng_seed,
             self.world.level + 1,
             player_data,
+            &SpaceStationSpec { demo: config.demo },
             &mut self.rng,
         );
         self.visibility_grid = VisibilityGrid::new(world.size());

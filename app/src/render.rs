@@ -169,9 +169,6 @@ impl GameView {
                 }
             }
             GameStatus::Over => {
-                for entity in game_to_render.game.to_render_entities() {
-                    render_entity_game_over(&entity, game_to_render.game, context, frame);
-                }
                 StringView::new(Style::new().with_foreground(Rgb24::new(255, 0, 0)), wrap::Word::new()).view(
                     "You failed. The slimes overrun the city and CONSUME WHAT REMAINS OF HUMANITY. Press a key to continue...",
                     context.add_offset(Coord::new(0, MAP_SIZE.height() as i32 * 3)),
@@ -284,241 +281,6 @@ impl GameView {
     }
 }
 
-mod quad {
-    use super::Coord;
-    pub const OFFSETS: [Coord; 4] = [
-        Coord::new(0, 0),
-        Coord::new(1, 0),
-        Coord::new(0, 1),
-        Coord::new(1, 1),
-    ];
-}
-
-struct Quad {
-    cells: [ViewCell; 4],
-}
-
-fn apply_lighting(cell_colour: Rgb24, light_colour: Rgb24) -> Rgb24 {
-    let base_colour = cell_colour
-        .saturating_add(light_colour.scalar_div(4))
-        .saturating_sub(light_colour.complement().scalar_div(1));
-    base_colour.normalised_mul(light_colour)
-}
-
-impl Quad {
-    fn new_repeating(to_repeat: ViewCell) -> Self {
-        Self {
-            cells: [to_repeat, to_repeat, to_repeat, to_repeat],
-        }
-    }
-    fn enumerate<'a>(&'a self) -> impl 'a + Iterator<Item = (Coord, ViewCell)> {
-        quad::OFFSETS
-            .iter()
-            .cloned()
-            .zip(self.cells.iter().cloned())
-    }
-    fn new_wall_front(front_col: Rgb24, top_col: Rgb24) -> Self {
-        let front = ViewCell::new()
-            .with_character(' ')
-            .with_background(front_col);
-        let top = ViewCell::new()
-            .with_character('█')
-            .with_background(front_col)
-            .with_foreground(top_col);
-        Self {
-            cells: [top, top, front, front],
-        }
-    }
-    fn new_wall_top(top: Rgb24) -> Self {
-        let top = ViewCell::new().with_character(' ').with_background(top);
-        Self::new_repeating(top)
-    }
-    fn new_floor(foreground: Rgb24, background: Rgb24) -> Self {
-        let base = ViewCell::new()
-            .with_foreground(foreground)
-            .with_background(background);
-        Self {
-            cells: [
-                base.with_character('▗'),
-                base.with_character('▖'),
-                base.with_character('▝'),
-                base.with_character('▘'),
-            ],
-        }
-    }
-    fn new_door_closed(foreground: Rgb24, background: Rgb24) -> Self {
-        let base = ViewCell::new()
-            .with_foreground(background)
-            .with_background(foreground);
-        Self {
-            cells: [
-                base.with_character('▘'),
-                base.with_character('▝'),
-                base.with_character('▖'),
-                base.with_character('▗'),
-            ],
-        }
-    }
-    fn new_door_open(foreground: Rgb24, background: Rgb24) -> Self {
-        let base = ViewCell::new()
-            .with_foreground(foreground)
-            .with_background(background);
-        Self {
-            cells: [
-                base.with_character('▄'),
-                base.with_character('▄'),
-                base.with_character('▀'),
-                base.with_character('▀'),
-            ],
-        }
-    }
-    fn new_stairs(foreground: Rgb24, background: Rgb24) -> Self {
-        let base = ViewCell::new().with_bold(true);
-        Self {
-            cells: [
-                base.with_character('▝')
-                    .with_foreground(background)
-                    .with_background(foreground),
-                base.with_character(' ').with_background(background),
-                base.with_character(' ').with_background(foreground),
-                base.with_character('▝')
-                    .with_foreground(background)
-                    .with_background(foreground),
-            ],
-        }
-    }
-    fn new_player(foreground: Rgb24) -> Self {
-        let base = ViewCell::new().with_bold(true).with_foreground(foreground);
-        Self {
-            cells: [
-                base.with_character('╔'),
-                base.with_character('╗'),
-                base.with_character('╚'),
-                base.with_character('╩'),
-            ],
-        }
-    }
-    fn new_slime(
-        character: char,
-        foreground: Rgb24,
-        background: Rgb24,
-        hit_points: u32,
-        next_action: NpcAction,
-    ) -> Self {
-        let base = ViewCell::new()
-            .with_background(background)
-            .with_foreground(foreground);
-        let action_character = match next_action {
-            NpcAction::Wait => ' ',
-            NpcAction::Walk(direction) => match direction {
-                CardinalDirection::North => '↑',
-                CardinalDirection::East => '→',
-                CardinalDirection::South => '↓',
-                CardinalDirection::West => '←',
-            },
-        };
-        Self {
-            cells: [
-                base.with_character(character)
-                    .with_bold(true)
-                    .with_foreground(foreground),
-                base.with_character(action_character),
-                base.with_character(std::char::from_digit((hit_points / 10) % 10, 10).unwrap()),
-                base.with_character(std::char::from_digit(hit_points % 10, 10).unwrap()),
-            ],
-        }
-    }
-    fn new_attack(foreground: Rgb24, special: bool) -> Self {
-        let base = ViewCell::new().with_foreground(foreground).with_bold(true);
-        Self {
-            cells: [
-                base.with_character('A'),
-                base.with_character('t'),
-                base.with_character('k'),
-                base.with_character(if special { '*' } else { ' ' }),
-            ],
-        }
-    }
-    fn new_defend(foreground: Rgb24, special: bool) -> Self {
-        let base = ViewCell::new().with_foreground(foreground).with_bold(true);
-        Self {
-            cells: [
-                base.with_character('D'),
-                base.with_character('e'),
-                base.with_character('f'),
-                base.with_character(if special { '*' } else { ' ' }),
-            ],
-        }
-    }
-    fn new_tech(foreground: Rgb24, special: bool) -> Self {
-        let base = ViewCell::new().with_foreground(foreground).with_bold(true);
-        Self {
-            cells: [
-                base.with_character('T'),
-                base.with_character('c'),
-                base.with_character('h'),
-                base.with_character(if special { '*' } else { ' ' }),
-            ],
-        }
-    }
-    fn apply_lighting(&mut self, light_colour: Rgb24) {
-        for view_cell in self.cells.iter_mut() {
-            if let Some(foreground) = view_cell.style.foreground.as_mut() {
-                *foreground = apply_lighting(*foreground, light_colour);
-            }
-            if let Some(background) = view_cell.style.background.as_mut() {
-                *background = apply_lighting(*background, light_colour);
-            }
-        }
-    }
-}
-
-fn entity_to_quad_visible(entity: &ToRenderEntity, game: &Game, game_over: bool) -> Quad {
-    match entity.tile {
-        Tile::Player => Quad::new_player(Rgb24::new(255, 255, 255)),
-        Tile::Window(_) | Tile::Floor => {
-            Quad::new_floor(Rgb24::new(0, 187, 187), Rgb24::new(0, 127, 127))
-        }
-        Tile::Wall => {
-            let below = entity.coord + Coord::new(0, 1);
-            if game.contains_wall(below)
-                && (game_over || !game.visibility_grid().is_coord_never_visible(below))
-            {
-                Quad::new_wall_top(Rgb24::new(255, 0, 255))
-            } else {
-                Quad::new_wall_front(Rgb24::new(127, 0, 127), Rgb24::new(255, 0, 255))
-            }
-        }
-        Tile::DoorClosed(_) => {
-            Quad::new_door_closed(Rgb24::new(255, 127, 255), Rgb24::new(127, 0, 127))
-        }
-        Tile::DoorOpen(_) => {
-            Quad::new_door_open(Rgb24::new(255, 127, 255), Rgb24::new(0, 127, 127))
-        }
-        Tile::Stairs => Quad::new_stairs(Rgb24::new(255, 255, 255), Rgb24::new(0, 127, 127)),
-    }
-}
-
-fn entity_to_quad_remembered(entity: &ToRenderEntity, game: &Game) -> Option<Quad> {
-    let foreground = Rgb24::new_grey(63);
-    let background = Rgb24::new_grey(15);
-    let quad = match entity.tile {
-        Tile::Window(_) | Tile::Floor => Quad::new_floor(foreground, background),
-        Tile::Wall => {
-            if game.contains_wall(entity.coord + Coord::new(0, 1)) {
-                Quad::new_wall_top(foreground)
-            } else {
-                Quad::new_wall_front(background, foreground)
-            }
-        }
-        Tile::DoorClosed(_) => Quad::new_door_closed(foreground, background),
-        Tile::DoorOpen(_) => Quad::new_door_closed(foreground, background),
-        Tile::Stairs => Quad::new_stairs(foreground, background),
-        Tile::Player => Quad::new_player(foreground),
-    };
-    Some(quad)
-}
-
 pub fn layer_depth(layer: Option<Layer>) -> i8 {
     if let Some(layer) = layer {
         match layer {
@@ -528,19 +290,6 @@ pub fn layer_depth(layer: Option<Layer>) -> i8 {
         }
     } else {
         depth::GAME_MAX - 1
-    }
-}
-
-fn render_quad<F: Frame, C: ColModify>(
-    coord: Coord,
-    depth: i8,
-    quad: &Quad,
-    context: ViewContext<C>,
-    frame: &mut F,
-) {
-    for (offset, view_cell) in quad.enumerate() {
-        let output_coord = coord * 3 + offset;
-        frame.set_cell_relative(output_coord, depth, view_cell, context);
     }
 }
 
@@ -707,18 +456,6 @@ pub fn render_entity<F: Frame, C: ColModify>(
     }
 }
 
-fn render_entity_game_over<F: Frame, C: ColModify>(
-    entity: &ToRenderEntity,
-    game: &Game,
-    context: ViewContext<C>,
-    frame: &mut F,
-) {
-    let mut quad = entity_to_quad_visible(entity, game, true);
-    let depth = layer_depth(entity.layer);
-    quad.apply_lighting(Rgb24::new(255, 87, 31));
-    render_quad(entity.coord, depth, &quad, context, frame);
-}
-
 fn tile_str(tile: Tile) -> Option<&'static str> {
     match tile {
         Tile::Player => Some("yourself"),
@@ -727,6 +464,7 @@ fn tile_str(tile: Tile) -> Option<&'static str> {
         Tile::Floor => Some("the floor"),
         Tile::Window(_) => Some("a window"),
         Tile::Stairs => Some("a staircase leading further down"),
+        Tile::Zombie => Some("a zombie"),
     }
 }
 

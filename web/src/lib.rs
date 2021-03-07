@@ -1,7 +1,7 @@
 use chargrid_web::{Context, Size};
 use general_audio_static::{backend::WebAudioPlayer, StaticAudioPlayer};
 use general_storage_static::{backend::LocalStorage, StaticStorage};
-use orbital_decay_app::{app, AutoPlay, Controls, EnvNull, Frontend, GameConfig, RngSeed};
+use orbital_decay_app::{app, Controls, EnvNull, Frontend, GameConfig, RngSeed};
 use wasm_bindgen::prelude::*;
 
 const SAVE_KEY: &str = "save";
@@ -16,7 +16,10 @@ pub fn run() -> Result<(), JsValue> {
     let storage = StaticStorage::new(LocalStorage::new());
     let context = Context::new(Size::new(80, 60), "content");
     let app = app(
-        GameConfig { omniscient: None },
+        GameConfig {
+            omniscient: None,
+            demo: true,
+        },
         Frontend::Web,
         Controls::default(),
         storage,

@@ -79,7 +79,8 @@ impl NativeCommon {
                         Some(Omniscient)
                     } else {
                         None
-                    }
+                    },
+                    demo: false,
                 };
                 Self {
                     rng_seed,

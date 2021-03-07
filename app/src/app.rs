@@ -22,7 +22,6 @@ use menu::{
     fade_spec, FadeMenuInstanceView, MenuEntryStringFn, MenuEntryToRender, MenuInstanceChoose,
 };
 use render::{ColModifyDefaultForeground, ColModifyMap, Coord, Rgb24, Style};
-use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
 enum MainMenuType {
@@ -689,6 +688,11 @@ fn options_menu() -> impl EventRoutine<
         menu::FadeMenuInstanceRoutine::new(menu_entry_string)
             .select(SelectOptionsMenu)
             .decorated(DecorateOptionsMenu)
+            .on_event(|data, event| {
+                if let CommonEvent::Frame(since_prev) = event {
+                    data.menu_background_data.tick(*since_prev);
+                }
+            })
     })
 }
 
@@ -795,9 +799,18 @@ fn main_menu(
                 },
             ))
             .select(SelectMainMenu)
-            .decorated(DecorateMainMenu);
+            .decorated(DecorateMainMenu)
+            .on_event(|data, event| {
+                if let CommonEvent::Frame(since_prev) = event {
+                    data.menu_background_data.tick(*since_prev);
+                }
+            });
             if first_run.is_some() {
-                Ei::E(story().then(|| menu))
+                Ei::E(story().then(|| menu).on_event(|data, event| {
+                    if let CommonEvent::Frame(since_prev) = event {
+                        data.menu_background_data.tick(*since_prev);
+                    }
+                }))
             } else {
                 Ei::B(menu)
             }
@@ -917,7 +930,11 @@ fn win() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event
         let mut config = data.game.config();
         config.won = true;
         data.game.set_config(config);
-        win_text().then(|| win_text2())
+        win_text().then(|| win_text2()).on_event(|data, event| {
+            if let CommonEvent::Frame(since_prev) = event {
+                data.menu_background_data.tick(*since_prev);
+            }
+        })
     })
 }
 
@@ -1101,9 +1118,28 @@ fn main_menu_cycle(
             },
         )),
         Ok(MainMenuEntry::Options) => Ei::G(options_menu_cycle().map(|_| None)),
-        Ok(MainMenuEntry::Story) => Ei::H(story().map(|()| None)),
-        Ok(MainMenuEntry::Keybindings) => Ei::I(keybindings().map(|()| None)),
-        Ok(MainMenuEntry::EndText) => Ei::J(win_text().then(|| win_text2()).map(|()| None)),
+        Ok(MainMenuEntry::Story) => Ei::H(story().map(|()| None).on_event(|data, event| {
+            if let CommonEvent::Frame(since_prev) = event {
+                data.menu_background_data.tick(*since_prev);
+            }
+        })),
+        Ok(MainMenuEntry::Keybindings) => {
+            Ei::I(keybindings().map(|()| None).on_event(|data, event| {
+                if let CommonEvent::Frame(since_prev) = event {
+                    data.menu_background_data.tick(*since_prev);
+                }
+            }))
+        }
+        Ok(MainMenuEntry::EndText) => Ei::J(
+            win_text()
+                .then(|| win_text2())
+                .map(|()| None)
+                .on_event(|data, event| {
+                    if let CommonEvent::Frame(since_prev) = event {
+                        data.menu_background_data.tick(*since_prev);
+                    }
+                }),
+        ),
     })
 }
 

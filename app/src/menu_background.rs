@@ -1,18 +1,21 @@
 use crate::colours;
-use chargrid::render::{grid_2d::Size, ColModify, Coord, Frame, Style, ViewCell, ViewContext};
-use orbital_decay_game::{Config, Game, Omniscient, Tile, ToRenderEntity};
+use chargrid::render::{ColModify, Coord, Frame, Style, ViewCell, ViewContext};
+use orbital_decay_game::{Config, Game, Omniscient, ToRenderEntity};
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
+use std::time::Duration;
 
 pub struct MenuBackgroundData {
     game: Game,
     star_rng_seed: u64,
+    duration: Duration,
 }
 
 impl MenuBackgroundData {
     pub fn new() -> Self {
         let config = Config {
             omniscient: Some(Omniscient),
+            demo: true,
         };
         let mut rng = XorShiftRng::from_entropy();
         let game = Game::new(&config, &mut rng);
@@ -20,6 +23,7 @@ impl MenuBackgroundData {
         Self {
             game,
             star_rng_seed,
+            duration: Duration::from_millis(0),
         }
     }
 
@@ -28,15 +32,16 @@ impl MenuBackgroundData {
         render_stars(&mut rng, context, frame);
         let context = context.add_offset(Coord { x: 38, y: 5 });
         for entity in self.game.to_render_entities() {
-            match entity.tile {
-                Tile::Wall
-                | Tile::Floor
-                | Tile::Window(_)
-                | Tile::DoorClosed(_)
-                | Tile::DoorOpen(_) => (),
-                _ => continue,
-            }
             render_entity(&entity, &self.game, context, frame);
+        }
+    }
+
+    pub fn tick(&mut self, since_prev: Duration) {
+        const NPC_TURN_PERIOD: Duration = Duration::from_millis(2000);
+        self.duration += since_prev;
+        if self.duration > NPC_TURN_PERIOD {
+            self.duration -= NPC_TURN_PERIOD;
+            self.game.handle_npc_turn();
         }
     }
 }

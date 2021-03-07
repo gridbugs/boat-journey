@@ -1,13 +1,9 @@
 use crate::{terrain, visibility::Light, ExternalEvent};
 use entity_table::{Entity, EntityAllocator};
 use grid_2d::{Coord, Size};
-use rand::{
-    seq::{IteratorRandom, SliceRandom},
-    Rng,
-};
+use rand::Rng;
 use rgb24::Rgb24;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
 mod spatial;
 use spatial::SpatialTable;
@@ -15,8 +11,8 @@ use spatial::SpatialTable;
 pub mod player;
 
 mod data;
+pub use data::{Armour, Disposition, EntityData, HitPoints, Layer, Location, NpcAction, Tile};
 use data::{Components, Npc};
-pub use data::{Disposition, EntityData, HitPoints, Layer, Location, NpcAction, Tile};
 
 mod realtime_periodic;
 pub use realtime_periodic::animation::{
@@ -69,6 +65,7 @@ impl World {
         let blood_component = &self.components.blood;
         let ignore_lighting_component = &self.components.ignore_lighting;
         let hit_points = &self.components.hit_points;
+        let armour = &self.components.armour;
         let next_action = &self.components.next_action;
         tile_component.iter().filter_map(move |(entity, &tile)| {
             if let Some(location) = spatial_table.location_of(entity) {
@@ -79,6 +76,7 @@ impl World {
                 let blood = blood_component.contains(entity);
                 let ignore_lighting = ignore_lighting_component.contains(entity);
                 let hit_points = hit_points.get(entity).cloned();
+                let armour = armour.get(entity).cloned();
                 let next_action = next_action.get(entity).cloned();
                 Some(ToRenderEntity {
                     coord: location.coord,
@@ -89,6 +87,7 @@ impl World {
                     blood,
                     ignore_lighting,
                     hit_points,
+                    armour,
                     next_action,
                 })
             } else {
@@ -186,6 +185,7 @@ pub struct ToRenderEntity {
     pub blood: bool,
     pub ignore_lighting: bool,
     pub hit_points: Option<HitPoints>,
+    pub armour: Option<Armour>,
     pub next_action: Option<NpcAction>,
 }
 

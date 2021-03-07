@@ -53,9 +53,8 @@ impl World {
                         self.components.door_state.get(feature_entity).cloned()
                     {
                         self.open_door(feature_entity);
-                    } else {
-                        return Err(Error::WalkIntoSolidCell);
                     }
+                    return Err(Error::WalkIntoSolidCell);
                 }
             }
         } else {
@@ -125,6 +124,37 @@ impl World {
             _ => panic!("unexpecgted tile on door"),
         };
         self.components.tile.insert(door, Tile::DoorOpen(axis));
+        self.components.door_close_countdown.insert(door, 4);
+    }
+
+    fn close_door(&mut self, door: Entity) {
+        self.components.solid.insert(door, ());
+        self.components.opacity.insert(door, 255);
+        let axis = match self
+            .components
+            .tile
+            .get(door)
+            .expect("door lacks tile component")
+        {
+            Tile::DoorClosed(axis) | Tile::DoorOpen(axis) => *axis,
+            _ => panic!("unexpecgted tile on door"),
+        };
+        self.components.tile.insert(door, Tile::DoorClosed(axis));
+    }
+
+    pub fn process_door_close_countdown(&mut self) {
+        let mut to_close = Vec::new();
+        for (entity, door_close_countdown) in self.components.door_close_countdown.iter_mut() {
+            if *door_close_countdown == 0 {
+                to_close.push(entity);
+            } else {
+                *door_close_countdown -= 1;
+            }
+        }
+        for entity in to_close {
+            self.components.door_close_countdown.remove(entity);
+            self.close_door(entity);
+        }
     }
 
     pub fn character_fire_bullet(&mut self, character: Entity, target: Coord) {

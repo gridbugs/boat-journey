@@ -2,8 +2,8 @@ use crate::{
     visibility::Light,
     world::{
         data::{
-            CollidesWith, Disposition, DoorState, EntityData, HitPoints, Item, Layer, Location,
-            MoveHalfSpeed, Npc, OnCollision, Tile,
+            Armour, CollidesWith, Disposition, DoorState, EntityData, HitPoints, Item, Layer,
+            Location, MoveHalfSpeed, Npc, OnCollision, Tile,
         },
         explosion, player,
         realtime_periodic::{
@@ -501,6 +501,32 @@ impl World {
             .unwrap();
         self.components.tile.insert(entity, Tile::Stairs);
         self.components.stairs.insert(entity, ());
+        entity
+    }
+
+    pub fn spawn_zombie<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Character),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Zombie);
+        self.components.npc.insert(
+            entity,
+            Npc {
+                disposition: Disposition::Hostile,
+            },
+        );
+        self.components.character.insert(entity, ());
+        self.components
+            .hit_points
+            .insert(entity, HitPoints::new_full(4));
+        self.components.armour.insert(entity, Armour::new(2));
         entity
     }
 }
