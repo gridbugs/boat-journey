@@ -66,6 +66,7 @@ impl World {
         self.components.tile.insert(entity, Tile::Wall);
         self.components.solid.insert(entity, ());
         self.components.opacity.insert(entity, 255);
+        self.components.destructible.insert(entity, ());
         entity
     }
 
@@ -280,6 +281,7 @@ impl World {
                 hit_points: 2,
                 push_back: false,
                 pen: 3,
+                hull_pen_percent: 50,
             },
         );
         entity
@@ -482,6 +484,7 @@ impl World {
         self.components.opacity.insert(entity, 255);
         self.components.solid.insert(entity, ());
         self.components.door_state.insert(entity, DoorState::Closed);
+        self.components.destructible.insert(entity, ());
         entity
     }
 
@@ -498,6 +501,7 @@ impl World {
             .unwrap();
         self.components.tile.insert(entity, Tile::Window(axis));
         self.components.solid.insert(entity, ());
+        self.components.destructible.insert(entity, ());
         entity
     }
 

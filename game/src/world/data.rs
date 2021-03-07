@@ -39,6 +39,7 @@ declare_entity_module! {
         item: Item,
         damage: u32,
         particle: (),
+        destructible: (),
     }
 }
 pub use components::Components;
@@ -109,6 +110,7 @@ pub struct ProjectileDamage {
     pub hit_points: u32,
     pub push_back: bool,
     pub pen: u32,
+    pub hull_pen_percent: u32,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

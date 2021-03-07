@@ -266,6 +266,16 @@ impl World {
                         || (collides_with.character
                             && self.components.character.contains(entity_in_cell))
                     {
+                        if let Some(&projectile_damage) =
+                            self.components.projectile_damage.get(projectile_entity)
+                        {
+                            if self.components.destructible.contains(entity_in_cell) {
+                                if rng.gen_range(0..100) < projectile_damage.hull_pen_percent {
+                                    self.components.remove_entity(entity_in_cell);
+                                    self.spatial_table.remove(entity_in_cell);
+                                }
+                            }
+                        }
                         self.projectile_stop(projectile_entity, external_events, rng);
                         return;
                     }

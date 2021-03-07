@@ -204,6 +204,7 @@ impl RealtimePeriodicState for ParticleEmitterState {
                     hit_points: d.range.choose(rng),
                     push_back: d.push_back,
                     pen: 0,
+                    hull_pen_percent: 0,
                 })
             }),
         };
