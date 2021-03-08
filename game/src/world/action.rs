@@ -53,6 +53,7 @@ impl World {
                         self.components.door_state.get(feature_entity).cloned()
                     {
                         self.open_door(feature_entity);
+                        return Ok(());
                     }
                     return Err(Error::WalkIntoSolidCell);
                 }
@@ -164,10 +165,18 @@ impl World {
     pub fn process_door_close_countdown(&mut self) {
         let mut to_close = Vec::new();
         for (entity, door_close_countdown) in self.components.door_close_countdown.iter_mut() {
-            if *door_close_countdown == 0 {
-                to_close.push(entity);
-            } else {
-                *door_close_countdown -= 1;
+            if let Some(coord) = self.spatial_table.coord_of(entity) {
+                if let Some(layers) = self.spatial_table.layers_at(coord) {
+                    if layers.character.is_some() {
+                        *door_close_countdown = 4;
+                        continue;
+                    }
+                }
+                if *door_close_countdown == 0 {
+                    to_close.push(entity);
+                } else {
+                    *door_close_countdown -= 1;
+                }
             }
         }
         for entity in to_close {
