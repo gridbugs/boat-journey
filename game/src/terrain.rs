@@ -51,6 +51,7 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                 }
                 '>' => {
                     world.spawn_stairs(coord);
+                    world.spawn_floor(coord);
                 }
                 'z' => {
                     let entity = world.spawn_zombie(coord, rng);
@@ -266,11 +267,10 @@ pub fn space_station<R: Rng>(
                 world.spawn_window(coord, *axis);
             }
             GameCell::Stairs => {
-                if spec.demo {
-                    world.spawn_floor(coord);
-                } else {
+                if !spec.demo {
                     world.spawn_stairs(coord);
                 }
+                world.spawn_floor(coord);
             }
             GameCell::Spawn => {
                 world.spawn_floor(coord);

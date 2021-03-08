@@ -38,7 +38,7 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
                 denominator: 8,
             },
         }),
-        hit_points: Some(HitPoints::new_full(10)),
+        hit_points: Some(HitPoints::new_full(99)),
         oxygen: Some(Oxygen::new_full(10)),
         ..Default::default()
     }
