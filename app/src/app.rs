@@ -1158,27 +1158,6 @@ fn main_menu_cycle(
     })
 }
 
-fn splash() -> TextOverlay {
-    let text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'\".,-!@#$%^&*()♥♦{}[]▄▀▗▖▝▘▐▌:; ●?";
-    TextOverlay::new(
-        20,
-        vec![
-            text::RichTextPartOwned::new(
-                text.to_string(),
-                Style::new()
-                    .with_foreground(Rgb24::new_grey(255))
-                    .with_bold(false),
-            ),
-            text::RichTextPartOwned::new(
-                text.to_string(),
-                Style::new()
-                    .with_foreground(Rgb24::new_grey(255))
-                    .with_bold(true),
-            ),
-        ],
-    )
-}
-
 struct PrimeFont;
 impl EventRoutine for PrimeFont {
     type Return = ();
