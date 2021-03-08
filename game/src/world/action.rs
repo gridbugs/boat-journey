@@ -27,6 +27,34 @@ impl World {
         }
     }
     fn after_player_move<R: Rng>(&mut self, character: Entity, target_coord: Coord, rng: &mut R) {}
+
+    pub fn character_pull_in_direction<R: Rng>(
+        &mut self,
+        character: Entity,
+        direction: CardinalDirection,
+        rng: &mut R,
+    ) {
+        let current_coord = if let Some(coord) = self.spatial_table.coord_of(character) {
+            coord
+        } else {
+            panic!("failed to find coord for {:?}", character);
+        };
+        let target_coord = current_coord + direction.coord();
+        if let Some(&cell) = self.spatial_table.layers_at(target_coord) {
+            if let Some(feature_entity) = cell.feature {
+                if self.components.solid.contains(feature_entity) {
+                    return;
+                }
+            }
+        } else {
+            return;
+        }
+        let _ = self
+            .spatial_table
+            .update_coord(character, target_coord)
+            .map_err(|e| e.unwrap_occupied_by());
+    }
+
     pub fn character_walk_in_direction<R: Rng>(
         &mut self,
         character: Entity,
@@ -160,6 +188,24 @@ impl World {
             _ => panic!("unexpecgted tile on door"),
         };
         self.components.tile.insert(door, Tile::DoorClosed(axis));
+    }
+
+    pub fn process_oxygen<R: Rng>(&mut self, entity: Entity, rng: &mut R) {
+        if let Some(oxygen) = self.components.oxygen.get_mut(entity) {
+            if let Some(coord) = self.spatial_table.coord_of(entity) {
+                if self.air.has_air(coord) {
+                    if oxygen.current < oxygen.max {
+                        oxygen.current += 1;
+                    }
+                } else {
+                    if oxygen.current == 0 {
+                        self.damage_character(entity, 1, rng);
+                    } else {
+                        oxygen.current -= 1;
+                    }
+                }
+            }
+        }
     }
 
     pub fn process_door_close_countdown(&mut self) {

@@ -937,16 +937,6 @@ pub fn zombie<F: Frame, C: ColModify>(
     view_context: ViewContext<C>,
     frame: &mut F,
 ) {
-    for offset in Size::new_u16(3, 3).coord_iter_row_major() {
-        frame.set_cell_relative(
-            offset,
-            0,
-            ViewCell::new()
-                .with_character(' ')
-                .with_background(colours::FLOOR_BACKGROUND),
-            view_context,
-        );
-    }
     StringViewSingleLine::new(
         Style::new()
             .with_foreground(colours::ZOMBIE)

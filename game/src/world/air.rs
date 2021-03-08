@@ -94,6 +94,27 @@ impl Air {
                 }
             }
         }
+        for (coord, air_cell) in self.pressure.enumerate_mut() {
+            if self.flow.get_checked(coord).is_none() {
+                *air_cell = 255;
+            }
+        }
         to_move
+    }
+
+    pub fn has_air(&self, coord: Coord) -> bool {
+        if let Some(cell) = self.pressure.get(coord) {
+            *cell > 0
+        } else {
+            false
+        }
+    }
+
+    pub fn has_flow(&self, coord: Coord) -> bool {
+        if let Some(Some(flow)) = self.flow.get(coord) {
+            *flow > 0
+        } else {
+            false
+        }
     }
 }

@@ -59,6 +59,11 @@ pub enum Input {
     Fire(CardinalDirection),
 }
 
+pub enum WarningLight {
+    NoAir,
+    Decompression,
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 enum Turn {
     Player,
@@ -145,6 +150,23 @@ impl Game {
         game.update_visibility(config);
         game.prime_npcs();
         game
+    }
+    pub fn warning_light(&self, coord: Coord) -> Option<WarningLight> {
+        if let Some(layers) = self.world.spatial_table.layers_at(coord) {
+            if layers.floor.is_some() {
+                if !self.world.air.has_air(coord) {
+                    Some(WarningLight::NoAir)
+                } else if self.world.air.has_flow(coord) {
+                    Some(WarningLight::Decompression)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
     pub fn is_adrift(&self) -> bool {
         self.adrift
@@ -332,6 +354,20 @@ impl Game {
     }
 
     fn npc_turn(&mut self) {
+        for _ in 0..2 {
+            let to_move = self
+                .world
+                .air
+                .update(&self.world.spatial_table, &self.world.components);
+            for (entity, direction) in to_move {
+                let _ = self
+                    .world
+                    .character_pull_in_direction(entity, direction, &mut self.rng);
+            }
+            self.update_last_player_info();
+        }
+        self.world.process_door_close_countdown();
+        self.world.process_oxygen(self.player, &mut self.rng);
         self.update_behaviour();
         for (entity, agent) in self.agents.iter_mut() {
             if !self.world.entity_exists(entity) {
@@ -391,21 +427,19 @@ impl Game {
     }
 
     fn after_turn(&mut self) {
-        let to_move = self
-            .world
-            .air
-            .update(&self.world.spatial_table, &self.world.components);
-        for (entity, direction) in to_move {
-            let _ = self
-                .world
-                .character_walk_in_direction(entity, direction, &mut self.rng);
-        }
-        self.update_last_player_info();
-        self.world.process_door_close_countdown();
         if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
             if layers.floor.is_none() {
                 self.world.components.to_remove.insert(self.player, ());
                 self.adrift = true;
+            }
+        }
+        for npc in self.world.components.npc.entities() {
+            if let Some(coord) = self.world.spatial_table.coord_of(npc) {
+                if let Some(layers) = self.world.spatial_table.layers_at(coord) {
+                    if layers.floor.is_none() {
+                        self.world.components.to_remove.insert(npc, ());
+                    }
+                }
             }
         }
         self.cleanup();
