@@ -1195,18 +1195,18 @@ impl EventRoutine for PrimeFont {
         F: Frame,
         C: ColModify,
     {
-        let string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'\".,-!@#$%^&*()♥♦{}[]▄▀▗▖▝▘▐▌:; ●?";
+        let string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'\"/\\+=-_~`.,-!@#$%^&*()♥♦{}[]▄▀▗▖▝▘▐▌:; ●?──││┌┐└┘┤├";
         let text = vec![
             text::RichTextPart::new(
                 string,
                 Style::new()
-                    .with_foreground(Rgb24::new_grey(255))
+                    .with_foreground(Rgb24::new_grey(0))
                     .with_bold(false),
             ),
             text::RichTextPart::new(
                 string,
                 Style::new()
-                    .with_foreground(Rgb24::new_grey(255))
+                    .with_foreground(Rgb24::new_grey(0))
                     .with_bold(true),
             ),
         ];
