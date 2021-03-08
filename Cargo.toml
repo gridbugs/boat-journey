@@ -20,14 +20,3 @@ lto = true
 # I forked rodio to fix a bug where the dedicated audio thread overflows its stack when the track changes.
 # PR to fix this issue is here: https://github.com/RustAudio/rodio/pull/285
 rodio = { git = "https://github.com/stevebob/rodio.git", branch = "fix-frame-drop-stack-overflow-2021-pinned-cpal" }
-chargrid_render = { path = "/home/steve/src/chargrid/render" }
-chargrid_input = { path = "/home/steve/src/chargrid/input" }
-chargrid_app = { path = "/home/steve/src/chargrid/app" }
-chargrid_graphical = { path = "/home/steve/src/chargrid/graphical" }
-chargrid_ansi_terminal = { path = "/home/steve/src/chargrid/ansi-terminal" }
-chargrid_web = { path = "/home/steve/src/chargrid/web" }
-chargrid_event_routine = { path = "/home/steve/src/chargrid/event-routine" }
-chargrid_decorator = { path = "/home/steve/src/chargrid/decorator" }
-chargrid_text = { path = "/home/steve/src/chargrid/text" }
-chargrid = {path = "/home/steve/src/chargrid/chargrid" }
-
