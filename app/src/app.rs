@@ -23,6 +23,7 @@ use menu::{
 };
 use orbital_decay_game::player::RangedWeaponSlot;
 use render::{ColModifyDefaultForeground, ColModifyMap, Coord, Rgb24, Style};
+use std::time::Duration;
 
 #[derive(Clone, Copy)]
 enum MainMenuType {
@@ -124,6 +125,7 @@ struct AppData {
     last_mouse_coord: Coord,
     env: Box<dyn Env>,
     menu_background_data: MenuBackgroundData,
+    prime_font_countdown: Duration,
 }
 
 struct AppView {
@@ -171,6 +173,7 @@ impl AppData {
             last_mouse_coord: Coord::new(0, 0),
             env,
             menu_background_data,
+            prime_font_countdown: Duration::from_millis(100),
         }
     }
 }
@@ -1156,7 +1159,7 @@ fn main_menu_cycle(
 }
 
 fn splash() -> TextOverlay {
-    let text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'\".,-!@#$%^&*()♥♦{}[]▄▀▗▖▝▘▐▌:; ●";
+    let text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'\".,-!@#$%^&*()♥♦{}[]▄▀▗▖▝▘▐▌:; ●?";
     TextOverlay::new(
         20,
         vec![
@@ -1174,6 +1177,62 @@ fn splash() -> TextOverlay {
             ),
         ],
     )
+}
+
+struct PrimeFont;
+impl EventRoutine for PrimeFont {
+    type Return = ();
+    type Data = AppData;
+    type View = AppView;
+    type Event = CommonEvent;
+    fn handle<EP>(
+        self,
+        data: &mut Self::Data,
+        _view: &Self::View,
+        event_or_peek: EP,
+    ) -> Handled<Self::Return, Self>
+    where
+        EP: EventOrPeek<Event = Self::Event>,
+    {
+        event_or_peek_with_handled(event_or_peek, self, |s, event| match event {
+            CommonEvent::Input(_) => Handled::Continue(s),
+            CommonEvent::Frame(duration) => {
+                if let Some(remaining) = data.prime_font_countdown.checked_sub(duration) {
+                    data.prime_font_countdown = remaining;
+                    Handled::Continue(s)
+                } else {
+                    Handled::Return(())
+                }
+            }
+        })
+    }
+    fn view<F, C>(
+        &self,
+        _data: &Self::Data,
+        _view: &mut Self::View,
+        context: ViewContext<C>,
+        frame: &mut F,
+    ) where
+        F: Frame,
+        C: ColModify,
+    {
+        let string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'\".,-!@#$%^&*()♥♦{}[]▄▀▗▖▝▘▐▌:; ●?";
+        let text = vec![
+            text::RichTextPart::new(
+                string,
+                Style::new()
+                    .with_foreground(Rgb24::new_grey(255))
+                    .with_bold(false),
+            ),
+            text::RichTextPart::new(
+                string,
+                Style::new()
+                    .with_foreground(Rgb24::new_grey(255))
+                    .with_bold(true),
+            ),
+        ];
+        text::RichTextView::new(text::wrap::Char::new()).view(text, context, frame);
+    }
 }
 
 fn event_routine(
@@ -1251,7 +1310,7 @@ pub fn app(
         env,
     );
     let app_view = AppView::new();
-    splash()
+    PrimeFont
         .then(move || event_routine(auto_play))
         .app_one_shot_ignore_return(app_data, app_view)
 }
