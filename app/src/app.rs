@@ -102,7 +102,7 @@ impl MainMenuEntry {
                 hashmap!['r' => Resume, 'q' => SaveQuit, 'o' => Options, 'k' => Keybindings, 'b'=> Story, 'n' => NewGame, 'c' => Clear],
             ),
             Frontend::Web => (
-                vec![Resume, Save, NewGame, Options, Story, Clear],
+                vec![Resume, Save, NewGame, Options, Keybindings, Story, Clear],
                 hashmap!['r' => Resume, 's' => Save, 'o' => Options, 'k' => Keybindings, 'b' => Story, 'n' => NewGame, 'c' => Clear],
             ),
         };
@@ -1183,6 +1183,7 @@ fn keybindings() -> TextOverlay {
             text::RichTextPartOwned::new("Cancel Aim: escape\n\n".to_string(), normal),
             text::RichTextPartOwned::new("Wait: space\n\n".to_string(), normal),
             text::RichTextPartOwned::new("Examine: x\n\n".to_string(), normal),
+            text::RichTextPartOwned::new("Fire Ranged Weapon: 1-3\n\n".to_string(), normal),
             text::RichTextPartOwned::new("\n\n\n\n\nPress any key...".to_string(), faint),
         ],
     )
