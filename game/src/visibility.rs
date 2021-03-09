@@ -45,6 +45,7 @@ pub struct TileLayers {
     pub floor: Option<EntityTile>,
     pub feature: Option<EntityTile>,
     pub character: Option<EntityTile>,
+    pub item: Option<EntityTile>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -69,6 +70,7 @@ impl Default for VisibilityCell {
                 floor: None,
                 feature: None,
                 character: None,
+                item: None,
             },
         }
     }
@@ -205,6 +207,13 @@ impl VisibilityGrid {
                         }
                     } else {
                         cell.tile_layers.character = None;
+                    }
+                    if let Some(entity) = layers.item {
+                        if let Some(&tile) = world.components.tile.get(entity) {
+                            cell.tile_layers.item = Some(EntityTile { entity, tile });
+                        }
+                    } else {
+                        cell.tile_layers.item = None;
                     }
                 },
             );

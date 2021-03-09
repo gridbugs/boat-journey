@@ -25,3 +25,6 @@ pub const BLOOD: Rgb24 = Rgb24::new(0xFF, 0x00, 0x22);
 pub const FUEL_BAY_BACKGROUND: Rgb24 = Rgb24::new_grey(0x44);
 pub const FUEL_BAY_FOREGROUND: Rgb24 = Rgb24::new(0, 0, 255);
 pub const BULLET: Rgb24 = Rgb24::new_grey(0);
+pub const CREDIT_FOREGROUND: Rgb24 = Rgb24::new(0, 127, 127);
+pub const UPGRADE_FOREGROUND: Rgb24 = Rgb24::new(0, 187, 0);
+pub const UPGRADE_BACKGROUND: Rgb24 = Rgb24::new(0, 0, 0);

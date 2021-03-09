@@ -40,6 +40,7 @@ declare_entity_module! {
         damage: u32,
         particle: (),
         destructible: (),
+        upgrade: (),
     }
 }
 pub use components::Components;
@@ -63,13 +64,14 @@ pub enum Tile {
     FuelText1,
     FuelHatch,
     Bullet,
+    Credit1,
+    Credit2,
+    Upgrade,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Item {
-    Attack { special: bool },
-    Defend { special: bool },
-    Tech { special: bool },
+    Credit(u32),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

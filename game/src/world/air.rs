@@ -13,9 +13,11 @@ pub struct Air {
     seen: HashSet<Coord>,
 }
 
+const MAX_AIR: u8 = 6;
+
 impl Air {
     pub fn new(size: Size) -> Self {
-        let pressure = Grid::new_copy(size, 255);
+        let pressure = Grid::new_copy(size, MAX_AIR);
         let flow = Grid::new_copy(size, None);
         let queue = Default::default();
         let seen = Default::default();
@@ -84,9 +86,12 @@ impl Air {
                         *flow_cell = Some(current_flow + 1);
                         let pressure = self.pressure.get_checked_mut(nei_coord);
                         if *pressure > 0 {
-                            *pressure = pressure.saturating_sub(32);
+                            *pressure = pressure.saturating_sub(1);
                             if let Some(character) = layers.character {
                                 to_move.push((character, direction.opposite()));
+                            }
+                            if let Some(item) = layers.item {
+                                to_move.push((item, direction.opposite()));
                             }
                         }
                         self.queue.push_back(nei_coord);
@@ -96,7 +101,7 @@ impl Air {
         }
         for (coord, air_cell) in self.pressure.enumerate_mut() {
             if self.flow.get_checked(coord).is_none() {
-                *air_cell = 255;
+                *air_cell = MAX_AIR;
             }
         }
         to_move

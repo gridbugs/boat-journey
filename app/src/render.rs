@@ -124,6 +124,9 @@ impl GameView {
                             {
                                 entity_under_cursor = Some((character.tile, verb));
                             }
+                            if let Some(item) = visibility_cell_under_cursor.tile_layers().item {
+                                entity_under_cursor = Some((item.tile, verb));
+                            }
                         }
                     }
                 }
@@ -266,17 +269,27 @@ impl GameView {
                 );
             }
         }
+        if let Some(action_error) = game_to_render.action_error {
+            let s = action_error_str(action_error);
+            StringView::new(
+                Style::new().with_foreground(Rgb24::new(255, 255, 255)),
+                wrap::Word::new(),
+            )
+            .view(s, context.add_offset(Coord::new(0, 1)), frame);
+        }
+
         let ui = ui::Ui {
             player: game_to_render.game.player(),
             player_info: game_to_render.game.player_info(),
         };
-        ui::UiView.view(ui, context.add_offset(Coord::new(65, 4)), frame);
+        ui::UiView.view(ui, context.add_offset(Coord::new(64, 4)), frame);
         match game_to_render.mode {
             Mode::Normal => (),
             Mode::Aim { slot } => {
                 let slot_str = match slot {
                     RangedWeaponSlot::Slot1 => "Weapon 1",
                     RangedWeaponSlot::Slot2 => "Weapon 2",
+                    RangedWeaponSlot::Slot3 => "Weapon 3",
                 };
                 StringViewSingleLine::new(
                     Style::new()
@@ -337,7 +350,8 @@ pub fn layer_depth(layer: Option<Layer>) -> i8 {
         match layer {
             Layer::Floor => 0,
             Layer::Feature => 1,
-            Layer::Character => 2,
+            Layer::Item => 2,
+            Layer::Character => 3,
         }
     } else {
         depth::GAME_MAX - 1
@@ -580,11 +594,15 @@ fn tile_str(tile: Tile) -> Option<&'static str> {
         Tile::Stairs => Some("a staircase leading further down"),
         Tile::Zombie => Some("a zombie"),
         Tile::Bullet => None,
+        Tile::Credit1 => Some("a $1 credit chip"),
+        Tile::Credit2 => Some("a $2 credit chip"),
+        Tile::Upgrade => Some("an upgrade store"),
     }
 }
 
 fn action_error_str(action_error: ActionError) -> &'static str {
     match action_error {
-        ActionError::WalkIntoSolidCell => "You can't walk there",
+        ActionError::WalkIntoSolidCell => "You can't walk there!",
+        ActionError::CannotAffordUpgrade => "You can't afford tha!t",
     }
 }

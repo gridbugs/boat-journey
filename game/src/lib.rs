@@ -19,8 +19,8 @@ use terrain::{SpaceStationSpec, Terrain};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
-    player, ActionError, CharacterInfo, EntityData, HitPoints, Layer, NpcAction, PlayerDied, Tile,
-    ToRenderEntity, ToRenderEntityRealtime,
+    player, ActionError, CharacterInfo, EntityData, HitPoints, Item, Layer, NpcAction, PlayerDied,
+    Tile, ToRenderEntity, ToRenderEntityRealtime,
 };
 
 pub const MAP_SIZE: Size = Size::new_u16(20, 14);
@@ -50,6 +50,7 @@ pub enum GameControlFlow {
     GameOver,
     Win,
     LevelChange,
+    Upgrade,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -57,6 +58,7 @@ pub enum Input {
     Walk(CardinalDirection),
     Wait,
     Fire(CardinalDirection),
+    Upgrade(player::Upgrade),
 }
 
 pub enum WarningLight {
@@ -116,6 +118,17 @@ impl Game {
                 &mut rng,
             )
         };
+        if debug {
+            world.components.player.get_mut(player).unwrap().credit = 1000;
+            /*
+            let _ = world.apply_upgrade(
+                player,
+                player::Upgrade {
+                    typ: player::UpgradeType::Toughness,
+                    level: player::UpgradeLevel::Level1,
+                },
+            );*/
+        }
         world.air.init(&world.spatial_table, &world.components);
         let last_player_info = world
             .character_info(player)
@@ -150,6 +163,15 @@ impl Game {
         game.update_visibility(config);
         game.prime_npcs();
         game
+    }
+    pub fn available_upgrades(&self) -> Vec<player::Upgrade> {
+        let player = self
+            .world
+            .components
+            .player
+            .get(self.player)
+            .expect("no player");
+        player.available_upgrades()
     }
     pub fn warning_light(&self, coord: Coord) -> Option<WarningLight> {
         if let Some(layers) = self.world.spatial_table.layers_at(coord) {
@@ -296,13 +318,19 @@ impl Game {
         input: Input,
         config: &Config,
     ) -> Result<Option<GameControlFlow>, ActionError> {
+        if let Input::Upgrade(upgrade) = input {
+            self.world.apply_upgrade(self.player, upgrade)?;
+            return Ok(None);
+        }
         if self.generate_frame_countdown.is_some() {
             return Ok(None);
         }
         let mut change = false;
         if !self.is_gameplay_blocked() && self.turn_during_animation.is_none() {
             change = true;
-            self.player_turn(input)?;
+            if let Some(control_flow) = self.player_turn(input)? {
+                return Ok(Some(control_flow));
+            }
         }
         if change {
             self.update_last_player_info();
@@ -325,7 +353,7 @@ impl Game {
         self.update_behaviour();
     }
 
-    fn player_turn(&mut self, input: Input) -> Result<(), ActionError> {
+    fn player_turn(&mut self, input: Input) -> Result<Option<GameControlFlow>, ActionError> {
         let result = match input {
             Input::Walk(direction) => {
                 self.world
@@ -333,15 +361,16 @@ impl Game {
             }
             Input::Wait => {
                 self.world.wait(self.player, &mut self.rng);
-                Ok(())
+                Ok(None)
             }
             Input::Fire(direction) => {
                 self.world.character_fire_bullet(
                     self.player,
                     self.player_coord() + (direction.coord() * 100),
                 );
-                Ok(())
+                Ok(None)
             }
+            Input::Upgrade(upgrade) => Ok(None),
         };
         if result.is_ok() {
             if self.is_gameplay_blocked() {
@@ -354,12 +383,17 @@ impl Game {
     }
 
     fn npc_turn(&mut self) {
-        for _ in 0..2 {
+        for i in 0..2 {
             let to_move = self
                 .world
                 .air
                 .update(&self.world.spatial_table, &self.world.components);
             for (entity, direction) in to_move {
+                if let Some(player) = self.world.components.player.get(entity) {
+                    if player.traits.half_vacuum_pull && i == 1 {
+                        continue;
+                    }
+                }
                 let _ = self
                     .world
                     .character_pull_in_direction(entity, direction, &mut self.rng);
@@ -368,6 +402,21 @@ impl Game {
         }
         self.world.process_door_close_countdown();
         self.world.process_oxygen(self.player, &mut self.rng);
+        if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
+            if let Some(item_entity) = layers.item {
+                if let Some(item) = self.world.components.item.get(item_entity) {
+                    match item {
+                        Item::Credit(amount) => {
+                            if let Some(player) = self.world.components.player.get_mut(self.player)
+                            {
+                                player.credit += amount;
+                            }
+                            self.world.components.to_remove.insert(item_entity, ());
+                        }
+                    }
+                }
+            }
+        }
         self.update_behaviour();
         for (entity, agent) in self.agents.iter_mut() {
             if !self.world.entity_exists(entity) {

@@ -3,6 +3,7 @@ spatial_table::declare_layers_module! {
         floor: Floor,
         feature: Feature,
         character: Character,
+        item: Item,
     }
 }
 pub use layers::{Layer, Layers};

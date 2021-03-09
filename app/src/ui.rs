@@ -1,10 +1,11 @@
+use crate::colours;
 use chargrid::render::{ColModify, Coord, Frame, Rgb24, Style, View, ViewContext};
 use chargrid::text::{
     wrap, RichStringViewSingleLine, RichTextPart, RichTextPartOwned, RichTextView,
     StringViewSingleLine,
 };
 use orbital_decay_game::{
-    player::{Player, Weapon, WeaponAbility, WeaponName},
+    player::{self, Player, Weapon, WeaponAbility, WeaponName},
     CharacterInfo, HitPoints,
 };
 
@@ -44,7 +45,15 @@ impl UiView {
                         .with_foreground(Rgb24::new(127, 127, 255))
                         .with_bold(true),
                 ),
-                RichTextPart::new("\n\n", plain),
+                RichTextPart::new("\n", plain),
+                RichTextPart::new("Credit: ", plain),
+                RichTextPart::new(
+                    format!("${}", ui.player.credit).as_str(),
+                    Style::new()
+                        .with_foreground(colours::CREDIT_FOREGROUND)
+                        .with_bold(true),
+                ),
+                RichTextPart::new("\n", plain),
             ],
             context,
             frame,
@@ -52,9 +61,35 @@ impl UiView {
         view_weapon(
             "Melee Weapon:",
             &ui.player.melee_weapon,
-            context.add_offset(Coord { x: 0, y: 4 }),
+            &ui.player,
+            context.add_offset(Coord { x: 0, y: 5 }),
             frame,
         );
+        let context = context.add_offset(Coord { x: 0, y: 13 });
+        for (i, ranged_slot) in ui.player.ranged_weapons.iter().enumerate() {
+            if let Some(weapon) = ranged_slot {
+                view_weapon(
+                    format!("Weapon {}:", i + 1).as_str(),
+                    weapon,
+                    &ui.player,
+                    context.add_offset(Coord {
+                        x: 0,
+                        y: i as i32 * 10,
+                    }),
+                    frame,
+                );
+            } else {
+                view_empty_weapon_slot(
+                    format!("Weapon {}:", i + 1).as_str(),
+                    context.add_offset(Coord {
+                        x: 0,
+                        y: i as i32 * 10,
+                    }),
+                    frame,
+                );
+            }
+        }
+        view_upgrades(ui, context.add_offset(Coord { x: 0, y: 32 }), frame);
     }
 }
 
@@ -75,9 +110,33 @@ fn weapon_ability_text(weapon_ability: WeaponAbility) -> RichTextPartOwned {
     }
 }
 
+fn view_empty_weapon_slot<F: Frame, C: ColModify>(
+    title: &str,
+    context: ViewContext<C>,
+    frame: &mut F,
+) {
+    let plain = Style::new()
+        .with_foreground(Rgb24::new_grey(255))
+        .with_bold(false);
+    let mut rich_view = RichStringViewSingleLine::new();
+    let mut plain_view = StringViewSingleLine::new(plain);
+    rich_view.view(
+        RichTextPart::new(
+            title,
+            Style::new()
+                .with_foreground(Rgb24::new_grey(255))
+                .with_bold(true),
+        ),
+        context,
+        frame,
+    );
+    plain_view.view("(empty)", context.add_offset(Coord::new(0, 1)), frame);
+}
+
 fn view_weapon<F: Frame, C: ColModify>(
     title: &str,
     weapon: &Weapon,
+    player: &Player,
     context: ViewContext<C>,
     frame: &mut F,
 ) {
@@ -106,13 +165,23 @@ fn view_weapon<F: Frame, C: ColModify>(
         context.add_offset(Coord::new(0, 2)),
         frame,
     );
+    let extra = if player.traits.double_damage {
+        "x2"
+    } else {
+        ""
+    };
     plain_view.view(
-        format!("DMG(♥): {}\n", weapon.dmg).as_str(),
+        format!("DMG(♥): {}{}\n", weapon.dmg, extra).as_str(),
         context.add_offset(Coord::new(0, 3)),
         frame,
     );
+    let extra = if player.traits.reduce_hull_pen {
+        "/2"
+    } else {
+        ""
+    };
     plain_view.view(
-        format!("HULL PEN: {}%\n", weapon.hull_pen_percent).as_str(),
+        format!("HULL PEN: {}%{}\n", weapon.hull_pen_percent, extra).as_str(),
         context.add_offset(Coord::new(0, 4)),
         frame,
     );
@@ -122,5 +191,47 @@ fn view_weapon<F: Frame, C: ColModify>(
             context.add_offset(Coord::new(0, 5)),
             frame,
         );
+    }
+}
+
+fn view_upgrades<F: Frame, C: ColModify>(ui: Ui, context: ViewContext<C>, frame: &mut F) {
+    let plain = Style::new()
+        .with_foreground(Rgb24::new_grey(255))
+        .with_bold(false);
+    let mut view = StringViewSingleLine::new(plain);
+    StringViewSingleLine::new(plain.with_bold(true)).view("Upgrades:", context, frame);
+    let mut upgrades = Vec::new();
+    use player::UpgradeLevel::*;
+    if let Some(level) = ui.player.upgrade_table.toughness {
+        upgrades.push("T1: Strong Back");
+        if level == Level2 {
+            upgrades.push("T2: Hardy");
+        }
+    }
+    if let Some(level) = ui.player.upgrade_table.accuracy {
+        upgrades.push("A1: Careful");
+        if level == Level2 {
+            upgrades.push("A2: Kill Shot");
+        }
+    }
+    if let Some(level) = ui.player.upgrade_table.endurance {
+        upgrades.push("E1: Sure-Footed");
+        if level == Level2 {
+            upgrades.push("E2: Big Lungs");
+        }
+    }
+    if upgrades.is_empty() {
+        view.view("(none)", context.add_offset(Coord { x: 0, y: 1 }), frame);
+    } else {
+        for (i, upgrade) in upgrades.into_iter().enumerate() {
+            view.view(
+                upgrade,
+                context.add_offset(Coord {
+                    x: 0,
+                    y: i as i32 + 1,
+                }),
+                frame,
+            );
+        }
     }
 }

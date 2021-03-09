@@ -4,7 +4,7 @@ use crate::{
         explosion, player,
         realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
         spatial::{Layer, Location, SpatialTable},
-        ExternalEvent, World,
+        ActionError, ExternalEvent, World,
     },
     VisibilityGrid,
 };
@@ -15,9 +15,10 @@ use rand::{seq::IteratorRandom, seq::SliceRandom, Rng};
 use std::collections::{HashSet, VecDeque};
 use std::time::Duration;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Error {
     WalkIntoSolidCell,
+    CannotAffordUpgrade,
 }
 
 impl World {
@@ -60,11 +61,11 @@ impl World {
         character: Entity,
         direction: CardinalDirection,
         rng: &mut R,
-    ) -> Result<(), Error> {
+    ) -> Result<Option<crate::GameControlFlow>, Error> {
         if let Some(move_half_speed) = self.components.move_half_speed.get_mut(character) {
             if move_half_speed.skip_next_move {
                 move_half_speed.skip_next_move = false;
-                return Ok(());
+                return Ok(None);
             }
             move_half_speed.skip_next_move = true;
         }
@@ -81,9 +82,16 @@ impl World {
                         self.components.door_state.get(feature_entity).cloned()
                     {
                         self.open_door(feature_entity);
-                        return Ok(());
+                        return Ok(None);
                     }
                     return Err(Error::WalkIntoSolidCell);
+                }
+                if self.components.upgrade.contains(feature_entity) {
+                    if self.components.player.contains(character) {
+                        return Ok(Some(crate::GameControlFlow::Upgrade));
+                    } else {
+                        return Err(Error::WalkIntoSolidCell);
+                    }
                 }
             }
         } else {
@@ -100,7 +108,7 @@ impl World {
                 self.after_player_move(character, target_coord, rng);
             }
         }
-        Ok(())
+        Ok(None)
     }
 
     fn player_melee_attack<R: Rng>(
@@ -120,7 +128,10 @@ impl World {
                 .expect("npc lacks armour")
                 .value
         {
-            let dmg = player.melee_dmg();
+            let mut dmg = player.melee_dmg();
+            if player.traits.double_damage {
+                dmg *= 2;
+            }
             self.damage_character(victim, dmg, rng);
         }
         let player = self.components.player.get(attacker).unwrap();
@@ -325,7 +336,14 @@ impl World {
                             self.components.projectile_damage.get(projectile_entity)
                         {
                             if self.components.destructible.contains(entity_in_cell) {
-                                if rng.gen_range(0..100) < projectile_damage.hull_pen_percent {
+                                let mut hull_pen_percent = projectile_damage.hull_pen_percent;
+                                for (_, player) in self.components.player.iter() {
+                                    if player.traits.reduce_hull_pen {
+                                        hull_pen_percent /= 2;
+                                    }
+                                    break;
+                                }
+                                if rng.gen_range(0..100) < hull_pen_percent {
                                     self.components.remove_entity(entity_in_cell);
                                     self.spatial_table.remove(entity_in_cell);
                                 }
@@ -411,5 +429,69 @@ impl World {
                 self.components.remove_entity(projectile_entity);
             }
         }
+    }
+
+    pub fn apply_upgrade(
+        &mut self,
+        entity: Entity,
+        upgrade: player::Upgrade,
+    ) -> Result<(), ActionError> {
+        let player = self.components.player.get_mut(entity).unwrap();
+        if player.credit < upgrade.level.cost() {
+            return Err(ActionError::CannotAffordUpgrade);
+        }
+        player.credit -= upgrade.level.cost();
+        {
+            let player_level = match upgrade.typ {
+                player::UpgradeType::Toughness => &mut player.upgrade_table.toughness,
+                player::UpgradeType::Accuracy => &mut player.upgrade_table.accuracy,
+                player::UpgradeType::Endurance => &mut player.upgrade_table.endurance,
+            };
+            *player_level = Some(upgrade.level);
+        }
+        use player::{Upgrade, UpgradeLevel::*, UpgradeType::*};
+        match upgrade {
+            Upgrade {
+                typ: Toughness,
+                level: Level1,
+            } => {
+                player.ranged_weapons.push(None);
+            }
+            Upgrade {
+                typ: Toughness,
+                level: Level2,
+            } => {
+                let hit_points = self.components.hit_points.get_mut(entity).unwrap();
+                hit_points.max *= 2;
+                hit_points.current *= 2;
+            }
+            Upgrade {
+                typ: Accuracy,
+                level: Level1,
+            } => {
+                player.traits.reduce_hull_pen = true;
+            }
+            Upgrade {
+                typ: Accuracy,
+                level: Level2,
+            } => {
+                player.traits.double_damage = true;
+            }
+            Upgrade {
+                typ: Endurance,
+                level: Level1,
+            } => {
+                player.traits.half_vacuum_pull = true;
+            }
+            Upgrade {
+                typ: Endurance,
+                level: Level2,
+            } => {
+                let oxygen = self.components.oxygen.get_mut(entity).unwrap();
+                oxygen.max *= 2;
+                oxygen.current *= 2;
+            }
+        }
+        Ok(())
     }
 }

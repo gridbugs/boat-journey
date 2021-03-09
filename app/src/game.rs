@@ -9,8 +9,8 @@ use direction::{CardinalDirection, Direction};
 use general_audio_static::{AudioHandle, AudioPlayer};
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
-    player::RangedWeaponSlot, ActionError, CharacterInfo, ExternalEvent, Game, GameControlFlow,
-    Music,
+    player, player::RangedWeaponSlot, ActionError, CharacterInfo, ExternalEvent, Game,
+    GameControlFlow, Music,
 };
 pub use orbital_decay_game::{Config as GameConfig, Input as GameInput, Omniscient};
 use rand::{Rng, SeedableRng};
@@ -139,6 +139,7 @@ fn loop_music(
 
 pub enum InjectedInput {
     Fire(CardinalDirection),
+    Upgrade(player::Upgrade),
 }
 
 #[derive(Clone, Copy)]
@@ -692,6 +693,7 @@ pub enum GameReturn {
     GameOver,
     Win,
     Examine,
+    Upgrade,
 }
 
 impl EventRoutine for GameEventRoutine {
@@ -723,6 +725,11 @@ impl EventRoutine for GameEventRoutine {
                         let _ = instance
                             .game
                             .handle_input(GameInput::Fire(direction), game_config);
+                    }
+                    InjectedInput::Upgrade(upgrade) => {
+                        let _ = instance
+                            .game
+                            .handle_input(GameInput::Upgrade(upgrade), game_config);
                     }
                 }
             }
@@ -759,6 +766,9 @@ impl EventRoutine for GameEventRoutine {
                                                     }
                                                     GameControlFlow::LevelChange => {
                                                         return Handled::Continue(s);
+                                                    }
+                                                    GameControlFlow::Upgrade => {
+                                                        return Handled::Return(GameReturn::Upgrade)
                                                     }
                                                 }
                                             }
@@ -800,6 +810,9 @@ impl EventRoutine for GameEventRoutine {
                                             GameControlFlow::LevelChange => {
                                                 return Handled::Continue(s);
                                             }
+                                            GameControlFlow::Upgrade => {
+                                                return Handled::Return(GameReturn::Upgrade)
+                                            }
                                         },
                                     }
                                 }
@@ -838,6 +851,9 @@ impl EventRoutine for GameEventRoutine {
                             }
                             GameControlFlow::LevelChange => {
                                 return Handled::Continue(s);
+                            }
+                            GameControlFlow::Upgrade => {
+                                return Handled::Return(GameReturn::Upgrade)
                             }
                         }
                     }

@@ -58,6 +58,14 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                     agents.insert(entity, Agent::new(size));
                     world.spawn_floor(coord);
                 }
+                'u' => {
+                    let entity = world.spawn_upgrade(coord);
+                    world.spawn_floor(coord);
+                }
+                '$' => {
+                    let entity = world.spawn_credit(coord, 2);
+                    world.spawn_floor(coord);
+                }
                 '@' => {
                     world.spawn_floor(coord);
                     let location = Location {
@@ -298,6 +306,9 @@ pub fn space_station<R: Rng>(
             agents.insert(entity, Agent::new(AREA_SIZE));
         }
     }
+    if !spec.demo {
+        spawn_items(&mut empty_coords, &mut world);
+    }
     let player = player.expect("didn't create player");
     Terrain {
         world,
@@ -424,11 +435,28 @@ fn space_station_last_level<R: Rng>(
             .unwrap(),
         fuel_light,
     );
+    spawn_items(&mut empty_coords, &mut world);
     let player = player.expect("didn't create player");
     Terrain {
         world,
         player,
         agents,
+    }
+}
+
+fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World) {
+    for _ in 0..2 {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_credit(coord, 2);
+        }
+    }
+    for _ in 0..4 {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_credit(coord, 1);
+        }
+    }
+    if let Some(coord) = empty_coords.pop() {
+        world.spawn_upgrade(coord);
     }
 }
 

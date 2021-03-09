@@ -27,9 +27,7 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
     EntityData {
         tile: Some(Tile::Player),
         character: Some(()),
-        player: Some(player::Player {
-            melee_weapon: player::Weapon::new_bare_hands(),
-        }),
+        player: Some(player::Player::new()),
         light: Some(Light {
             colour: Rgb24::new_grey(200),
             vision_distance: Circle::new_squared(120),
@@ -518,6 +516,45 @@ impl World {
             .unwrap();
         self.components.tile.insert(entity, Tile::Stairs);
         self.components.stairs.insert(entity, ());
+        entity
+    }
+
+    pub fn spawn_credit(&mut self, coord: Coord, value: u32) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Item),
+                },
+            )
+            .unwrap();
+        let tile = if value == 1 {
+            Tile::Credit1
+        } else if value == 2 {
+            Tile::Credit2
+        } else {
+            panic!()
+        };
+        self.components.tile.insert(entity, tile);
+        self.components.item.insert(entity, Item::Credit(value));
+        entity
+    }
+
+    pub fn spawn_upgrade(&mut self, coord: Coord) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Feature),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Upgrade);
+        self.components.upgrade.insert(entity, ());
         entity
     }
 

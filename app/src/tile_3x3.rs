@@ -63,6 +63,9 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
                 zombie(&entity, view_context, frame);
             }
         }
+        Tile::Credit1 => credit1(view_context, frame),
+        Tile::Credit2 => credit2(view_context, frame),
+        Tile::Upgrade => upgrade(view_context, frame),
     };
     let tile_layers = visibility_cell.tile_layers();
     if let Some(EntityTile { entity, tile }) = tile_layers.floor {
@@ -71,8 +74,11 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
     if let Some(EntityTile { entity, tile }) = tile_layers.feature {
         render_tile(entity, tile, view_context.add_depth(1));
     }
-    if let Some(EntityTile { entity, tile }) = tile_layers.character {
+    if let Some(EntityTile { entity, tile }) = tile_layers.item {
         render_tile(entity, tile, view_context.add_depth(2));
+    }
+    if let Some(EntityTile { entity, tile }) = tile_layers.character {
+        render_tile(entity, tile, view_context.add_depth(3));
     }
 }
 
@@ -114,6 +120,9 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
         Tile::Stairs => stairs(view_context, frame),
         Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => (),
+        Tile::Credit1 => credit1(view_context, frame),
+        Tile::Credit2 => credit2(view_context, frame),
+        Tile::Upgrade => upgrade(view_context, frame),
     };
     let tile_layers = visibility_cell.tile_layers();
     if let Some(EntityTile { entity: _, tile }) = tile_layers.floor {
@@ -122,8 +131,11 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
     if let Some(EntityTile { entity: _, tile }) = tile_layers.feature {
         render_tile(tile, view_context.add_depth(1));
     }
-    if let Some(EntityTile { entity: _, tile }) = tile_layers.character {
+    if let Some(EntityTile { entity: _, tile }) = tile_layers.item {
         render_tile(tile, view_context.add_depth(2));
+    }
+    if let Some(EntityTile { entity: _, tile }) = tile_layers.character {
+        render_tile(tile, view_context.add_depth(3));
     }
 }
 
@@ -177,6 +189,9 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::Stairs => stairs(view_context, frame),
         Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => zombie(entity, view_context, frame),
+        Tile::Credit1 => credit1(view_context, frame),
+        Tile::Credit2 => credit2(view_context, frame),
+        Tile::Upgrade => upgrade(view_context, frame),
     }
 }
 
@@ -974,4 +989,38 @@ pub fn bullet<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut 
             .with_background(colours::BULLET),
         view_context,
     );
+}
+
+pub fn credit1<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    let mut view = StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::CREDIT_FOREGROUND)
+            .with_bold(true),
+    );
+    view.view("$1 ", view_context, frame);
+    view.view("CRE", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
+    view.view("DIT", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
+}
+
+pub fn credit2<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    let mut view = StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::CREDIT_FOREGROUND)
+            .with_bold(true),
+    );
+    view.view("$2.", view_context, frame);
+    view.view("CRE", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
+    view.view("DIT", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
+}
+
+pub fn upgrade<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    let mut view = StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::UPGRADE_FOREGROUND)
+            .with_background(colours::UPGRADE_BACKGROUND)
+            .with_bold(true),
+    );
+    view.view("UPG", view_context, frame);
+    view.view("RAD", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
+    view.view("E++", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
 }

@@ -21,7 +21,7 @@ use maplit::hashmap;
 use menu::{
     fade_spec, FadeMenuInstanceView, MenuEntryStringFn, MenuEntryToRender, MenuInstanceChoose,
 };
-use orbital_decay_game::player::RangedWeaponSlot;
+use orbital_decay_game::player::{self, RangedWeaponSlot};
 use render::{ColModifyDefaultForeground, ColModifyMap, Coord, Rgb24, Style};
 use std::time::Duration;
 
@@ -121,6 +121,7 @@ struct AppData {
     game: GameData,
     main_menu: menu::MenuInstanceChooseOrEscape<MainMenuEntry>,
     main_menu_type: MainMenuType,
+    upgrade_menu: Option<menu::MenuInstanceChooseOrEscape<player::Upgrade>>,
     options_menu: menu::MenuInstanceChooseOrEscape<OrBack<OptionsMenuEntry>>,
     last_mouse_coord: Coord,
     env: Box<dyn Env>,
@@ -132,6 +133,7 @@ struct AppView {
     game: GameView,
     main_menu: FadeMenuInstanceView,
     options_menu: FadeMenuInstanceView,
+    upgrade_menu: FadeMenuInstanceView,
 }
 
 impl AppData {
@@ -170,6 +172,7 @@ impl AppData {
             game: game_data,
             main_menu: MainMenuEntry::init(frontend).into_choose_or_escape(),
             main_menu_type: MainMenuType::Init,
+            upgrade_menu: None,
             last_mouse_coord: Coord::new(0, 0),
             env,
             menu_background_data,
@@ -213,6 +216,7 @@ impl AppView {
             game: GameView::new(),
             main_menu: FadeMenuInstanceView::new(spec.clone()),
             options_menu: FadeMenuInstanceView::new(spec.clone()),
+            upgrade_menu: FadeMenuInstanceView::new(spec.clone()),
         }
     }
 }
@@ -292,6 +296,29 @@ where
             .view(app_data, context.add_offset(Coord::new(0, 4)), frame);
     }
 }
+
+struct SelectUpgradeMenu;
+impl ViewSelector for SelectUpgradeMenu {
+    type ViewInput = AppView;
+    type ViewOutput = FadeMenuInstanceView;
+    fn view<'a>(&self, input: &'a Self::ViewInput) -> &'a Self::ViewOutput {
+        &input.upgrade_menu
+    }
+    fn view_mut<'a>(&self, input: &'a mut Self::ViewInput) -> &'a mut Self::ViewOutput {
+        &mut input.upgrade_menu
+    }
+}
+impl DataSelector for SelectUpgradeMenu {
+    type DataInput = AppData;
+    type DataOutput = menu::MenuInstanceChooseOrEscape<player::Upgrade>;
+    fn data<'a>(&self, input: &'a Self::DataInput) -> &'a Self::DataOutput {
+        input.upgrade_menu.as_ref().unwrap()
+    }
+    fn data_mut<'a>(&self, input: &'a mut Self::DataInput) -> &'a mut Self::DataOutput {
+        input.upgrade_menu.as_mut().unwrap()
+    }
+}
+impl Selector for SelectUpgradeMenu {}
 
 struct TextOverlay {
     height: u32,
@@ -438,6 +465,124 @@ impl Decorate for DecorateMainMenu {
             InitMenu(event_routine_view).view(
                 &data,
                 context.add_offset(Coord { x: 14, y: 24 }).add_depth(100),
+                frame,
+            );
+        }
+    }
+}
+
+struct DecorateUpgradeMenu;
+
+struct UpgradeMenuWindow<'a, 'b, 'c, E: EventRoutine>(&'a mut EventRoutineView<'b, 'c, E>);
+
+impl<'a, 'b, 'c, E: EventRoutine<Data = AppData>> View<&'a AppData>
+    for UpgradeMenuWindow<'a, 'b, 'c, E>
+{
+    fn view<F: Frame, C: ColModify>(
+        &mut self,
+        data: &'a AppData,
+        context: ViewContext<C>,
+        frame: &mut F,
+    ) {
+        let menu_instance = data.upgrade_menu.as_ref().unwrap().menu_instance();
+        let balance = data.game.instance().unwrap().game().player().credit;
+        text::StringViewSingleLine::new(Style::new().with_foreground(Rgb24::new_grey(255))).view(
+            "Buy an Upgrade (escape cancels)",
+            context,
+            frame,
+        );
+        text::StringViewSingleLine::new(Style::new().with_foreground(Rgb24::new_grey(255))).view(
+            format!("Your balance: ${}", balance),
+            context.add_offset(Coord { x: 0, y: 2 }),
+            frame,
+        );
+        self.0
+            .view(data, context.add_offset(Coord { x: 0, y: 4 }), frame);
+        let menu_length = menu_instance.len();
+        use player::{Upgrade, UpgradeLevel::*, UpgradeType::*};
+        let description = match menu_instance.selected() {
+            Upgrade {
+                typ: Toughness,
+                level: Level1,
+            } => "Toughness 1: Strong Back\nGain a third ranged weapon slot.",
+            Upgrade {
+                typ: Toughness,
+                level: Level2,
+            } => "Toughness 2: Hardy\nDouble your maximum health.",
+            Upgrade {
+                typ: Accuracy,
+                level: Level1,
+            } => "Accuracy 1: Careful\nReduce hull pen chance by half.",
+            Upgrade {
+                typ: Accuracy,
+                level: Level2,
+            } => "Accuracy 2: Kill Shot\nDeal double damage to enemies.",
+            Upgrade {
+                typ: Endurance,
+                level: Level1,
+            } => "Endurance 1: Sure-Footed\nVacuum pulls you one space each turn instead of two.",
+            Upgrade {
+                typ: Endurance,
+                level: Level2,
+            } => "Endurance 2: Big Lungs\nDouble your maximum oxygen.",
+        };
+        text::TextView::new(
+            Style::new().with_foreground(Rgb24::new_grey(255)),
+            text::wrap::Word::new(),
+        )
+        .view(
+            vec![description],
+            context.add_offset(Coord {
+                x: 0,
+                y: 5 + menu_length as i32,
+            }),
+            frame,
+        );
+    }
+}
+
+impl Decorate for DecorateUpgradeMenu {
+    type View = AppView;
+    type Data = AppData;
+    fn view<E, F, C>(
+        &self,
+        data: &Self::Data,
+        mut event_routine_view: EventRoutineView<E>,
+        context: ViewContext<C>,
+        frame: &mut F,
+    ) where
+        E: EventRoutine<Data = Self::Data, View = Self::View>,
+        F: Frame,
+        C: ColModify,
+    {
+        if let Some(instance) = data.game.instance() {
+            AlignView {
+                alignment: Alignment::centre(),
+                view: FillBackgroundView {
+                    rgb24: colours::SPACE_BACKGROUND,
+                    view: BorderView {
+                        style: &BorderStyle::new(),
+                        view: BoundView {
+                            size: Size::new(33, 12),
+                            view: UpgradeMenuWindow(&mut event_routine_view),
+                        },
+                    },
+                },
+            }
+            .view(data, context.add_depth(depth::GAME_MAX + 1), frame);
+            event_routine_view.view.game.view(
+                GameToRender {
+                    game: instance.game(),
+                    status: GameStatus::Playing,
+                    mouse_coord: None,
+                    mode: Mode::Normal,
+                    action_error: None,
+                },
+                context.compose_col_modify(
+                    ColModifyDefaultForeground(Rgb24::new_grey(255)).compose(ColModifyMap(
+                        |col: Rgb24| col.saturating_scalar_mul_div(1, 3),
+                    )),
+                ),
                 frame,
             );
         }
@@ -731,6 +876,51 @@ pub struct AutoPlay;
 #[derive(Clone, Copy)]
 pub struct FirstRun;
 
+fn upgrade_menu() -> impl EventRoutine<
+    Return = Result<player::Upgrade, menu::Escape>,
+    Data = AppData,
+    View = AppView,
+    Event = CommonEvent,
+> {
+    make_either!(Ei = A | B);
+    SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
+        let upgrades = data.game.instance().unwrap().game().available_upgrades();
+        if upgrades.is_empty() {
+            Ei::A(Value::new(Err(menu::Escape)))
+        } else {
+            data.upgrade_menu = Some(
+                menu::MenuInstanceBuilder {
+                    items: upgrades,
+                    selected_index: 0,
+                    hotkeys: None,
+                }
+                .build()
+                .unwrap()
+                .into_choose_or_escape(),
+            );
+            let menu = menu::FadeMenuInstanceRoutine::new(MenuEntryStringFn::new(
+                |entry: MenuEntryToRender<player::Upgrade>, buf: &mut String| {
+                    use std::fmt::Write;
+                    let name = match entry.entry.typ {
+                        player::UpgradeType::Toughness => "Toughness",
+                        player::UpgradeType::Accuracy => "Accuracy",
+                        player::UpgradeType::Endurance => "Endurance",
+                    };
+                    let level = match entry.entry.level {
+                        player::UpgradeLevel::Level1 => "1",
+                        player::UpgradeLevel::Level2 => "2",
+                    };
+                    let price = entry.entry.level.cost();
+                    write!(buf, "{} {} (${})", name, level, price).unwrap();
+                },
+            ))
+            .select(SelectUpgradeMenu)
+            .decorated(DecorateUpgradeMenu);
+            Ei::B(menu)
+        }
+    })
+}
+
 fn main_menu(
     auto_play: Option<AutoPlay>,
     first_run: Option<FirstRun>,
@@ -942,6 +1132,14 @@ fn win() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event
     })
 }
 
+fn cannot_afford() -> TextOverlay {
+    let normal = Style::new()
+        .with_foreground(colours::STRIPE)
+        .with_bold(false);
+    let t = |text: &str, style| text::RichTextPartOwned::new(text.to_string(), style);
+    TextOverlay::new(1, vec![t("You can't afford that upgrade!", normal)])
+}
+
 fn story() -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
@@ -1038,7 +1236,7 @@ enum GameLoopBreak {
 
 fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent>
 {
-    make_either!(Ei = A | B | C);
+    make_either!(Ei = A | B | C | D);
     SideEffect::new_with_view(|data: &mut AppData, _: &_| data.game.pre_game_loop())
         .then(|| {
             Ei::A(game())
@@ -1054,6 +1252,29 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                             make_either!(Ei = A | B);
                             if let Some(direction) = maybe_direction {
                                 Ei::A(game_injecting_inputs(vec![InjectedInput::Fire(direction)]))
+                            } else {
+                                Ei::B(game())
+                            }
+                        })))
+                    }
+                    GameReturn::Upgrade => {
+                        Handled::Continue(Ei::D(upgrade_menu().and_then(|upgrade| {
+                            make_either!(Ei = A | B);
+                            if let Ok(upgrade) = upgrade {
+                                Ei::A(SideEffectThen::new_with_view(
+                                    move |data: &mut AppData, _: &_| {
+                                        make_either!(Ei = A | B);
+                                        if upgrade.level.cost()
+                                            > data.game.instance().unwrap().game().player().credit
+                                        {
+                                            Ei::A(cannot_afford().then(|| game()))
+                                        } else {
+                                            Ei::B(game_injecting_inputs(vec![
+                                                InjectedInput::Upgrade(upgrade),
+                                            ]))
+                                        }
+                                    },
+                                ))
                             } else {
                                 Ei::B(game())
                             }

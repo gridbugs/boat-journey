@@ -37,6 +37,7 @@ impl Controls {
             KeyboardInput::Char('x') => AppInput::Examine,
             KeyboardInput::Char('1') => AppInput::Aim(RangedWeaponSlot::Slot1),
             KeyboardInput::Char('2') => AppInput::Aim(RangedWeaponSlot::Slot2),
+            KeyboardInput::Char('3') => AppInput::Aim(RangedWeaponSlot::Slot3),
             KeyboardInput::Char(' ') => AppInput::Wait,
         ];
         let gamepad = hashmap![
