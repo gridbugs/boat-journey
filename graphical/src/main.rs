@@ -121,7 +121,7 @@ fn main() {
             normal: include_bytes!("./fonts/PxPlus_IBM_CGAthin-with-quadrant-blocks.ttf").to_vec(),
             bold: include_bytes!("./fonts/PxPlus_IBM_CGA-with-quadrant-blocks.ttf").to_vec(),
         },
-        title: "orbital_decay".to_string(),
+        title: "Orbital Decay".to_string(),
         window_dimensions: Dimensions {
             width: 960.,
             height: 720.,
