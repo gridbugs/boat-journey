@@ -18,7 +18,7 @@ pub fn run() -> Result<(), JsValue> {
     let app = app(
         GameConfig {
             omniscient: None,
-            demo: true,
+            demo: false,
         },
         Frontend::Web,
         Controls::default(),
