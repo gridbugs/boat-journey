@@ -467,6 +467,25 @@ impl Decorate for DecorateMainMenu {
                 context.add_offset(Coord { x: 14, y: 24 }).add_depth(100),
                 frame,
             );
+            let mut credit_view = text::StringViewSingleLine::new(
+                Style::new()
+                    .with_foreground(colours::WALL_FRONT)
+                    .with_bold(false),
+            );
+            let credit_y = 57;
+            credit_view.view(
+                "Programming and art by Stephen Sherratt",
+                context.add_offset(Coord { x: 1, y: credit_y }),
+                frame,
+            );
+            credit_view.view(
+                "Music and sound effects by Lily Chen",
+                context.add_offset(Coord {
+                    x: 1,
+                    y: credit_y + 1,
+                }),
+                frame,
+            );
         }
     }
 }
