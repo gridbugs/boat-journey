@@ -11,6 +11,7 @@ pub enum AppInput {
     Aim(RangedWeaponSlot),
     Wait,
     Examine,
+    Get,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -38,6 +39,8 @@ impl Controls {
             KeyboardInput::Char('1') => AppInput::Aim(RangedWeaponSlot::Slot1),
             KeyboardInput::Char('2') => AppInput::Aim(RangedWeaponSlot::Slot2),
             KeyboardInput::Char('3') => AppInput::Aim(RangedWeaponSlot::Slot3),
+            KeyboardInput::Char('3') => AppInput::Aim(RangedWeaponSlot::Slot3),
+            KeyboardInput::Char('g') => AppInput::Get,
             KeyboardInput::Char(' ') => AppInput::Wait,
         ];
         let gamepad = hashmap![

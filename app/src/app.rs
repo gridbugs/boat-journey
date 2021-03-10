@@ -4,8 +4,8 @@ use crate::controls::Controls;
 use crate::depth;
 use crate::frontend::Frontend;
 use crate::game::{
-    AimEventRoutine, ExamineEventRoutine, GameData, GameEventRoutine, GameOverEventRoutine,
-    GameReturn, GameStatus, InjectedInput, ScreenCoord,
+    AimEventRoutine, ChooseWeaponSlotEventRoutine, ExamineEventRoutine, GameData, GameEventRoutine,
+    GameOverEventRoutine, GameReturn, GameStatus, InjectedInput, ScreenCoord,
 };
 pub use crate::game::{GameConfig, Omniscient, RngSeed};
 use crate::menu_background::MenuBackgroundData;
@@ -1034,6 +1034,14 @@ fn game_over() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
         .decorated(DecorateGame)
 }
 
+fn choose_weapon_slot(
+) -> impl EventRoutine<Return = Option<usize>, Data = AppData, View = AppView, Event = CommonEvent>
+{
+    ChooseWeaponSlotEventRoutine
+        .select(SelectGame)
+        .decorated(DecorateGame)
+}
+
 fn win_text() -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
@@ -1183,6 +1191,7 @@ fn keybindings() -> TextOverlay {
             text::RichTextPartOwned::new("Cancel Aim: escape\n\n".to_string(), normal),
             text::RichTextPartOwned::new("Wait: space\n\n".to_string(), normal),
             text::RichTextPartOwned::new("Examine: x\n\n".to_string(), normal),
+            text::RichTextPartOwned::new("Get Weapon: g\n\n".to_string(), normal),
             text::RichTextPartOwned::new("Fire Ranged Weapon: 1-3\n\n".to_string(), normal),
             text::RichTextPartOwned::new("\n\n\n\n\nPress any key...".to_string(), faint),
         ],
@@ -1237,7 +1246,7 @@ enum GameLoopBreak {
 
 fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent>
 {
-    make_either!(Ei = A | B | C | D);
+    make_either!(Ei = A | B | C | D | E);
     SideEffect::new_with_view(|data: &mut AppData, _: &_| data.game.pre_game_loop())
         .then(|| {
             Ei::A(game())
@@ -1280,6 +1289,9 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                                 Ei::B(game())
                             }
                         })))
+                    }
+                    GameReturn::Equip => {
+                        Handled::Continue(Ei::E(choose_weapon_slot().and_then(|_| game())))
                     }
                 })
                 .and_then(|game_loop_break| {

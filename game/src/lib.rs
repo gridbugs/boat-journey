@@ -103,7 +103,7 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        let debug = true;
+        let debug = false;
         let Terrain {
             mut world,
             agents,

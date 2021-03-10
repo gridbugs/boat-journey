@@ -431,7 +431,9 @@ impl EventRoutine for ExamineEventRoutine {
                                         Examine::KeyboardDirection(direction)
                                     }
                                     AppInput::Examine => Examine::Cancel,
-                                    AppInput::Wait | AppInput::Aim(_) => Examine::Ignore,
+                                    AppInput::Wait | AppInput::Aim(_) | AppInput::Get => {
+                                        Examine::Ignore
+                                    }
                                 }
                             } else {
                                 match keyboard_input {
@@ -583,7 +585,9 @@ impl EventRoutine for AimEventRoutine {
                             if let Some(app_input) = controls.get(keyboard_input) {
                                 match app_input {
                                     AppInput::Move(direction) => Aim::KeyboardFinalise(direction),
-                                    AppInput::Wait | AppInput::Examine => Aim::Ignore,
+                                    AppInput::Wait | AppInput::Examine | AppInput::Get => {
+                                        Aim::Ignore
+                                    }
                                     AppInput::Aim(slot) => {
                                         s.slot = slot;
                                         Aim::Ignore
@@ -668,6 +672,51 @@ impl EventRoutine for AimEventRoutine {
     }
 }
 
+pub struct ChooseWeaponSlotEventRoutine;
+impl EventRoutine for ChooseWeaponSlotEventRoutine {
+    type Return = Option<usize>;
+    type Data = GameData;
+    type View = GameView;
+    type Event = CommonEvent;
+
+    fn handle<EP>(
+        self,
+        data: &mut Self::Data,
+        view: &Self::View,
+        event_or_peek: EP,
+    ) -> Handled<Self::Return, Self>
+    where
+        EP: EventOrPeek<Event = Self::Event>,
+    {
+        Handled::Continue(self)
+    }
+
+    fn view<F, C>(
+        &self,
+        data: &Self::Data,
+        view: &mut Self::View,
+        context: ViewContext<C>,
+        frame: &mut F,
+    ) where
+        F: Frame,
+        C: ColModify,
+    {
+        if let Some(instance) = data.instance.as_ref() {
+            view.view(
+                GameToRender {
+                    game: &instance.game,
+                    status: GameStatus::Playing,
+                    mouse_coord: None,
+                    mode: Mode::Normal,
+                    action_error: None,
+                },
+                context,
+                frame,
+            );
+        }
+    }
+}
+
 pub struct GameEventRoutine {
     injected_inputs: Vec<InjectedInput>,
     mouse_coord: Option<Coord>,
@@ -694,6 +743,7 @@ pub enum GameReturn {
     Win,
     Examine,
     Upgrade,
+    Equip,
 }
 
 impl EventRoutine for GameEventRoutine {
@@ -795,6 +845,9 @@ impl EventRoutine for GameEventRoutine {
                                         }
                                         AppInput::Aim(slot) => {
                                             return Handled::Return(GameReturn::Aim(slot))
+                                        }
+                                        AppInput::Get => {
+                                            return Handled::Return(GameReturn::Equip);
                                         }
                                     };
                                     match game_control_flow {
