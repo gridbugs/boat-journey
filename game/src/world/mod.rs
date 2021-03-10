@@ -15,7 +15,8 @@ pub mod player;
 
 mod data;
 pub use data::{
-    Armour, Disposition, EntityData, HitPoints, Item, Layer, Location, NpcAction, Oxygen, Tile,
+    Armour, Disposition, EntityData, HitPoints, Item, Layer, Location, MeleeWeapon, NpcAction,
+    Oxygen, RangedWeapon, Tile,
 };
 use data::{Components, Npc};
 

@@ -2,7 +2,7 @@ use crate::behaviour::Agent;
 use crate::visibility::Light;
 use crate::{
     world::EntityData,
-    world::{Layer, Location},
+    world::{Layer, Location, MeleeWeapon, RangedWeapon},
     Tile, World,
 };
 use entity_table::{ComponentTable, Entity};
@@ -47,7 +47,11 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                 }
                 '+' => {
                     world.spawn_floor(coord);
-                    world.spawn_door(coord, Axis::X);
+                    world.spawn_wall(coord);
+                }
+                '%' => {
+                    world.spawn_floor(coord);
+                    world.spawn_wall(coord);
                 }
                 '>' => {
                     world.spawn_stairs(coord);
@@ -66,6 +70,30 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                     let entity = world.spawn_credit(coord, 2);
                     world.spawn_floor(coord);
                 }
+                '0'..='5' => {
+                    use RangedWeapon::*;
+                    let weapon = match ch {
+                        '0' => Shotgun,
+                        '1' => Railgun,
+                        '2' => Rifle,
+                        '3' => GausCannon,
+                        '4' => Oxidiser,
+                        '5' => LifeStealer,
+                        _ => panic!(),
+                    };
+                    let entity = world.spawn_ranged_weapon(coord, weapon);
+                    world.spawn_floor(coord);
+                }
+                '6'..='6' => {
+                    use MeleeWeapon::*;
+                    let weapon = match ch {
+                        '6' => Chainsaw,
+                        _ => panic!(),
+                    };
+                    let entity = world.spawn_melee_weapon(coord, weapon);
+                    world.spawn_floor(coord);
+                }
+
                 '@' => {
                     world.spawn_floor(coord);
                     let location = Location {

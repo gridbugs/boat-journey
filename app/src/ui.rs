@@ -6,7 +6,7 @@ use chargrid::text::{
 };
 use orbital_decay_game::{
     player::{self, Player, Weapon, WeaponAbility, WeaponName},
-    CharacterInfo, HitPoints,
+    CharacterInfo, HitPoints, MeleeWeapon, RangedWeapon,
 };
 
 pub struct Ui<'a> {
@@ -30,7 +30,7 @@ impl UiView {
                     )
                     .as_str(),
                     Style::new()
-                        .with_foreground(Rgb24::new(255, 0, 0))
+                        .with_foreground(crate::colours::HEALTH)
                         .with_bold(true),
                 ),
                 RichTextPart::new("\n", plain),
@@ -42,7 +42,7 @@ impl UiView {
                     )
                     .as_str(),
                     Style::new()
-                        .with_foreground(Rgb24::new(127, 127, 255))
+                        .with_foreground(crate::colours::OXYGEN)
                         .with_bold(true),
                 ),
                 RichTextPart::new("\n", plain),
@@ -94,11 +94,17 @@ impl UiView {
 }
 
 fn weapon_name_text(weapon_name: WeaponName) -> RichTextPartOwned {
-    let string = match weapon_name {
-        WeaponName::BareHands => "Bare Hands".to_string(),
-    };
-    let style = Style::new().with_foreground(Rgb24::new_grey(255));
-    RichTextPartOwned::new(string, style)
+    let t = |s: &str, c| RichTextPartOwned::new(s.to_string(), Style::new().with_foreground(c));
+    match weapon_name {
+        WeaponName::BareHands => t("Bare Hands", Rgb24::new_grey(255)),
+        WeaponName::MeleeWeapon(MeleeWeapon::Chainsaw) => t("Chainsaw", colours::CHAINSAW),
+        WeaponName::RangedWeapon(RangedWeapon::Shotgun) => t("Shotgun", colours::WOOD),
+        WeaponName::RangedWeapon(RangedWeapon::Railgun) => t("Railgun", colours::PLASMA),
+        WeaponName::RangedWeapon(RangedWeapon::Rifle) => t("Rifle", colours::LASER),
+        WeaponName::RangedWeapon(RangedWeapon::GausCannon) => t("Gaus Cannon", colours::GAUS),
+        WeaponName::RangedWeapon(RangedWeapon::Oxidiser) => t("Oxidiser", colours::OXYGEN),
+        WeaponName::RangedWeapon(RangedWeapon::LifeStealer) => t("Life Stealer", colours::HEALTH),
+    }
 }
 
 fn weapon_ability_text(weapon_ability: WeaponAbility) -> RichTextPartOwned {
@@ -106,6 +112,14 @@ fn weapon_ability_text(weapon_ability: WeaponAbility) -> RichTextPartOwned {
         WeaponAbility::KnockBack => RichTextPartOwned::new(
             "Knocks Back".to_string(),
             Style::new().with_foreground(Rgb24::new(0xFF, 0x44, 0x00)),
+        ),
+        WeaponAbility::LifeSteal => RichTextPartOwned::new(
+            "Restores Health".to_string(),
+            Style::new().with_foreground(colours::HEALTH),
+        ),
+        WeaponAbility::Oxidise => RichTextPartOwned::new(
+            "Restores Oxygen".to_string(),
+            Style::new().with_foreground(colours::OXYGEN),
         ),
     }
 }
@@ -160,9 +174,18 @@ fn view_weapon<F: Frame, C: ColModify>(
         context.add_offset(Coord::new(0, 1)),
         frame,
     );
+    if let Some(ammo) = weapon.ammo.as_ref() {
+        plain_view.view(
+            format!("AMMO: {}/{}\n", ammo.current, ammo.max).as_str(),
+            context.add_offset(Coord::new(0, 2)),
+            frame,
+        );
+    } else {
+        plain_view.view("AMMO: -", context.add_offset(Coord::new(0, 2)), frame);
+    }
     plain_view.view(
         format!("PEN(♦): {}\n", weapon.pen).as_str(),
-        context.add_offset(Coord::new(0, 2)),
+        context.add_offset(Coord::new(0, 3)),
         frame,
     );
     let extra = if player.traits.double_damage {
@@ -172,7 +195,7 @@ fn view_weapon<F: Frame, C: ColModify>(
     };
     plain_view.view(
         format!("DMG(♥): {}{}\n", weapon.dmg, extra).as_str(),
-        context.add_offset(Coord::new(0, 3)),
+        context.add_offset(Coord::new(0, 4)),
         frame,
     );
     let extra = if player.traits.reduce_hull_pen {
@@ -182,13 +205,13 @@ fn view_weapon<F: Frame, C: ColModify>(
     };
     plain_view.view(
         format!("HULL PEN: {}%{}\n", weapon.hull_pen_percent, extra).as_str(),
-        context.add_offset(Coord::new(0, 4)),
+        context.add_offset(Coord::new(0, 5)),
         frame,
     );
     for &ability in weapon.abilities.iter() {
         rich_view.view(
             weapon_ability_text(ability).as_rich_text_part(),
-            context.add_offset(Coord::new(0, 5)),
+            context.add_offset(Coord::new(0, 6)),
             frame,
         );
     }

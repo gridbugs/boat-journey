@@ -142,6 +142,7 @@ impl World {
                     self.character_push_in_direction(victim, direction.direction());
                     self.character_push_in_direction(victim, direction.direction());
                 }
+                _ => (),
             }
         }
         self.wait(attacker, rng);

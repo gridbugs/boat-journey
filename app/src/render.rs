@@ -2,7 +2,7 @@ use crate::{blink::Blink, colours, depth, game::GameStatus, tile_3x3, ui};
 use chargrid::render::{
     blend_mode, ColModify, Coord, Frame, Rgb24, Size, Style, View, ViewCell, ViewContext,
 };
-use chargrid::text::{wrap, StringView, StringViewSingleLine};
+use chargrid::text::{wrap, StringView, StringViewSingleLine, TextView};
 use direction::CardinalDirection;
 use line_2d::{Config as LineConfig, LineSegment};
 use orbital_decay_game::{
@@ -162,18 +162,31 @@ impl GameView {
                     }
                 }
                 if let Some((tile, verb)) = entity_under_cursor {
-                    if let Some(description) = tile_str(tile) {
-                        let verb_str = match verb {
-                            MessageVerb::Remember => "remember seeing",
-                            MessageVerb::See => "see",
-                        };
-                        let mut buf = String::new();
-                        use std::fmt::Write;
-                        write!(&mut buf, "You {} {} here.", verb_str, description).unwrap();
-                        StringViewSingleLine::new(
-                            Style::new().with_foreground(Rgb24::new_grey(255)),
-                        )
-                        .view(&buf, context, frame);
+                    match tile_str(tile) {
+                        Some(TileLabel::Name(name)) => {
+                            let verb_str = match verb {
+                                MessageVerb::Remember => "remember seeing",
+                                MessageVerb::See => "see",
+                            };
+                            let mut buf = String::new();
+                            use std::fmt::Write;
+                            write!(&mut buf, "You {} {} here.", verb_str, name).unwrap();
+                            StringViewSingleLine::new(
+                                Style::new().with_foreground(Rgb24::new_grey(255)),
+                            )
+                            .view(&buf, context, frame);
+                        }
+                        Some(TileLabel::Literal(literal)) => {
+                            let mut buf = String::new();
+                            use std::fmt::Write;
+                            write!(&mut buf, "{}", literal).unwrap();
+                            TextView::new(
+                                Style::new().with_foreground(Rgb24::new_grey(255)),
+                                wrap::Word::new(),
+                            )
+                            .view(vec![buf], context, frame);
+                        }
+                        None => (),
                     }
                 } else {
                     let current_level = game_to_render.game.current_level();
@@ -320,7 +333,7 @@ impl GameView {
                 }
                 StringViewSingleLine::new(Style::new().with_foreground(Rgb24::new_grey(127))).view(
                     "Examining (escape to return to game)",
-                    context.add_offset(Coord::new(0, 1)),
+                    context.add_offset(Coord::new(0, 2)),
                     frame,
                 );
             }
@@ -581,23 +594,44 @@ impl ColModify for ColModifyAdrift {
     }
 }
 
-fn tile_str(tile: Tile) -> Option<&'static str> {
-    match tile {
-        Tile::Player => Some("yourself"),
-        Tile::DoorClosed(_) | Tile::DoorOpen(_) => Some("a door"),
+enum TileLabel {
+    Literal(&'static str),
+    Name(&'static str),
+}
+
+fn tile_str(tile: Tile) -> Option<TileLabel> {
+    let label = match tile {
+        Tile::Player => TileLabel::Name("yourself"),
+        Tile::DoorClosed(_) | Tile::DoorOpen(_) => TileLabel::Name("a door"),
         Tile::Wall | Tile::WallText0 | Tile::WallText1 | Tile::WallText2 | Tile::WallText3 => {
-            Some("a wall")
+            TileLabel::Name("a wall")
         }
-        Tile::Floor | Tile::FuelText0 | Tile::FuelText1 => Some("the floor"),
-        Tile::FuelHatch => Some("the fuel bay"),
-        Tile::Window(_) => Some("a window"),
-        Tile::Stairs => Some("a staircase leading further down"),
-        Tile::Zombie => Some("a zombie"),
-        Tile::Bullet => None,
-        Tile::Credit1 => Some("a $1 credit chip"),
-        Tile::Credit2 => Some("a $2 credit chip"),
-        Tile::Upgrade => Some("an upgrade store"),
-    }
+        Tile::Floor | Tile::FuelText0 | Tile::FuelText1 => TileLabel::Name("the floor"),
+        Tile::FuelHatch => TileLabel::Name("the fuel bay"),
+        Tile::Window(_) => TileLabel::Name("a window"),
+        Tile::Stairs => TileLabel::Name("a staircase leading further down"),
+        Tile::Zombie => TileLabel::Name("a zombie"),
+        Tile::Bullet => return None,
+        Tile::Credit1 => TileLabel::Name("a $1 credit chip"),
+        Tile::Credit2 => TileLabel::Name("a $2 credit chip"),
+        Tile::Upgrade => TileLabel::Name("an upgrade store"),
+        Tile::Chainsaw => {
+            TileLabel::Literal("A chainsaw - melee weapon with high DMG and limited uses.")
+        }
+        Tile::Shotgun => TileLabel::Literal("A shotgun - high DMG, low PEN."),
+        Tile::Railgun => TileLabel::Literal("A railgun - it can shoot through almost anything!"),
+        Tile::Rifle => TileLabel::Literal("A rifle - general all-rounder. Boring."),
+        Tile::GausCannon => TileLabel::Literal(
+            "A gaus cannon - cooks organic matter leaving the hull intact. Ammo is scarce!",
+        ),
+        Tile::Oxidiser => {
+            TileLabel::Literal("An oxidiser - converts organic matter into oxygen.")
+        }
+        Tile::LifeStealer => {
+            TileLabel::Literal("A life stealer - converts the recently deceased into health like some kind of creepy vampire. And you thought the zombies were gross!")
+        }
+    };
+    Some(label)
 }
 
 fn action_error_str(action_error: ActionError) -> &'static str {

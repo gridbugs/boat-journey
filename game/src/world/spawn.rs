@@ -3,7 +3,8 @@ use crate::{
     world::{
         data::{
             Armour, CollidesWith, Disposition, DoorState, EntityData, HitPoints, Item, Layer,
-            Location, MoveHalfSpeed, Npc, OnCollision, Oxygen, ProjectileDamage, Tile,
+            Location, MeleeWeapon, MoveHalfSpeed, Npc, OnCollision, Oxygen, ProjectileDamage,
+            RangedWeapon, Tile,
         },
         explosion, player,
         realtime_periodic::{
@@ -582,6 +583,42 @@ impl World {
             .insert(entity, HitPoints::new_full(4));
         self.components.armour.insert(entity, Armour::new(2));
         self.components.damage.insert(entity, 1);
+        entity
+    }
+
+    pub fn spawn_ranged_weapon(&mut self, coord: Coord, ranged_weapon: RangedWeapon) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Item),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, ranged_weapon.tile());
+        self.components
+            .item
+            .insert(entity, Item::RangedWeapon(ranged_weapon));
+        entity
+    }
+
+    pub fn spawn_melee_weapon(&mut self, coord: Coord, melee_weapon: MeleeWeapon) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Item),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, melee_weapon.tile());
+        self.components
+            .item
+            .insert(entity, Item::MeleeWeapon(melee_weapon));
         entity
     }
 }

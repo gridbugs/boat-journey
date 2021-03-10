@@ -67,11 +67,58 @@ pub enum Tile {
     Credit1,
     Credit2,
     Upgrade,
+    Chainsaw,
+    Shotgun,
+    Railgun,
+    Rifle,
+    GausCannon,
+    Oxidiser,
+    LifeStealer,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RangedWeapon {
+    Shotgun,
+    Railgun,
+    Rifle,
+    GausCannon,
+    Oxidiser,
+    LifeStealer,
+}
+
+impl RangedWeapon {
+    pub fn tile(self) -> Tile {
+        use RangedWeapon::*;
+        match self {
+            Shotgun => Tile::Shotgun,
+            Railgun => Tile::Railgun,
+            Rifle => Tile::Rifle,
+            GausCannon => Tile::GausCannon,
+            Oxidiser => Tile::Oxidiser,
+            LifeStealer => Tile::LifeStealer,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MeleeWeapon {
+    Chainsaw,
+}
+
+impl MeleeWeapon {
+    pub fn tile(self) -> Tile {
+        use MeleeWeapon::*;
+        match self {
+            Chainsaw => Tile::Chainsaw,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Item {
     Credit(u32),
+    RangedWeapon(RangedWeapon),
+    MeleeWeapon(MeleeWeapon),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

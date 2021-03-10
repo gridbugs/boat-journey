@@ -19,8 +19,8 @@ use terrain::{SpaceStationSpec, Terrain};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
-    player, ActionError, CharacterInfo, EntityData, HitPoints, Item, Layer, NpcAction, PlayerDied,
-    Tile, ToRenderEntity, ToRenderEntityRealtime,
+    player, ActionError, CharacterInfo, EntityData, HitPoints, Item, Layer, MeleeWeapon, NpcAction,
+    PlayerDied, RangedWeapon, Tile, ToRenderEntity, ToRenderEntityRealtime,
 };
 
 pub const MAP_SIZE: Size = Size::new_u16(20, 14);
@@ -103,7 +103,7 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        let debug = false;
+        let debug = true;
         let Terrain {
             mut world,
             agents,
@@ -413,6 +413,8 @@ impl Game {
                             }
                             self.world.components.to_remove.insert(item_entity, ());
                         }
+                        Item::RangedWeapon(ranged_weapon) => {}
+                        Item::MeleeWeapon(melee_weapon) => {}
                     }
                 }
             }

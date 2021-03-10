@@ -66,6 +66,13 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
+        Tile::Chainsaw => chainsaw(view_context, frame),
+        Tile::Shotgun => shotgun(view_context, frame),
+        Tile::Railgun => railgun(view_context, frame),
+        Tile::Rifle => rifle(view_context, frame),
+        Tile::GausCannon => gaus_cannon(view_context, frame),
+        Tile::Oxidiser => oxidiser(view_context, frame),
+        Tile::LifeStealer => life_stealer(view_context, frame),
     };
     let tile_layers = visibility_cell.tile_layers();
     if let Some(EntityTile { entity, tile }) = tile_layers.floor {
@@ -123,6 +130,13 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
+        Tile::Chainsaw => chainsaw(view_context, frame),
+        Tile::Shotgun => shotgun(view_context, frame),
+        Tile::Railgun => railgun(view_context, frame),
+        Tile::Rifle => rifle(view_context, frame),
+        Tile::GausCannon => gaus_cannon(view_context, frame),
+        Tile::Oxidiser => oxidiser(view_context, frame),
+        Tile::LifeStealer => life_stealer(view_context, frame),
     };
     let tile_layers = visibility_cell.tile_layers();
     if let Some(EntityTile { entity: _, tile }) = tile_layers.floor {
@@ -192,6 +206,13 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
+        Tile::Chainsaw => chainsaw(view_context, frame),
+        Tile::Shotgun => shotgun(view_context, frame),
+        Tile::Railgun => railgun(view_context, frame),
+        Tile::Rifle => rifle(view_context, frame),
+        Tile::GausCannon => gaus_cannon(view_context, frame),
+        Tile::Oxidiser => oxidiser(view_context, frame),
+        Tile::LifeStealer => life_stealer(view_context, frame),
     }
 }
 
@@ -1023,4 +1044,337 @@ pub fn upgrade<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut
     view.view("UPG", view_context, frame);
     view.view("RAD", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
     view.view("E++", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
+}
+
+pub fn chainsaw<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 0, y: 0 },
+        0,
+        ViewCell::new()
+            .with_character('╥')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('-')
+            .with_foreground(colours::GUN_METAL)
+            .with_background(colours::CHAINSAW),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character(' ')
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('►')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+}
+
+pub fn shotgun<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 0, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::WOOD),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▖')
+            .with_foreground(colours::WOOD)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▀')
+            .with_foreground(colours::GUN_METAL)
+            .with_background(colours::WOOD),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▀')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+}
+
+pub fn railgun<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 0, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('-')
+            .with_background(colours::GUN_METAL)
+            .with_foreground(colours::PLASMA),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('=')
+            .with_background(colours::GUN_METAL)
+            .with_foreground(colours::PLASMA),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('=')
+            .with_background(colours::GUN_METAL)
+            .with_foreground(colours::PLASMA),
+        view_context,
+    );
+}
+
+pub fn rifle<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 0, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character(' ')
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▗')
+            .with_foreground(colours::LASER)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▀')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 0 },
+        0,
+        ViewCell::new()
+            .with_character('▗')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+}
+
+pub fn gaus_cannon<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 0, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▌')
+            .with_background(colours::GUN_METAL)
+            .with_foreground(colours::GAUS),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▌')
+            .with_background(colours::GUN_METAL)
+            .with_foreground(colours::GAUS),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▌')
+            .with_background(colours::GUN_METAL)
+            .with_foreground(colours::GAUS),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 0 },
+        0,
+        ViewCell::new()
+            .with_character('▗')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▝')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+}
+
+pub fn oxidiser<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 0, y: 0 },
+        0,
+        ViewCell::new()
+            .with_character('┌')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 0 },
+        0,
+        ViewCell::new()
+            .with_character('┬')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 0 },
+        0,
+        ViewCell::new()
+            .with_character('┐')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('●')
+            .with_foreground(colours::OXYGEN)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('●')
+            .with_foreground(colours::OXYGEN)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('●')
+            .with_foreground(colours::OXYGEN)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+}
+
+pub fn life_stealer<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    frame.set_cell_relative(
+        Coord { x: 1, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('└')
+            .with_foreground(colours::HEALTH),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('┘')
+            .with_foreground(colours::HEALTH),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 2 },
+        0,
+        ViewCell::new()
+            .with_character('▘')
+            .with_foreground(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('♥')
+            .with_foreground(colours::HEALTH)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('♥')
+            .with_foreground(colours::HEALTH)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('♥')
+            .with_foreground(colours::HEALTH)
+            .with_background(colours::GUN_METAL),
+        view_context,
+    );
 }
