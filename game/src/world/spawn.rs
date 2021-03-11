@@ -758,4 +758,20 @@ impl World {
             .insert(entity, melee_weapon.new_weapon());
         entity
     }
+
+    pub fn spawn_medkit(&mut self, coord: Coord) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Item),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Medkit);
+        self.components.item.insert(entity, Item::Medkit);
+        entity
+    }
 }

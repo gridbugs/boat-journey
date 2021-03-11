@@ -83,6 +83,7 @@ pub enum Tile {
     GausCannon,
     Oxidiser,
     LifeStealer,
+    Medkit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -149,6 +150,7 @@ pub enum Item {
     Credit(u32),
     RangedWeapon(RangedWeapon),
     MeleeWeapon(MeleeWeapon),
+    Medkit,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

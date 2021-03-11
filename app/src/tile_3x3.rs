@@ -93,6 +93,7 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
         Tile::GausCannon => gaus_cannon(view_context, frame),
         Tile::Oxidiser => oxidiser(view_context, frame),
         Tile::LifeStealer => life_stealer(view_context, frame),
+        Tile::Medkit => medkit(view_context, frame),
     };
     let tile_layers = visibility_cell.tile_layers();
     if let Some(EntityTile { entity, tile }) = tile_layers.floor {
@@ -165,6 +166,7 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
         Tile::GausCannon => gaus_cannon(view_context, frame),
         Tile::Oxidiser => oxidiser(view_context, frame),
         Tile::LifeStealer => life_stealer(view_context, frame),
+        Tile::Medkit => medkit(view_context, frame),
     };
     let tile_layers = visibility_cell.tile_layers();
     if let Some(EntityTile { entity: _, tile }) = tile_layers.floor {
@@ -245,6 +247,7 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::GausCannon => gaus_cannon(view_context, frame),
         Tile::Oxidiser => oxidiser(view_context, frame),
         Tile::LifeStealer => life_stealer(view_context, frame),
+        Tile::Medkit => medkit(view_context, frame),
     }
 }
 
@@ -1524,6 +1527,52 @@ pub fn life_stealer<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame:
             .with_character('♥')
             .with_foreground(colours::HEALTH)
             .with_background(colours::GUN_METAL),
+        view_context,
+    );
+}
+
+pub fn medkit<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    for coord in Size::new_u16(3, 2).coord_iter_row_major() {
+        frame.set_cell_relative(
+            coord + Coord { x: 0, y: 1 },
+            0,
+            ViewCell::new()
+                .with_character(' ')
+                .with_background(colours::MEDKIT),
+            view_context,
+        );
+    }
+    frame.set_cell_relative(
+        Coord { x: 1, y: 2 },
+        0,
+        ViewCell::new()
+            .with_bold(true)
+            .with_character('+')
+            .with_foreground(colours::HEALTH),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 2, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▌')
+            .with_foreground(colours::MEDKIT_TOP),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 0, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character('▐')
+            .with_foreground(colours::MEDKIT_TOP),
+        view_context,
+    );
+    frame.set_cell_relative(
+        Coord { x: 1, y: 1 },
+        0,
+        ViewCell::new()
+            .with_character(' ')
+            .with_background(colours::MEDKIT_TOP),
         view_context,
     );
 }

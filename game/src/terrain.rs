@@ -85,6 +85,10 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                     let entity = world.spawn_credit(coord, 2);
                     world.spawn_floor(coord);
                 }
+                'h' => {
+                    let entity = world.spawn_medkit(coord);
+                    world.spawn_floor(coord);
+                }
                 '0'..='5' => {
                     use RangedWeapon::*;
                     let weapon = match ch {

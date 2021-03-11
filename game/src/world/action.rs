@@ -673,4 +673,10 @@ impl World {
             }
         }
     }
+
+    pub fn heal_fully(&mut self, entity: Entity) {
+        if let Some(hit_points) = self.components.hit_points.get_mut(entity) {
+            hit_points.current = hit_points.max;
+        }
+    }
 }

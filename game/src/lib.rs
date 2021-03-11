@@ -483,6 +483,10 @@ impl Game {
                         }
                         Item::RangedWeapon(ranged_weapon) => {}
                         Item::MeleeWeapon(melee_weapon) => {}
+                        Item::Medkit => {
+                            self.world.heal_fully(self.player);
+                            self.world.components.to_remove.insert(item_entity, ());
+                        }
                     }
                 }
             }
