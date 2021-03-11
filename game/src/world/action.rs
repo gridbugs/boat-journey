@@ -1,13 +1,14 @@
 use crate::{
     behaviour::Agent,
     world::{
-        data::{DoorState, Item, OnCollision, ProjectileDamage, Tile},
+        data::{DoorState, Item, MeleeWeapon, OnCollision, ProjectileDamage, RangedWeapon, Tile},
         explosion, player,
+        player::WeaponName,
         realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
         spatial::{Layer, Location, SpatialTable},
         ActionError, ExternalEvent, World,
     },
-    VisibilityGrid,
+    SoundEffect, VisibilityGrid,
 };
 use direction::{CardinalDirection, Direction};
 use entity_table::{ComponentTable, Entity};
@@ -83,6 +84,9 @@ impl World {
                     if let Some(DoorState::Closed) =
                         self.components.door_state.get(feature_entity).cloned()
                     {
+                        if self.components.player.contains(character) {
+                            external_events.push(ExternalEvent::SoundEffect(SoundEffect::DoorOpen));
+                        }
                         self.open_door(feature_entity);
                         return Ok(None);
                     }
@@ -128,6 +132,11 @@ impl World {
         } else {
             false
         };
+        if player.melee_weapon.name == WeaponName::MeleeWeapon(MeleeWeapon::Chainsaw) {
+            external_events.push(ExternalEvent::SoundEffect(SoundEffect::Chainsaw));
+        } else {
+            external_events.push(ExternalEvent::SoundEffect(SoundEffect::Punch));
+        }
         let pen = player.melee_pen();
         if pen
             >= self
@@ -316,6 +325,7 @@ impl World {
         character: Entity,
         target: Coord,
         slot: player::RangedWeaponSlot,
+        external_events: &mut Vec<ExternalEvent>,
     ) {
         let character_coord = self.spatial_table.coord_of(character).unwrap();
         if character_coord == target {
@@ -331,6 +341,21 @@ impl World {
                 }
             }
             let weapon = weapon.clone();
+            let sound_effect = match weapon.name {
+                WeaponName::MeleeWeapon(_) => None,
+                WeaponName::BareHands => None,
+                WeaponName::RangedWeapon(RangedWeapon::Shotgun) => Some(SoundEffect::Shotgun),
+                WeaponName::RangedWeapon(RangedWeapon::Rifle) => Some(SoundEffect::Rifle),
+                WeaponName::RangedWeapon(RangedWeapon::Railgun) => Some(SoundEffect::Railgun),
+                WeaponName::RangedWeapon(RangedWeapon::GausCannon) => Some(SoundEffect::GausCannon),
+                WeaponName::RangedWeapon(RangedWeapon::LifeStealer) => {
+                    Some(SoundEffect::LifeStealer)
+                }
+                WeaponName::RangedWeapon(RangedWeapon::Oxidiser) => Some(SoundEffect::Oxidiser),
+            };
+            if let Some(sound_effect) = sound_effect {
+                external_events.push(ExternalEvent::SoundEffect(sound_effect));
+            }
             self.spawn_bullet(character_coord, target, &weapon);
             self.spawn_flash(character_coord);
         }

@@ -1,5 +1,6 @@
 use general_audio_static::{AudioPlayer, StaticAudioPlayer, StaticHandle, StaticSound};
 use maplit::hashmap;
+use orbital_decay_game::SoundEffect;
 use std::collections::HashMap;
 
 pub type AppAudioPlayer = Option<StaticAudioPlayer>;
@@ -23,6 +24,7 @@ pub enum Audio {
     EndText,
     Menu,
     Explosion,
+    SoundEffect(SoundEffect),
 }
 
 pub struct AudioTable {
@@ -39,6 +41,15 @@ impl AudioTable {
             Audio::EndText => audio_player.load_sound(END_TEXT),
             Audio::Menu => audio_player.load_sound(MENU),
             Audio::Explosion => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::Shotgun) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::Rifle) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::Railgun) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::GausCannon) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::LifeStealer) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::Oxidiser) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::Chainsaw) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::Punch) => audio_player.load_sound(EXPLOSION),
+            Audio::SoundEffect(SoundEffect::DoorOpen) => audio_player.load_sound(EXPLOSION),
         ];
         Self { map }
     }

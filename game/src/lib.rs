@@ -38,12 +38,26 @@ pub enum Music {
     Boss,
 }
 
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum SoundEffect {
+    Shotgun,
+    Rifle,
+    Railgun,
+    GausCannon,
+    LifeStealer,
+    Oxidiser,
+    Chainsaw,
+    Punch,
+    DoorOpen,
+}
+
 /// Events which the game can report back to the io layer so it can
 /// respond with a sound/visual effect.
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum ExternalEvent {
     Explosion(Coord),
     LoopMusic(Music),
+    SoundEffect(SoundEffect),
 }
 
 pub enum GameControlFlow {
@@ -127,6 +141,7 @@ impl Game {
             )
         };
         if debug {
+            /*
             world
                 .components
                 .player
@@ -146,7 +161,6 @@ impl Game {
                 .unwrap()
                 .melee_weapon = player::Weapon::new_chainsaw();
 
-            /*
             let _ = world.apply_upgrade(
                 player,
                 player::Upgrade {
@@ -433,6 +447,7 @@ impl Game {
                     self.player,
                     self.player_coord() + (direction.coord() * 100),
                     slot,
+                    &mut self.events,
                 );
                 Ok(None)
             }

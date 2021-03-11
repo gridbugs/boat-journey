@@ -112,6 +112,11 @@ impl<'a> EffectContext<'a> {
                 let handle = loop_music(self.audio_player, self.audio_table, self.config, music);
                 *self.current_music_handle = Some(handle);
             }
+            ExternalEvent::SoundEffect(sound_effect) => {
+                const BASE_VOLUME: f32 = 50.;
+                let volume = BASE_VOLUME;
+                self.play_audio(Audio::SoundEffect(sound_effect), volume);
+            }
         }
     }
 }
