@@ -468,6 +468,8 @@ impl Game {
         self.world.process_door_close_countdown();
         self.world
             .process_oxygen(self.player, &mut self.rng, &mut self.events);
+        self.world
+            .process_skeleton_respawn(&mut self.rng, &mut self.agents, &mut self.events);
         if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
             if let Some(item_entity) = layers.item {
                 if let Some(item) = self.world.components.item.get(item_entity) {

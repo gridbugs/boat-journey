@@ -1,4 +1,5 @@
 use crate::{
+    behaviour::Agent,
     world::{
         data::{DoorState, Item, OnCollision, ProjectileDamage, Tile},
         explosion, player,
@@ -9,7 +10,7 @@ use crate::{
     VisibilityGrid,
 };
 use direction::{CardinalDirection, Direction};
-use entity_table::Entity;
+use entity_table::{ComponentTable, Entity};
 use grid_2d::Coord;
 use rand::{seq::IteratorRandom, seq::SliceRandom, Rng};
 use std::collections::{HashSet, VecDeque};
@@ -259,6 +260,34 @@ impl World {
         }
     }
 
+    pub fn process_skeleton_respawn<R: Rng>(
+        &mut self,
+        rng: &mut R,
+        agents: &mut ComponentTable<Agent>,
+        external_events: &mut Vec<ExternalEvent>,
+    ) {
+        let mut to_spawn = Vec::new();
+        for (entity, respawn) in self.components.skeleton_respawn.iter_mut() {
+            if *respawn == 0 {
+                if let Some(coord) = self.spatial_table.coord_of(entity) {
+                    if let Some(layers) = self.spatial_table.layers_at(coord) {
+                        if layers.character.is_some() {
+                            continue;
+                        }
+                    }
+                    to_spawn.push(coord);
+                }
+                self.components.to_remove.insert(entity, ());
+            } else {
+                *respawn -= 1;
+            }
+        }
+        for coord in to_spawn {
+            let entity = self.spawn_skeleton(coord, rng);
+            agents.insert(entity, Agent::new(self.spatial_table.grid_size()));
+        }
+    }
+
     pub fn process_door_close_countdown(&mut self) {
         let mut to_close = Vec::new();
         for (entity, door_close_countdown) in self.components.door_close_countdown.iter_mut() {
@@ -460,6 +489,11 @@ impl World {
                     },
                 };
                 explosion::explode(self, coord, spec, external_events, rng);
+            }
+        }
+        if self.components.skeleton.contains(character) {
+            if let Some(coord) = self.spatial_table.coord_of(character) {
+                self.spawn_skeleton_respawn(coord, rng);
             }
         }
     }

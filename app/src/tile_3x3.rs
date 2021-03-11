@@ -1080,13 +1080,13 @@ pub fn skeleton_respawn<F: Frame, C: ColModify>(
     StringViewSingleLine::new(
         Style::new()
             .with_foreground(colours::SKELETON)
-            .with_bold(false),
+            .with_bold(true),
     )
     .view("paw", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
     StringViewSingleLine::new(
         Style::new()
             .with_foreground(colours::SKELETON)
-            .with_bold(false),
+            .with_bold(true),
     )
     .view(
         format!("n{:02}", entity.skeleton_respawn.unwrap()).as_str(),

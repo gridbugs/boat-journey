@@ -645,6 +645,22 @@ impl World {
         entity
     }
 
+    pub fn spawn_skeleton_respawn<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Item),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::SkeletonRespawn);
+        self.components.skeleton_respawn.insert(entity, 11);
+        entity
+    }
+
     pub fn spawn_tank<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
