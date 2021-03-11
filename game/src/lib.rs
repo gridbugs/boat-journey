@@ -647,8 +647,10 @@ impl Game {
         if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
             if layers.floor.is_none() {
                 self.world.components.to_remove.insert(self.player, ());
+                if !self.adrift {
+                    self.message_log.push(Message::PlayerAdrift);
+                }
                 self.adrift = true;
-                self.message_log.push(Message::PlayerAdrift);
             }
         }
         for npc in self.world.components.npc.entities() {
