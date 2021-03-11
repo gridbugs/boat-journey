@@ -59,7 +59,7 @@ impl UiView {
             frame,
         );
         view_weapon(
-            "Melee Weapon:",
+            "Melee:",
             &ui.player.melee_weapon,
             &ui.player,
             context.add_offset(Coord { x: 0, y: 5 }),
@@ -69,7 +69,7 @@ impl UiView {
         for (i, ranged_slot) in ui.player.ranged_weapons.iter().enumerate() {
             if let Some(weapon) = ranged_slot {
                 view_weapon(
-                    format!("Weapon {}:", i + 1).as_str(),
+                    format!("Ranged {}:", i + 1).as_str(),
                     weapon,
                     &ui.player,
                     context.add_offset(Coord {
@@ -80,7 +80,7 @@ impl UiView {
                 );
             } else {
                 view_empty_weapon_slot(
-                    format!("Weapon {}:", i + 1).as_str(),
+                    format!("Ranged {}:", i + 1).as_str(),
                     context.add_offset(Coord {
                         x: 0,
                         y: i as i32 * 10,
@@ -94,14 +94,26 @@ impl UiView {
 }
 
 fn weapon_name_text(weapon_name: WeaponName) -> RichTextPartOwned {
-    let t = |s: &str, c| RichTextPartOwned::new(s.to_string(), Style::new().with_foreground(c));
+    let t = |s: &str, c| {
+        RichTextPartOwned::new(
+            s.to_string(),
+            Style::new().with_foreground(c).with_bold(true),
+        )
+    };
     match weapon_name {
         WeaponName::BareHands => t("Bare Hands", Rgb24::new_grey(255)),
-        WeaponName::MeleeWeapon(MeleeWeapon::Chainsaw) => t("Chainsaw", colours::CHAINSAW),
-        WeaponName::RangedWeapon(RangedWeapon::Shotgun) => t("Shotgun", colours::WOOD),
+        WeaponName::MeleeWeapon(MeleeWeapon::Chainsaw) => t(
+            "Chainsaw",
+            colours::CHAINSAW.saturating_scalar_mul_div(3, 2),
+        ),
+        WeaponName::RangedWeapon(RangedWeapon::Shotgun) => {
+            t("Shotgun", colours::WOOD.saturating_scalar_mul_div(3, 2))
+        }
         WeaponName::RangedWeapon(RangedWeapon::Railgun) => t("Railgun", colours::PLASMA),
         WeaponName::RangedWeapon(RangedWeapon::Rifle) => t("Rifle", colours::LASER),
-        WeaponName::RangedWeapon(RangedWeapon::GausCannon) => t("Gaus Cannon", colours::GAUS),
+        WeaponName::RangedWeapon(RangedWeapon::GausCannon) => {
+            t("Gaus Cannon", colours::GAUS.saturating_scalar_mul_div(3, 2))
+        }
         WeaponName::RangedWeapon(RangedWeapon::Oxidiser) => t("Oxidiser", colours::OXYGEN),
         WeaponName::RangedWeapon(RangedWeapon::LifeStealer) => t("Life Stealer", colours::HEALTH),
     }
@@ -139,7 +151,7 @@ fn view_empty_weapon_slot<F: Frame, C: ColModify>(
             title,
             Style::new()
                 .with_foreground(Rgb24::new_grey(255))
-                .with_bold(true),
+                .with_bold(false),
         ),
         context,
         frame,
@@ -164,7 +176,7 @@ fn view_weapon<F: Frame, C: ColModify>(
             title,
             Style::new()
                 .with_foreground(Rgb24::new_grey(255))
-                .with_bold(true),
+                .with_bold(false),
         ),
         context,
         frame,

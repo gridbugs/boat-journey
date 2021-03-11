@@ -123,6 +123,7 @@ struct AppData {
     main_menu_type: MainMenuType,
     upgrade_menu: Option<menu::MenuInstanceChooseOrEscape<player::Upgrade>>,
     options_menu: menu::MenuInstanceChooseOrEscape<OrBack<OptionsMenuEntry>>,
+    confirm_menu: menu::MenuInstanceChooseOrEscape<bool>,
     last_mouse_coord: Coord,
     env: Box<dyn Env>,
     menu_background_data: MenuBackgroundData,
@@ -134,6 +135,7 @@ struct AppView {
     main_menu: FadeMenuInstanceView,
     options_menu: FadeMenuInstanceView,
     upgrade_menu: FadeMenuInstanceView,
+    confirm_menu: FadeMenuInstanceView,
 }
 
 impl AppData {
@@ -167,6 +169,14 @@ impl AppData {
         }
         let menu_background_data = MenuBackgroundData::new();
         Self {
+            confirm_menu: menu::MenuInstanceBuilder {
+                items: vec![true, false],
+                selected_index: 0,
+                hotkeys: Some(hashmap!['y' => true, 'n' => false]),
+            }
+            .build()
+            .unwrap()
+            .into_choose_or_escape(),
             options_menu: OptionsMenuEntry::instance(&env),
             frontend,
             game: game_data,
@@ -217,6 +227,7 @@ impl AppView {
             main_menu: FadeMenuInstanceView::new(spec.clone()),
             options_menu: FadeMenuInstanceView::new(spec.clone()),
             upgrade_menu: FadeMenuInstanceView::new(spec.clone()),
+            confirm_menu: FadeMenuInstanceView::new(spec.clone()),
         }
     }
 }
@@ -319,6 +330,29 @@ impl DataSelector for SelectUpgradeMenu {
     }
 }
 impl Selector for SelectUpgradeMenu {}
+
+struct SelectConfirmMenu;
+impl ViewSelector for SelectConfirmMenu {
+    type ViewInput = AppView;
+    type ViewOutput = FadeMenuInstanceView;
+    fn view<'a>(&self, input: &'a Self::ViewInput) -> &'a Self::ViewOutput {
+        &input.upgrade_menu
+    }
+    fn view_mut<'a>(&self, input: &'a mut Self::ViewInput) -> &'a mut Self::ViewOutput {
+        &mut input.upgrade_menu
+    }
+}
+impl DataSelector for SelectConfirmMenu {
+    type DataInput = AppData;
+    type DataOutput = menu::MenuInstanceChooseOrEscape<bool>;
+    fn data<'a>(&self, input: &'a Self::DataInput) -> &'a Self::DataOutput {
+        &input.confirm_menu
+    }
+    fn data_mut<'a>(&self, input: &'a mut Self::DataInput) -> &'a mut Self::DataOutput {
+        &mut input.confirm_menu
+    }
+}
+impl Selector for SelectConfirmMenu {}
 
 struct TextOverlay {
     height: u32,
@@ -584,6 +618,76 @@ impl Decorate for DecorateUpgradeMenu {
                         view: BoundView {
                             size: Size::new(33, 12),
                             view: UpgradeMenuWindow(&mut event_routine_view),
+                        },
+                    },
+                },
+            }
+            .view(data, context.add_depth(depth::GAME_MAX + 1), frame);
+            event_routine_view.view.game.view(
+                GameToRender {
+                    game: instance.game(),
+                    status: GameStatus::Playing,
+                    mouse_coord: None,
+                    mode: Mode::Normal,
+                    action_error: None,
+                },
+                context.compose_col_modify(
+                    ColModifyDefaultForeground(Rgb24::new_grey(255)).compose(ColModifyMap(
+                        |col: Rgb24| col.saturating_scalar_mul_div(1, 3),
+                    )),
+                ),
+                frame,
+            );
+        }
+    }
+}
+
+struct ConfirmMenuWindow<'a, 'b, 'c, E: EventRoutine> {
+    view: &'a mut EventRoutineView<'b, 'c, E>,
+    text: &'a str,
+}
+
+impl<'a, 'b, 'c, E: EventRoutine<Data = AppData>> View<&'a AppData>
+    for ConfirmMenuWindow<'a, 'b, 'c, E>
+{
+    fn view<F: Frame, C: ColModify>(
+        &mut self,
+        data: &'a AppData,
+        context: ViewContext<C>,
+        frame: &mut F,
+    ) {
+        text::StringViewSingleLine::new(Style::new().with_foreground(Rgb24::new_grey(255)))
+            .view(self.text, context, frame);
+        self.view
+            .view(data, context.add_offset(Coord { x: 0, y: 2 }), frame);
+    }
+}
+
+struct DecorateConfirmMenu(String);
+impl Decorate for DecorateConfirmMenu {
+    type View = AppView;
+    type Data = AppData;
+    fn view<E, F, C>(
+        &self,
+        data: &Self::Data,
+        mut event_routine_view: EventRoutineView<E>,
+        context: ViewContext<C>,
+        frame: &mut F,
+    ) where
+        E: EventRoutine<Data = Self::Data, View = Self::View>,
+        F: Frame,
+        C: ColModify,
+    {
+        if let Some(instance) = data.game.instance() {
+            AlignView {
+                alignment: Alignment::centre(),
+                view: FillBackgroundView {
+                    rgb24: colours::SPACE_BACKGROUND,
+                    view: BorderView {
+                        style: &BorderStyle::new(),
+                        view: ConfirmMenuWindow {
+                            view: &mut event_routine_view,
+                            text: self.0.as_str(),
                         },
                     },
                 },
@@ -940,6 +1044,27 @@ fn upgrade_menu() -> impl EventRoutine<
     })
 }
 
+fn confirm_menu(
+    message: &str,
+) -> impl EventRoutine<Return = bool, Data = AppData, View = AppView, Event = CommonEvent> {
+    let menu = menu::FadeMenuInstanceRoutine::new(MenuEntryStringFn::new(
+        |entry: MenuEntryToRender<bool>, buf: &mut String| {
+            use std::fmt::Write;
+            if *entry.entry {
+                write!(buf, "(y) Yes").unwrap();
+            } else {
+                write!(buf, "(n) No").unwrap();
+            }
+        },
+    ))
+    .select(SelectConfirmMenu)
+    .decorated(DecorateConfirmMenu(message.to_string()));
+    SideEffectThen::new_with_view(move |data: &mut AppData, _: &_| {
+        data.confirm_menu.menu_instance_mut().set_index(0);
+        menu.map(|result| result.unwrap_or(false))
+    })
+}
+
 fn main_menu(
     auto_play: Option<AutoPlay>,
     first_run: Option<FirstRun>,
@@ -1053,9 +1178,12 @@ fn game_over() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
         .decorated(DecorateGame)
 }
 
-fn choose_weapon_slot(
-) -> impl EventRoutine<Return = Option<usize>, Data = AppData, View = AppView, Event = CommonEvent>
-{
+fn choose_weapon_slot() -> impl EventRoutine<
+    Return = Option<RangedWeaponSlot>,
+    Data = AppData,
+    View = AppView,
+    Event = CommonEvent,
+> {
     ChooseWeaponSlotEventRoutine
         .select(SelectGame)
         .decorated(DecorateGame)
@@ -1265,7 +1393,7 @@ enum GameLoopBreak {
 
 fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent>
 {
-    make_either!(Ei = A | B | C | D | E);
+    make_either!(Ei = A | B | C | D | E | F);
     SideEffect::new_with_view(|data: &mut AppData, _: &_| data.game.pre_game_loop())
         .then(|| {
             Ei::A(game())
@@ -1309,9 +1437,58 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                             }
                         })))
                     }
-                    GameReturn::Equip => {
-                        Handled::Continue(Ei::E(choose_weapon_slot().and_then(|_| game())))
+                    GameReturn::EquipRanged => {
+                        Handled::Continue(Ei::E(choose_weapon_slot().and_then(|slot| {
+                            SideEffectThen::new_with_view(move |data: &mut AppData, _: &_| {
+                                make_either!(Ei = A | B | C);
+                                if let Some(slot) = slot {
+                                    if data
+                                        .game
+                                        .instance()
+                                        .unwrap()
+                                        .game()
+                                        .player_has_weapon_in_slot(slot)
+                                    {
+                                        Ei::A(
+                                            confirm_menu(
+                                                format!(
+                                                    "Replace ranged weapon in slot {}?",
+                                                    slot.index() + 1
+                                                )
+                                                .as_str(),
+                                            )
+                                            .and_then(
+                                                move |yes| {
+                                                    let inputs = if yes {
+                                                        vec![InjectedInput::GetRangedWeapon(slot)]
+                                                    } else {
+                                                        vec![]
+                                                    };
+                                                    game_injecting_inputs(inputs)
+                                                },
+                                            ),
+                                        )
+                                    } else {
+                                        Ei::B(game_injecting_inputs(vec![
+                                            InjectedInput::GetRangedWeapon(slot),
+                                        ]))
+                                    }
+                                } else {
+                                    Ei::C(game())
+                                }
+                            })
+                        })))
                     }
+                    GameReturn::ConfirmReplaceMelee => Handled::Continue(Ei::F(
+                        confirm_menu("Replace current melee weapon?").and_then(|yes| {
+                            let inputs = if yes {
+                                vec![InjectedInput::GetMeleeWeapon]
+                            } else {
+                                vec![]
+                            };
+                            game_injecting_inputs(inputs)
+                        }),
+                    )),
                 })
                 .and_then(|game_loop_break| {
                     make_either!(Ei = A | B | C);

@@ -196,13 +196,35 @@ impl Weapon {
             abilities: vec![WeaponAbility::LifeSteal],
         }
     }
+    pub fn is_ranged(&self) -> bool {
+        match self.name {
+            WeaponName::RangedWeapon(_) => true,
+            _ => false,
+        }
+    }
+    pub fn is_melee(&self) -> bool {
+        match self.name {
+            WeaponName::MeleeWeapon(_) => true,
+            _ => false,
+        }
+    }
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum RangedWeaponSlot {
     Slot1,
     Slot2,
     Slot3,
+}
+
+impl RangedWeaponSlot {
+    pub fn index(self) -> usize {
+        match self {
+            Self::Slot1 => 0,
+            Self::Slot2 => 1,
+            Self::Slot3 => 2,
+        }
+    }
 }
 
 // Toughness:

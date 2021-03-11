@@ -601,6 +601,9 @@ impl World {
         self.components
             .item
             .insert(entity, Item::RangedWeapon(ranged_weapon));
+        self.components
+            .weapon
+            .insert(entity, ranged_weapon.new_weapon());
         entity
     }
 
@@ -619,6 +622,9 @@ impl World {
         self.components
             .item
             .insert(entity, Item::MeleeWeapon(melee_weapon));
+        self.components
+            .weapon
+            .insert(entity, melee_weapon.new_weapon());
         entity
     }
 }

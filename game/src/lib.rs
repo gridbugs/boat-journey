@@ -59,6 +59,8 @@ pub enum Input {
     Wait,
     Fire(CardinalDirection),
     Upgrade(player::Upgrade),
+    EquipMeleeWeapon,
+    EquipRangedWeapon(player::RangedWeaponSlot),
 }
 
 pub enum WarningLight {
@@ -103,7 +105,7 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        let debug = false;
+        let debug = true;
         let Terrain {
             mut world,
             agents,
@@ -163,6 +165,28 @@ impl Game {
         game.update_visibility(config);
         game.prime_npcs();
         game
+    }
+    pub fn player_has_weapon_in_slot(&self, slot: player::RangedWeaponSlot) -> bool {
+        let player = self.world.components.player.get(self.player).unwrap();
+        player.ranged_weapons[slot.index()].is_some()
+    }
+    pub fn player_has_third_weapon_slot(&self) -> bool {
+        let player = self.world.components.player.get(self.player).unwrap();
+        player.ranged_weapons.len() == 3
+    }
+    pub fn player_has_melee_weapon_equipped(&self) -> bool {
+        let player = self.world.components.player.get(self.player).unwrap();
+        player.melee_weapon.is_melee()
+    }
+    pub fn weapon_under_player(&self) -> Option<&player::Weapon> {
+        self.world
+            .spatial_table
+            .layers_at(self.player_coord())
+            .and_then(|layers| {
+                layers
+                    .item
+                    .and_then(|item_entity| self.world.components.weapon.get(item_entity))
+            })
     }
     pub fn available_upgrades(&self) -> Vec<player::Upgrade> {
         let player = self
@@ -370,7 +394,16 @@ impl Game {
                 );
                 Ok(None)
             }
-            Input::Upgrade(upgrade) => Ok(None),
+            Input::Upgrade(_upgrade) => Ok(None),
+            Input::EquipMeleeWeapon => {
+                self.world.equip_melee_weapon_from_ground(self.player);
+                Ok(None)
+            }
+            Input::EquipRangedWeapon(slot) => {
+                self.world
+                    .equip_ranged_weapon_from_ground(self.player, slot);
+                Ok(None)
+            }
         };
         if result.is_ok() {
             if self.is_gameplay_blocked() {

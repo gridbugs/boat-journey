@@ -5,6 +5,8 @@ use crate::render::{GameToRender, GameView, Mode};
 use chargrid::event_routine::common_event::*;
 use chargrid::event_routine::*;
 use chargrid::input::*;
+use chargrid::render::{Rgb24, Style};
+use chargrid::text::*;
 use direction::{CardinalDirection, Direction};
 use general_audio_static::{AudioHandle, AudioPlayer};
 use general_storage_static::{format, StaticStorage};
@@ -140,6 +142,8 @@ fn loop_music(
 pub enum InjectedInput {
     Fire(CardinalDirection),
     Upgrade(player::Upgrade),
+    GetMeleeWeapon,
+    GetRangedWeapon(RangedWeaponSlot),
 }
 
 #[derive(Clone, Copy)]
@@ -674,7 +678,7 @@ impl EventRoutine for AimEventRoutine {
 
 pub struct ChooseWeaponSlotEventRoutine;
 impl EventRoutine for ChooseWeaponSlotEventRoutine {
-    type Return = Option<usize>;
+    type Return = Option<RangedWeaponSlot>;
     type Data = GameData;
     type View = GameView;
     type Event = CommonEvent;
@@ -688,7 +692,39 @@ impl EventRoutine for ChooseWeaponSlotEventRoutine {
     where
         EP: EventOrPeek<Event = Self::Event>,
     {
-        Handled::Continue(self)
+        let controls = &data.controls;
+        event_or_peek_with_handled(event_or_peek, self, |mut s, event| match event {
+            CommonEvent::Input(input) => match input {
+                Input::Keyboard(keyboard_input) => {
+                    if let Some(app_input) = controls.get(keyboard_input) {
+                        match app_input {
+                            AppInput::Aim(slot) => {
+                                if let RangedWeaponSlot::Slot3 = slot {
+                                    if !data
+                                        .instance
+                                        .as_ref()
+                                        .unwrap()
+                                        .game
+                                        .player_has_third_weapon_slot()
+                                    {
+                                        return Handled::Return(None);
+                                    }
+                                }
+                                Handled::Return(Some(slot))
+                            }
+                            _ => Handled::Continue(s),
+                        }
+                    } else {
+                        match keyboard_input {
+                            keys::ESCAPE => Handled::Return(None),
+                            _ => Handled::Continue(s),
+                        }
+                    }
+                }
+                _ => Handled::Continue(s),
+            },
+            _ => Handled::Continue(s),
+        })
     }
 
     fn view<F, C>(
@@ -711,6 +747,25 @@ impl EventRoutine for ChooseWeaponSlotEventRoutine {
                     action_error: None,
                 },
                 context,
+                frame,
+            );
+            let num_weapon_slots = if instance.game.player_has_third_weapon_slot() {
+                3
+            } else {
+                2
+            };
+            let text = format!(
+                "Choose a weapon slot: (press 1-{} or escape to cancel)",
+                num_weapon_slots
+            );
+            StringViewSingleLine::new(
+                Style::new()
+                    .with_foreground(Rgb24::new(255, 0, 0))
+                    .with_bold(true),
+            )
+            .view(
+                text.as_str(),
+                context.add_offset(Coord { x: 0, y: 1 }),
                 frame,
             );
         }
@@ -743,7 +798,8 @@ pub enum GameReturn {
     Win,
     Examine,
     Upgrade,
-    Equip,
+    EquipRanged,
+    ConfirmReplaceMelee,
 }
 
 impl EventRoutine for GameEventRoutine {
@@ -780,6 +836,16 @@ impl EventRoutine for GameEventRoutine {
                         let _ = instance
                             .game
                             .handle_input(GameInput::Upgrade(upgrade), game_config);
+                    }
+                    InjectedInput::GetMeleeWeapon => {
+                        let _ = instance
+                            .game
+                            .handle_input(GameInput::EquipMeleeWeapon, game_config);
+                    }
+                    InjectedInput::GetRangedWeapon(slot) => {
+                        let _ = instance
+                            .game
+                            .handle_input(GameInput::EquipRangedWeapon(slot), game_config);
                     }
                 }
             }
@@ -847,7 +913,24 @@ impl EventRoutine for GameEventRoutine {
                                             return Handled::Return(GameReturn::Aim(slot))
                                         }
                                         AppInput::Get => {
-                                            return Handled::Return(GameReturn::Equip);
+                                            if let Some(weapon) =
+                                                instance.game.weapon_under_player()
+                                            {
+                                                if weapon.is_ranged() {
+                                                    return Handled::Return(
+                                                        GameReturn::EquipRanged,
+                                                    );
+                                                }
+                                                if weapon.is_melee() {
+                                                    return Handled::Return(
+                                                        GameReturn::ConfirmReplaceMelee,
+                                                    );
+                                                } else {
+                                                    Ok(None)
+                                                }
+                                            } else {
+                                                Ok(None)
+                                            }
                                         }
                                     };
                                     match game_control_flow {

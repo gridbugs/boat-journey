@@ -1,7 +1,7 @@
 use crate::visibility::Light;
 pub use crate::world::{
     explosion_spec,
-    player::Player,
+    player::{self, Player},
     spatial::{Layer, Location},
 };
 use direction::CardinalDirection;
@@ -41,6 +41,7 @@ declare_entity_module! {
         particle: (),
         destructible: (),
         upgrade: (),
+        weapon: player::Weapon,
     }
 }
 pub use components::Components;
@@ -98,6 +99,19 @@ impl RangedWeapon {
             LifeStealer => Tile::LifeStealer,
         }
     }
+
+    pub fn new_weapon(self) -> player::Weapon {
+        use player::Weapon;
+        use RangedWeapon::*;
+        match self {
+            Shotgun => Weapon::new_shotgun(),
+            Railgun => Weapon::new_railgun(),
+            Rifle => Weapon::new_rifle(),
+            GausCannon => Weapon::new_gaus_cannon(),
+            Oxidiser => Weapon::new_oxidiser(),
+            LifeStealer => Weapon::new_life_stealer(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -110,6 +124,14 @@ impl MeleeWeapon {
         use MeleeWeapon::*;
         match self {
             Chainsaw => Tile::Chainsaw,
+        }
+    }
+
+    pub fn new_weapon(self) -> player::Weapon {
+        use player::Weapon;
+        use MeleeWeapon::*;
+        match self {
+            Chainsaw => Weapon::new_chainsaw(),
         }
     }
 }
