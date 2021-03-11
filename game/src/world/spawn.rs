@@ -496,7 +496,7 @@ impl World {
                 until_next_event: Duration::from_millis(0),
             },
         );
-        panic!("missing tiles")
+        emitter_entity
     }
 
     pub fn spawn_door(&mut self, coord: Coord, axis: Axis) -> Entity {
@@ -614,6 +614,90 @@ impl World {
             .insert(entity, HitPoints::new_full(4));
         self.components.armour.insert(entity, Armour::new(2));
         self.components.damage.insert(entity, 1);
+        entity
+    }
+
+    pub fn spawn_skeleton<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Character),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Skeleton);
+        self.components.npc.insert(
+            entity,
+            Npc {
+                disposition: Disposition::Hostile,
+            },
+        );
+        self.components.character.insert(entity, ());
+        self.components
+            .hit_points
+            .insert(entity, HitPoints::new_full(8));
+        self.components.armour.insert(entity, Armour::new(3));
+        self.components.damage.insert(entity, 1);
+        self.components.skeleton.insert(entity, ());
+        entity
+    }
+
+    pub fn spawn_tank<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Character),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Tank);
+        self.components.npc.insert(
+            entity,
+            Npc {
+                disposition: Disposition::Hostile,
+            },
+        );
+        self.components.character.insert(entity, ());
+        self.components
+            .hit_points
+            .insert(entity, HitPoints::new_full(10));
+        self.components.armour.insert(entity, Armour::new(10));
+        self.components.damage.insert(entity, 2);
+        self.components.push_back.insert(entity, ());
+        entity
+    }
+
+    pub fn spawn_boomer<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+        let entity = self.entity_allocator.alloc();
+        self.spatial_table
+            .update(
+                entity,
+                Location {
+                    coord,
+                    layer: Some(Layer::Character),
+                },
+            )
+            .unwrap();
+        self.components.tile.insert(entity, Tile::Boomer);
+        self.components.npc.insert(
+            entity,
+            Npc {
+                disposition: Disposition::Hostile,
+            },
+        );
+        self.components.character.insert(entity, ());
+        self.components
+            .hit_points
+            .insert(entity, HitPoints::new_full(2));
+        self.components.armour.insert(entity, Armour::new(2));
+        self.components.damage.insert(entity, 1);
+        self.components.expoodes_on_death.insert(entity, ());
         entity
     }
 

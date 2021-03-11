@@ -76,6 +76,7 @@ impl World {
         let hit_points = &self.components.hit_points;
         let armour = &self.components.armour;
         let next_action = &self.components.next_action;
+        let skeleton_respawn = &self.components.skeleton_respawn;
         let fade = realtime_fade_component
             .get(entity)
             .and_then(|f| f.state.fading());
@@ -86,6 +87,7 @@ impl World {
         let armour = armour.get(entity).cloned();
         let next_action = next_action.get(entity).cloned();
         let tile = tile_component.get(entity).cloned()?;
+        let skeleton_respawn = skeleton_respawn.get(entity).cloned();
         if let Some(location) = spatial_table.location_of(entity) {
             Some(ToRenderEntity {
                 coord: location.coord,
@@ -98,6 +100,7 @@ impl World {
                 hit_points,
                 armour,
                 next_action,
+                skeleton_respawn,
             })
         } else {
             None
@@ -113,6 +116,7 @@ impl World {
         let hit_points = &self.components.hit_points;
         let armour = &self.components.armour;
         let next_action = &self.components.next_action;
+        let skeleton_respawn = &self.components.skeleton_respawn;
         tile_component.iter().filter_map(move |(entity, &tile)| {
             if let Some(location) = spatial_table.location_of(entity) {
                 let fade = realtime_fade_component
@@ -124,6 +128,7 @@ impl World {
                 let hit_points = hit_points.get(entity).cloned();
                 let armour = armour.get(entity).cloned();
                 let next_action = next_action.get(entity).cloned();
+                let skeleton_respawn = skeleton_respawn.get(entity).cloned();
                 Some(ToRenderEntity {
                     coord: location.coord,
                     layer: location.layer,
@@ -135,6 +140,7 @@ impl World {
                     hit_points,
                     armour,
                     next_action,
+                    skeleton_respawn,
                 })
             } else {
                 None
@@ -276,6 +282,7 @@ pub struct ToRenderEntity {
     pub hit_points: Option<HitPoints>,
     pub armour: Option<Armour>,
     pub next_action: Option<NpcAction>,
+    pub skeleton_respawn: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize)]

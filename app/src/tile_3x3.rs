@@ -63,6 +63,26 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
                 zombie(&entity, view_context, frame);
             }
         }
+        Tile::Skeleton => {
+            if let Some(entity) = game.to_render_entity(entity) {
+                skeleton(&entity, view_context, frame);
+            }
+        }
+        Tile::SkeletonRespawn => {
+            if let Some(entity) = game.to_render_entity(entity) {
+                skeleton_respawn(&entity, view_context, frame);
+            }
+        }
+        Tile::Boomer => {
+            if let Some(entity) = game.to_render_entity(entity) {
+                boomer(&entity, view_context, frame);
+            }
+        }
+        Tile::Tank => {
+            if let Some(entity) = game.to_render_entity(entity) {
+                tank(&entity, view_context, frame);
+            }
+        }
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
@@ -100,8 +120,12 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
     let mut render_tile = |tile, view_context| match tile {
         Tile::Wall => {
             let below = coord + Coord::new(0, 1);
-            if game.contains_wall_like(below) {
-                wall_top(view_context, frame);
+            if let Some(view_cell) = game.visibility_grid().get_cell(below) {
+                if view_cell.tile_layers().feature.is_some() {
+                    wall_top(view_context, frame);
+                } else {
+                    wall_front(view_context, frame);
+                }
             } else {
                 wall_front(view_context, frame);
             }
@@ -127,6 +151,10 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
         Tile::Stairs => stairs(view_context, frame),
         Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => (),
+        Tile::Skeleton => (),
+        Tile::SkeletonRespawn => (),
+        Tile::Tank => (),
+        Tile::Boomer => (),
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
@@ -203,6 +231,10 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::Stairs => stairs(view_context, frame),
         Tile::Bullet => bullet(view_context, frame),
         Tile::Zombie => zombie(entity, view_context, frame),
+        Tile::Skeleton => skeleton(entity, view_context, frame),
+        Tile::SkeletonRespawn => skeleton_respawn(entity, view_context, frame),
+        Tile::Boomer => boomer(entity, view_context, frame),
+        Tile::Tank => tank(entity, view_context, frame),
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
@@ -995,6 +1027,123 @@ pub fn zombie<F: Frame, C: ColModify>(
             .with_bold(false),
     )
     .view(
+        format!("♥{:02}", entity.hit_points.unwrap().current).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 2 }),
+        frame,
+    );
+}
+
+pub fn skeleton<F: Frame, C: ColModify>(
+    entity: &ToRenderEntity,
+    view_context: ViewContext<C>,
+    frame: &mut F,
+) {
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::SKELETON)
+            .with_bold(true),
+    )
+    .view("Skl", view_context, frame);
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::SKELETON)
+            .with_bold(false),
+    )
+    .view(
+        format!("♦{:02}", entity.armour.unwrap().value).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 1 }),
+        frame,
+    );
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::SKELETON)
+            .with_bold(false),
+    )
+    .view(
+        format!("♥{:02}", entity.hit_points.unwrap().current).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 2 }),
+        frame,
+    );
+}
+
+pub fn skeleton_respawn<F: Frame, C: ColModify>(
+    entity: &ToRenderEntity,
+    view_context: ViewContext<C>,
+    frame: &mut F,
+) {
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::SKELETON)
+            .with_bold(true),
+    )
+    .view("Res", view_context, frame);
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::SKELETON)
+            .with_bold(false),
+    )
+    .view("paw", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::SKELETON)
+            .with_bold(false),
+    )
+    .view(
+        format!("n{:02}", entity.skeleton_respawn.unwrap()).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 2 }),
+        frame,
+    );
+}
+
+pub fn boomer<F: Frame, C: ColModify>(
+    entity: &ToRenderEntity,
+    view_context: ViewContext<C>,
+    frame: &mut F,
+) {
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::BOOMER)
+            .with_bold(true),
+    )
+    .view("Bmr", view_context, frame);
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::BOOMER)
+            .with_bold(false),
+    )
+    .view(
+        format!("♦{:02}", entity.armour.unwrap().value).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 1 }),
+        frame,
+    );
+    StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::BOOMER)
+            .with_bold(false),
+    )
+    .view(
+        format!("♥{:02}", entity.hit_points.unwrap().current).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 2 }),
+        frame,
+    );
+}
+
+pub fn tank<F: Frame, C: ColModify>(
+    entity: &ToRenderEntity,
+    view_context: ViewContext<C>,
+    frame: &mut F,
+) {
+    StringViewSingleLine::new(Style::new().with_foreground(colours::TANK).with_bold(true)).view(
+        "Tnk",
+        view_context,
+        frame,
+    );
+    StringViewSingleLine::new(Style::new().with_foreground(colours::TANK).with_bold(false)).view(
+        format!("♦{:02}", entity.armour.unwrap().value).as_str(),
+        view_context.add_offset(Coord { x: 0, y: 1 }),
+        frame,
+    );
+    StringViewSingleLine::new(Style::new().with_foreground(colours::TANK).with_bold(false)).view(
         format!("♥{:02}", entity.hit_points.unwrap().current).as_str(),
         view_context.add_offset(Coord { x: 0, y: 2 }),
         frame,

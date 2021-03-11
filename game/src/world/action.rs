@@ -61,6 +61,7 @@ impl World {
         character: Entity,
         direction: CardinalDirection,
         rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
     ) -> Result<Option<crate::GameControlFlow>, Error> {
         if let Some(move_half_speed) = self.components.move_half_speed.get_mut(character) {
             if move_half_speed.skip_next_move {
@@ -102,7 +103,7 @@ impl World {
             .update_coord(character, target_coord)
             .map_err(|e| e.unwrap_occupied_by())
         {
-            self.melee_attack(character, occupant, direction, rng);
+            self.melee_attack(character, occupant, direction, rng, external_events);
         } else {
             if self.components.player.contains(character) {
                 self.after_player_move(character, target_coord, rng);
@@ -117,6 +118,7 @@ impl World {
         victim: Entity,
         direction: CardinalDirection,
         rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
     ) {
         let player = self.components.player.get_mut(attacker).unwrap();
         let remove = if let Some(ammo) = player.melee_weapon.ammo.as_mut() {
@@ -138,7 +140,7 @@ impl World {
             if player.traits.double_damage {
                 dmg *= 2;
             }
-            self.damage_character(victim, dmg, rng);
+            self.damage_character(victim, dmg, rng, external_events);
         }
         let player = self.components.player.get(attacker).unwrap();
         for ability in player.melee_weapon.abilities.clone() {
@@ -158,13 +160,34 @@ impl World {
         self.wait(attacker, rng);
     }
 
-    fn npc_melee_attack<R: Rng>(&mut self, attacker: Entity, victim: Entity, rng: &mut R) {
+    fn npc_melee_attack<R: Rng>(
+        &mut self,
+        attacker: Entity,
+        victim: Entity,
+        rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
+    ) {
         let &damage = self
             .components
             .damage
             .get(attacker)
             .expect("npc lacks damage component");
-        self.damage_character(victim, damage, rng);
+        if self.components.push_back.contains(attacker) {
+            let attacker_coord = self.spatial_table.coord_of(attacker).unwrap();
+            let victim_coord = self.spatial_table.coord_of(victim).unwrap();
+            let direction = match victim_coord - attacker_coord {
+                Coord { x: 1, y: 0 } => Some(CardinalDirection::East),
+                Coord { x: 0, y: -1 } => Some(CardinalDirection::North),
+                Coord { x: -1, y: 0 } => Some(CardinalDirection::West),
+                Coord { x: 0, y: 1 } => Some(CardinalDirection::South),
+                _ => None,
+            };
+            if let Some(direction) = direction {
+                self.character_push_in_direction(victim, direction.direction());
+                self.character_push_in_direction(victim, direction.direction());
+            }
+        }
+        self.damage_character(victim, damage, rng, external_events);
     }
 
     fn melee_attack<R: Rng>(
@@ -173,11 +196,12 @@ impl World {
         victim: Entity,
         direction: CardinalDirection,
         rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
     ) {
         if self.components.player.get(attacker).is_some() {
-            self.player_melee_attack(attacker, victim, direction, rng);
+            self.player_melee_attack(attacker, victim, direction, rng, external_events);
         } else if self.components.player.get(victim).is_some() {
-            self.npc_melee_attack(attacker, victim, rng);
+            self.npc_melee_attack(attacker, victim, rng, external_events);
         }
     }
 
@@ -212,7 +236,12 @@ impl World {
         self.components.tile.insert(door, Tile::DoorClosed(axis));
     }
 
-    pub fn process_oxygen<R: Rng>(&mut self, entity: Entity, rng: &mut R) {
+    pub fn process_oxygen<R: Rng>(
+        &mut self,
+        entity: Entity,
+        rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
+    ) {
         if let Some(oxygen) = self.components.oxygen.get_mut(entity) {
             if let Some(coord) = self.spatial_table.coord_of(entity) {
                 if self.air.has_air(coord) {
@@ -221,7 +250,7 @@ impl World {
                     }
                 } else {
                     if oxygen.current == 0 {
-                        self.damage_character(entity, 1, rng);
+                        self.damage_character(entity, 1, rng, external_events);
                     } else {
                         oxygen.current -= 1;
                     }
@@ -351,6 +380,7 @@ impl World {
                             movement_direction,
                             character_entity,
                             rng,
+                            external_events,
                         );
                     }
                 }
@@ -408,8 +438,30 @@ impl World {
         }
     }
 
-    fn character_die<R: Rng>(&mut self, character: Entity, rng: &mut R) {
+    fn character_die<R: Rng>(
+        &mut self,
+        character: Entity,
+        rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
+    ) {
         self.components.to_remove.insert(character, ());
+        if self.components.expoodes_on_death.contains(character) {
+            if let Some(coord) = self.spatial_table.coord_of(character) {
+                self.components.expoodes_on_death.remove(character);
+                use explosion::spec::*;
+                let spec = Explosion {
+                    mechanics: Mechanics { range: 2 },
+                    particle_emitter: ParticleEmitter {
+                        duration: Duration::from_millis(400),
+                        num_particles_per_frame: 100,
+                        min_step: Duration::from_millis(100),
+                        max_step: Duration::from_millis(300),
+                        fade_duration: Duration::from_millis(500),
+                    },
+                };
+                explosion::explode(self, coord, spec, external_events, rng);
+            }
+        }
     }
 
     pub fn damage_character<R: Rng>(
@@ -417,7 +469,12 @@ impl World {
         character: Entity,
         hit_points_to_lose: u32,
         rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
     ) {
+        if self.components.to_remove.contains(character) {
+            // prevent cascading damage on explosions
+            return;
+        }
         let hit_points = self
             .components
             .hit_points
@@ -425,7 +482,7 @@ impl World {
             .expect("character lacks hit_points");
         if hit_points_to_lose >= hit_points.current {
             hit_points.current = 0;
-            self.character_die(character, rng);
+            self.character_die(character, rng, external_events);
         } else {
             hit_points.current -= hit_points_to_lose;
         }
@@ -438,6 +495,7 @@ impl World {
         projectile_movement_direction: Direction,
         entity_to_damage: Entity,
         rng: &mut R,
+        external_events: &mut Vec<ExternalEvent>,
     ) {
         if let Some(armour) = self.components.armour.get(entity_to_damage).cloned() {
             if let Some(remaining_pen) = projectile_damage.pen.checked_sub(armour.value) {
@@ -445,7 +503,7 @@ impl World {
                 if projectile_damage.push_back {
                     damage /= 2; // spread the damage out over 2 ticks because the projectile will hit the character a second time
                 }
-                self.damage_character(entity_to_damage, damage, rng);
+                self.damage_character(entity_to_damage, damage, rng, external_events);
                 if projectile_damage.push_back {
                     self.character_push_in_direction(
                         entity_to_damage,

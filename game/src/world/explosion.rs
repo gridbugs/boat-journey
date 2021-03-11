@@ -44,11 +44,10 @@ fn character_effect_indirect_hit(
     mechanics: &spec::Mechanics,
     explosion_to_character: LineSegment,
 ) -> CharacterEffect {
-    let character_to_explosion_distance_squared = explosion_to_character.delta().magnitude2();
-    let push_back = 1 + (mechanics.range / (2 * (character_to_explosion_distance_squared + 1)));
+    let push_back = 2;
     CharacterEffect {
         push_back,
-        damage: push_back * 10,
+        damage: 2,
     }
 }
 
@@ -58,6 +57,7 @@ fn apply_indirect_hit<R: Rng>(
     character_entity: Entity,
     explosion_to_character: LineSegment,
     rng: &mut R,
+    external_events: &mut Vec<ExternalEvent>,
 ) {
     let CharacterEffect { push_back, damage } =
         character_effect_indirect_hit(mechanics, explosion_to_character);
@@ -74,14 +74,14 @@ fn apply_indirect_hit<R: Rng>(
             until_next_event: Duration::from_millis(0),
         },
     );
-    world.damage_character(character_entity, damage, rng);
+    world.damage_character(character_entity, damage, rng, external_events);
 }
 
 fn character_effect_direct_hit(mechanics: &spec::Mechanics) -> CharacterEffect {
-    let push_back = mechanics.range / 3;
+    let push_back = 2;
     CharacterEffect {
         push_back,
-        damage: mechanics.range * 10,
+        damage: 2,
     }
 }
 
@@ -91,6 +91,7 @@ fn apply_direct_hit<R: Rng>(
     mechanics: &spec::Mechanics,
     character_entity: Entity,
     rng: &mut R,
+    external_events: &mut Vec<ExternalEvent>,
 ) {
     let mut solid_neighbour_vector = Coord::new(0, 0);
     for direction in Direction::all() {
@@ -120,7 +121,7 @@ fn apply_direct_hit<R: Rng>(
             },
         );
     }
-    world.damage_character(character_entity, damage, rng);
+    world.damage_character(character_entity, damage, rng, external_events);
 }
 
 fn is_in_explosion_range(
@@ -136,27 +137,39 @@ fn apply_mechanics<R: Rng>(
     explosion_coord: Coord,
     mechanics: &spec::Mechanics,
     rng: &mut R,
+    external_events: &mut Vec<ExternalEvent>,
 ) {
     for character_entity in world.components.character.entities().collect::<Vec<_>>() {
         if let Some(character_coord) = world.spatial_table.coord_of(character_entity) {
             if character_coord == explosion_coord {
-                apply_direct_hit(world, explosion_coord, mechanics, character_entity, rng);
+                apply_direct_hit(
+                    world,
+                    explosion_coord,
+                    mechanics,
+                    character_entity,
+                    rng,
+                    external_events,
+                );
             } else {
                 if !is_in_explosion_range(explosion_coord, mechanics, character_coord) {
                     continue;
                 }
                 let explosion_to_character = LineSegment::new(explosion_coord, character_coord);
-                if !world.is_solid_feature_in_line_segment(explosion_to_character) {
-                    apply_indirect_hit(
-                        world,
-                        mechanics,
-                        character_entity,
-                        explosion_to_character,
-                        rng,
-                    );
-                } else {
-                    continue;
-                }
+                apply_indirect_hit(
+                    world,
+                    mechanics,
+                    character_entity,
+                    explosion_to_character,
+                    rng,
+                    external_events,
+                );
+            }
+        }
+    }
+    for destructible_entity in world.components.destructible.entities().collect::<Vec<_>>() {
+        if let Some(coord) = world.spatial_table.coord_of(destructible_entity) {
+            if is_in_explosion_range(explosion_coord, mechanics, coord) {
+                world.components.to_remove.insert(destructible_entity, ());
             }
         }
     }
@@ -170,6 +183,6 @@ pub fn explode<R: Rng>(
     rng: &mut R,
 ) {
     world.spawn_explosion_emitter(coord, &explosion.particle_emitter);
-    apply_mechanics(world, coord, &explosion.mechanics, rng);
+    apply_mechanics(world, coord, &explosion.mechanics, rng, external_events);
     external_events.push(ExternalEvent::Explosion(coord));
 }

@@ -62,6 +62,21 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                     agents.insert(entity, Agent::new(size));
                     world.spawn_floor(coord);
                 }
+                't' => {
+                    let entity = world.spawn_tank(coord, rng);
+                    agents.insert(entity, Agent::new(size));
+                    world.spawn_floor(coord);
+                }
+                's' => {
+                    let entity = world.spawn_skeleton(coord, rng);
+                    agents.insert(entity, Agent::new(size));
+                    world.spawn_floor(coord);
+                }
+                'b' => {
+                    let entity = world.spawn_boomer(coord, rng);
+                    agents.insert(entity, Agent::new(size));
+                    world.spawn_floor(coord);
+                }
                 'u' => {
                     let entity = world.spawn_upgrade(coord);
                     world.spawn_floor(coord);

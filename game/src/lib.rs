@@ -108,7 +108,7 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        let debug = false;
+        let debug = true;
         let Terrain {
             mut world,
             agents,
@@ -123,13 +123,13 @@ impl Game {
                 &mut rng,
             )
         };
-        if true {
+        if debug {
             world
                 .components
                 .player
                 .get_mut(player)
                 .unwrap()
-                .ranged_weapons[0] = Some(player::Weapon::new_railgun());
+                .ranged_weapons[0] = Some(player::Weapon::new_rifle());
             world
                 .components
                 .player
@@ -408,10 +408,12 @@ impl Game {
 
     fn player_turn(&mut self, input: Input) -> Result<Option<GameControlFlow>, ActionError> {
         let result = match input {
-            Input::Walk(direction) => {
-                self.world
-                    .character_walk_in_direction(self.player, direction, &mut self.rng)
-            }
+            Input::Walk(direction) => self.world.character_walk_in_direction(
+                self.player,
+                direction,
+                &mut self.rng,
+                &mut self.events,
+            ),
             Input::Wait => {
                 self.world.wait(self.player, &mut self.rng);
                 Ok(None)
@@ -464,7 +466,8 @@ impl Game {
             self.update_last_player_info();
         }
         self.world.process_door_close_countdown();
-        self.world.process_oxygen(self.player, &mut self.rng);
+        self.world
+            .process_oxygen(self.player, &mut self.rng, &mut self.events);
         if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
             if let Some(item_entity) = layers.item {
                 if let Some(item) = self.world.components.item.get(item_entity) {
@@ -498,9 +501,12 @@ impl Game {
             );
             match input {
                 NpcAction::Walk(direction) => {
-                    let _ =
-                        self.world
-                            .character_walk_in_direction(entity, direction, &mut self.rng);
+                    let _ = self.world.character_walk_in_direction(
+                        entity,
+                        direction,
+                        &mut self.rng,
+                        &mut self.events,
+                    );
                 }
                 NpcAction::Wait => (),
             }

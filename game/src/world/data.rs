@@ -42,6 +42,10 @@ declare_entity_module! {
         destructible: (),
         upgrade: (),
         weapon: player::Weapon,
+        push_back: (),
+        expoodes_on_death: (),
+        skeleton: (),
+        skeleton_respawn: u32,
     }
 }
 pub use components::Components;
@@ -57,6 +61,10 @@ pub enum Tile {
     Stairs,
     Window(Axis),
     Zombie,
+    Tank,
+    Boomer,
+    Skeleton,
+    SkeletonRespawn,
     WallText0,
     WallText1,
     WallText2,
