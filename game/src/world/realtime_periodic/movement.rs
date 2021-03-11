@@ -6,7 +6,7 @@ use crate::{
         },
         World,
     },
-    ExternalEvent,
+    ExternalEvent, Message,
 };
 use direction::Direction;
 use entity_table::Entity;
@@ -118,12 +118,19 @@ impl RealtimePeriodicState for MovementState {
         entity: Entity,
         world: &mut World,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
         rng: &mut R,
     ) {
         if let Some(movement_direction) = event {
-            world.projectile_move(entity, movement_direction, external_events, rng);
+            world.projectile_move(
+                entity,
+                movement_direction,
+                external_events,
+                message_log,
+                rng,
+            );
         } else {
-            world.projectile_stop(entity, external_events, rng);
+            world.projectile_stop(entity, external_events, message_log, rng);
         }
     }
 }

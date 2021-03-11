@@ -6,7 +6,7 @@ use crate::{
         },
         Tile, World,
     },
-    ExternalEvent,
+    ExternalEvent, Message,
 };
 use entity_table::Entity;
 use rand::{seq::SliceRandom, Rng};
@@ -68,6 +68,7 @@ impl RealtimePeriodicState for FlickerState {
         entity: Entity,
         world: &mut World,
         _external_events: &mut Vec<ExternalEvent>,
+        _message_log: &mut Vec<Message>,
         _rng: &mut R,
     ) {
         if let Some(colour_hint) = event.colour_hint {

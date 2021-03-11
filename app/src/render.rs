@@ -300,6 +300,11 @@ impl GameView {
             player_info: game_to_render.game.player_info(),
         };
         ui::UiView.view(ui, context.add_offset(Coord::new(64, 4)), frame);
+        ui::view_message_log(
+            game_to_render.game.message_log(),
+            context.add_offset(Coord { x: 1, y: 46 }),
+            frame,
+        );
         match game_to_render.mode {
             Mode::Normal => (),
             Mode::Aim { slot } => {

@@ -6,7 +6,7 @@ use chargrid::text::{
 };
 use orbital_decay_game::{
     player::{self, Player, Weapon, WeaponAbility, WeaponName},
-    CharacterInfo, HitPoints, MeleeWeapon, RangedWeapon,
+    CharacterInfo, Enemy, HitPoints, MeleeWeapon, Message, RangedWeapon,
 };
 
 pub struct Ui<'a> {
@@ -65,7 +65,7 @@ impl UiView {
             context.add_offset(Coord { x: 0, y: 5 }),
             frame,
         );
-        let context = context.add_offset(Coord { x: 0, y: 13 });
+        let context = context.add_offset(Coord { x: 0, y: 15 });
         for (i, ranged_slot) in ui.player.ranged_weapons.iter().enumerate() {
             if let Some(weapon) = ranged_slot {
                 view_weapon(
@@ -89,7 +89,7 @@ impl UiView {
                 );
             }
         }
-        view_upgrades(ui, context.add_offset(Coord { x: 0, y: 32 }), frame);
+        view_upgrades(&ui, context.add_offset(Coord { x: 0, y: 32 }), frame);
     }
 }
 
@@ -116,6 +116,21 @@ fn weapon_name_text(weapon_name: WeaponName) -> RichTextPartOwned {
         }
         WeaponName::RangedWeapon(RangedWeapon::Oxidiser) => t("Oxidiser", colours::OXYGEN),
         WeaponName::RangedWeapon(RangedWeapon::LifeStealer) => t("Life Stealer", colours::HEALTH),
+    }
+}
+
+fn enemy_text(enemy: Enemy) -> RichTextPartOwned {
+    let t = |s: &str, c| {
+        RichTextPartOwned::new(
+            s.to_string(),
+            Style::new().with_foreground(c).with_bold(true),
+        )
+    };
+    match enemy {
+        Enemy::Zombie => t("Zombie", colours::ZOMBIE),
+        Enemy::Skeleton => t("Skeleton", colours::SKELETON),
+        Enemy::Boomer => t("Boomer", colours::BOOMER),
+        Enemy::Tank => t("Tank", colours::TANK),
     }
 }
 
@@ -229,7 +244,7 @@ fn view_weapon<F: Frame, C: ColModify>(
     }
 }
 
-fn view_upgrades<F: Frame, C: ColModify>(ui: Ui, context: ViewContext<C>, frame: &mut F) {
+fn view_upgrades<F: Frame, C: ColModify>(ui: &Ui, context: ViewContext<C>, frame: &mut F) {
     let plain = Style::new()
         .with_foreground(Rgb24::new_grey(255))
         .with_bold(false);
@@ -268,5 +283,102 @@ fn view_upgrades<F: Frame, C: ColModify>(ui: Ui, context: ViewContext<C>, frame:
                 frame,
             );
         }
+    }
+}
+
+pub fn view_message_log<F: Frame, C: ColModify>(
+    messages: &[Message],
+    context: ViewContext<C>,
+    frame: &mut F,
+) {
+    const N: usize = 13;
+    let plain = Style::new()
+        .with_foreground(Rgb24::new_grey(255))
+        .with_bold(false);
+    let bold = Style::new()
+        .with_foreground(Rgb24::new_grey(255))
+        .with_bold(true);
+    let start = messages.len().saturating_sub(N);
+    let mut view = RichTextView::new(wrap::None::new());
+    let t = |text: &str, style| RichTextPartOwned::new(text.to_string(), style);
+    for (i, message) in messages[start..].iter().enumerate() {
+        let offset = Coord { x: 0, y: i as i32 };
+        let text = match message {
+            Message::MaybeThisWasntSuchAGoodIdea => {
+                vec![t("Maybe this wasn't such a good idea...", plain)]
+            }
+            Message::EquipWeapon(weapon) => {
+                vec![
+                    t("You equip the ", plain),
+                    weapon_name_text(*weapon),
+                    t(".", plain),
+                ]
+            }
+            Message::PulledByVacuum => {
+                vec![t("You are pulled towards the vacuum of space.", plain)]
+            }
+            Message::Descend => {
+                vec![t("You descend to the next floor. Ammo refilled!", plain)]
+            }
+            Message::Suffocating => {
+                vec![
+                    t("Oxygen tank is empty. ", plain),
+                    t(
+                        "You are suffocating!",
+                        bold.with_foreground(Rgb24::new(255, 0, 0)),
+                    ),
+                ]
+            }
+            Message::Heal => {
+                vec![t("Health restored.", plain)]
+            }
+            Message::TakeCredit(1) => {
+                vec![t("You gain $1 of credit.", plain)]
+            }
+            Message::TakeCredit(2) => {
+                vec![t("You gain $2 of credit.", plain)]
+            }
+            Message::BoomerExplodes => {
+                vec![
+                    t("The ", plain),
+                    enemy_text(Enemy::Boomer),
+                    t(" explodes!", plain),
+                ]
+            }
+            Message::EnemyHitPlayer(enemy) => {
+                vec![t("The ", plain), enemy_text(*enemy), t(" hits you!", plain)]
+            }
+            Message::PlayerHitEnemy { enemy, weapon } => {
+                vec![
+                    t("You hit the ", plain),
+                    enemy_text(*enemy),
+                    t(" with your ", plain),
+                    weapon_name_text(*weapon),
+                    t(".", plain),
+                ]
+            }
+            Message::PlayerDies => {
+                vec![t("You die!", bold.with_foreground(Rgb24::new(255, 0, 0)))]
+            }
+            Message::EnemyDies(enemy) => {
+                vec![t("The ", plain), enemy_text(*enemy), t(" dies.", plain)]
+            }
+            Message::PlayerAdrift => {
+                vec![t(
+                    "You fall into the void!",
+                    bold.with_foreground(Rgb24::new(0, 0, 255)),
+                )]
+            }
+            Message::EnemyAdrift(enemy) => {
+                vec![
+                    t("The ", plain),
+                    enemy_text(*enemy),
+                    t(" falls into the void.", plain),
+                ]
+            }
+            _ => vec![],
+        };
+        let text = text.iter().map(|t| t.as_rich_text_part());
+        view.view(text, context.add_offset(offset), frame);
     }
 }

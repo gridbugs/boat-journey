@@ -8,7 +8,7 @@ use crate::{
         spatial::{Layer, Location, SpatialTable},
         ActionError, ExternalEvent, World,
     },
-    SoundEffect, VisibilityGrid,
+    Message, SoundEffect, VisibilityGrid,
 };
 use direction::{CardinalDirection, Direction};
 use entity_table::{ComponentTable, Entity};
@@ -65,6 +65,7 @@ impl World {
         direction: CardinalDirection,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) -> Result<Option<crate::GameControlFlow>, Error> {
         if let Some(move_half_speed) = self.components.move_half_speed.get_mut(character) {
             if move_half_speed.skip_next_move {
@@ -87,6 +88,9 @@ impl World {
                     {
                         if self.components.player.contains(character) {
                             external_events.push(ExternalEvent::SoundEffect(SoundEffect::DoorOpen));
+                            if self.level == 0 && message_log.is_empty() {
+                                message_log.push(Message::MaybeThisWasntSuchAGoodIdea);
+                            }
                         }
                         self.open_door(feature_entity);
                         return Ok(None);
@@ -109,7 +113,14 @@ impl World {
             .update_coord(character, target_coord)
             .map_err(|e| e.unwrap_occupied_by())
         {
-            self.melee_attack(character, occupant, direction, rng, external_events);
+            self.melee_attack(
+                character,
+                occupant,
+                direction,
+                rng,
+                external_events,
+                message_log,
+            );
         } else {
             if self.components.player.contains(character) {
                 self.after_player_move(character, target_coord, rng);
@@ -125,6 +136,7 @@ impl World {
         direction: CardinalDirection,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
         let player = self.components.player.get_mut(attacker).unwrap();
         let remove = if let Some(ammo) = player.melee_weapon.ammo.as_mut() {
@@ -137,6 +149,12 @@ impl World {
             external_events.push(ExternalEvent::SoundEffect(SoundEffect::Chainsaw));
         } else {
             external_events.push(ExternalEvent::SoundEffect(SoundEffect::Punch));
+        }
+        if let Some(enemy) = self.components.enemy.get(victim) {
+            message_log.push(Message::PlayerHitEnemy {
+                enemy: *enemy,
+                weapon: player.melee_weapon.name,
+            });
         }
         let pen = player.melee_pen();
         if pen
@@ -151,7 +169,7 @@ impl World {
             if player.traits.double_damage {
                 dmg *= 2;
             }
-            self.damage_character(victim, dmg, rng, external_events);
+            self.damage_character(victim, dmg, rng, external_events, message_log);
         }
         let player = self.components.player.get(attacker).unwrap();
         for ability in player.melee_weapon.abilities.clone() {
@@ -177,6 +195,7 @@ impl World {
         victim: Entity,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
         let &damage = self
             .components
@@ -198,7 +217,10 @@ impl World {
                 self.character_push_in_direction(victim, direction.direction());
             }
         }
-        self.damage_character(victim, damage, rng, external_events);
+        if let Some(enemy) = self.components.enemy.get(attacker) {
+            message_log.push(Message::EnemyHitPlayer(*enemy));
+        }
+        self.damage_character(victim, damage, rng, external_events, message_log);
     }
 
     fn melee_attack<R: Rng>(
@@ -208,11 +230,19 @@ impl World {
         direction: CardinalDirection,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
         if self.components.player.get(attacker).is_some() {
-            self.player_melee_attack(attacker, victim, direction, rng, external_events);
+            self.player_melee_attack(
+                attacker,
+                victim,
+                direction,
+                rng,
+                external_events,
+                message_log,
+            );
         } else if self.components.player.get(victim).is_some() {
-            self.npc_melee_attack(attacker, victim, rng, external_events);
+            self.npc_melee_attack(attacker, victim, rng, external_events, message_log);
         }
     }
 
@@ -252,6 +282,7 @@ impl World {
         entity: Entity,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
         if let Some(oxygen) = self.components.oxygen.get_mut(entity) {
             if let Some(coord) = self.spatial_table.coord_of(entity) {
@@ -261,7 +292,8 @@ impl World {
                     }
                 } else {
                     if oxygen.current == 0 {
-                        self.damage_character(entity, 1, rng, external_events);
+                        message_log.push(Message::Suffocating);
+                        self.damage_character(entity, 1, rng, external_events, message_log);
                     } else {
                         oxygen.current -= 1;
                     }
@@ -373,6 +405,7 @@ impl World {
         &mut self,
         projectile_entity: Entity,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
         rng: &mut R,
     ) {
         if let Some(current_coord) = self.spatial_table.coord_of(projectile_entity) {
@@ -385,6 +418,7 @@ impl World {
                             current_coord,
                             explosion_spec,
                             external_events,
+                            message_log,
                             rng,
                         );
                         self.spatial_table.remove(projectile_entity);
@@ -414,6 +448,7 @@ impl World {
         projectile_entity: Entity,
         movement_direction: Direction,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
         rng: &mut R,
     ) {
         if let Some(current_coord) = self.spatial_table.coord_of(projectile_entity) {
@@ -436,6 +471,7 @@ impl World {
                             character_entity,
                             rng,
                             external_events,
+                            message_log,
                         );
                     }
                 }
@@ -464,7 +500,12 @@ impl World {
                             }
                         }
                         if stop {
-                            self.projectile_stop(projectile_entity, external_events, rng);
+                            self.projectile_stop(
+                                projectile_entity,
+                                external_events,
+                                message_log,
+                                rng,
+                            );
                             return;
                         }
                     }
@@ -473,7 +514,7 @@ impl World {
                     .spatial_table
                     .update_coord(projectile_entity, next_coord);
             } else {
-                self.projectile_stop(projectile_entity, external_events, rng);
+                self.projectile_stop(projectile_entity, external_events, message_log, rng);
                 return;
             }
         } else {
@@ -498,7 +539,13 @@ impl World {
         character: Entity,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
+        if self.components.player.contains(character) {
+            message_log.push(Message::PlayerDies);
+        } else if let Some(enemy) = self.components.enemy.get(character) {
+            message_log.push(Message::EnemyDies(*enemy));
+        }
         self.components.to_remove.insert(character, ());
         if self.components.expoodes_on_death.contains(character) {
             if let Some(coord) = self.spatial_table.coord_of(character) {
@@ -514,7 +561,8 @@ impl World {
                         fade_duration: Duration::from_millis(500),
                     },
                 };
-                explosion::explode(self, coord, spec, external_events, rng);
+                message_log.push(Message::BoomerExplodes);
+                explosion::explode(self, coord, spec, external_events, message_log, rng);
             }
         }
         if self.components.skeleton.contains(character) {
@@ -530,6 +578,7 @@ impl World {
         hit_points_to_lose: u32,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
         if self.components.to_remove.contains(character) {
             // prevent cascading damage on explosions
@@ -542,7 +591,7 @@ impl World {
             .expect("character lacks hit_points");
         if hit_points_to_lose >= hit_points.current {
             hit_points.current = 0;
-            self.character_die(character, rng, external_events);
+            self.character_die(character, rng, external_events, message_log);
         } else {
             hit_points.current -= hit_points_to_lose;
         }
@@ -556,11 +605,17 @@ impl World {
         entity_to_damage: Entity,
         rng: &mut R,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
     ) {
         if let Some(armour) = self.components.armour.get(entity_to_damage).cloned() {
             if let Some(remaining_pen) = projectile_damage.pen.checked_sub(armour.value) {
+                if let Some(&enemy) = self.components.enemy.get(entity_to_damage) {
+                    if let Some(weapon) = projectile_damage.weapon_name {
+                        message_log.push(Message::PlayerHitEnemy { enemy, weapon });
+                    }
+                }
                 let mut damage = projectile_damage.hit_points;
-                self.damage_character(entity_to_damage, damage, rng, external_events);
+                self.damage_character(entity_to_damage, damage, rng, external_events, message_log);
                 if projectile_damage.life_steal {
                     if let Some(player) = self.components.player.entities().next() {
                         if let Some(hit_points) = self.components.hit_points.get_mut(player) {
@@ -668,7 +723,12 @@ impl World {
         Ok(())
     }
 
-    pub fn equip_melee_weapon_from_ground(&mut self, entity: Entity) {
+    pub fn equip_melee_weapon_from_ground(
+        &mut self,
+        entity: Entity,
+
+        message_log: &mut Vec<Message>,
+    ) {
         if let Some(coord) = self.spatial_table.coord_of(entity) {
             if let Some((item_entity, weapon)) =
                 self.spatial_table.layers_at(coord).and_then(|layers| {
@@ -682,6 +742,7 @@ impl World {
             {
                 if weapon.is_melee() {
                     if let Some(player) = self.components.player.get_mut(entity) {
+                        message_log.push(Message::EquipWeapon(weapon.name));
                         player.melee_weapon = weapon;
                         self.components.to_remove.insert(item_entity, ());
                     }
@@ -694,6 +755,7 @@ impl World {
         &mut self,
         entity: Entity,
         slot: player::RangedWeaponSlot,
+        message_log: &mut Vec<Message>,
     ) {
         if let Some(coord) = self.spatial_table.coord_of(entity) {
             if let Some((item_entity, weapon)) =
@@ -708,6 +770,7 @@ impl World {
             {
                 if weapon.is_ranged() {
                     if let Some(player) = self.components.player.get_mut(entity) {
+                        message_log.push(Message::EquipWeapon(weapon.name));
                         player.ranged_weapons[slot.index()] = Some(weapon);
                         self.components.to_remove.insert(item_entity, ());
                     }
@@ -716,8 +779,9 @@ impl World {
         }
     }
 
-    pub fn heal_fully(&mut self, entity: Entity) {
+    pub fn heal_fully(&mut self, entity: Entity, message_log: &mut Vec<Message>) {
         if let Some(hit_points) = self.components.hit_points.get_mut(entity) {
+            message_log.push(Message::Heal);
             hit_points.current = hit_points.max;
         }
     }

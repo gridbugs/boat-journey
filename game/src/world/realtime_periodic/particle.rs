@@ -9,7 +9,7 @@ use crate::{
         },
         World,
     },
-    ExternalEvent,
+    ExternalEvent, Message,
 };
 use entity_table::Entity;
 use rand::Rng;
@@ -207,6 +207,7 @@ impl RealtimePeriodicState for ParticleEmitterState {
                     hull_pen_percent: 0,
                     life_steal: false,
                     oxidise: false,
+                    weapon_name: None,
                 })
             }),
         };
@@ -220,6 +221,7 @@ impl RealtimePeriodicState for ParticleEmitterState {
         entity: Entity,
         world: &mut World,
         _: &mut Vec<ExternalEvent>,
+        _: &mut Vec<Message>,
         _: &mut R,
     ) {
         let coord = if let Some(coord) = world.spatial_table.coord_of(entity) {

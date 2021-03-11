@@ -1,6 +1,6 @@
 use crate::{
     world::{realtime_periodic::core::TimeConsumingEvent, World},
-    ExternalEvent,
+    ExternalEvent, Message,
 };
 use entity_table::Entity;
 use rand::Rng;
@@ -32,6 +32,7 @@ impl Context {
         &mut self,
         world: &mut World,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
         rng: &mut R,
     ) {
         self.realtime_entities
@@ -46,7 +47,7 @@ impl Context {
                     until_next_event,
                 } = realtime_entity_components.tick(frame_remaining, rng);
                 frame_remaining -= until_next_event;
-                event.animate(entity, world, external_events, rng);
+                event.animate(entity, world, external_events, message_log, rng);
             }
         }
     }

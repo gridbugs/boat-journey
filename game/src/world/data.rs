@@ -46,6 +46,7 @@ declare_entity_module! {
         expoodes_on_death: (),
         skeleton: (),
         skeleton_respawn: u32,
+        enemy: Enemy,
     }
 }
 pub use components::Components;
@@ -84,6 +85,14 @@ pub enum Tile {
     Oxidiser,
     LifeStealer,
     Medkit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Enemy {
+    Zombie,
+    Skeleton,
+    Boomer,
+    Tank,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -194,6 +203,7 @@ pub struct ProjectileDamage {
     pub hull_pen_percent: u32,
     pub life_steal: bool,
     pub oxidise: bool,
+    pub weapon_name: Option<player::WeaponName>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

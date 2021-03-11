@@ -9,7 +9,7 @@ use crate::{
         },
         World,
     },
-    ExternalEvent,
+    ExternalEvent, Message,
 };
 use entity_table::Entity;
 use rand::Rng;
@@ -100,6 +100,7 @@ impl RealtimePeriodicState for FadeState {
         entity: Entity,
         world: &mut World,
         _: &mut Vec<ExternalEvent>,
+        _: &mut Vec<Message>,
         _: &mut R,
     ) {
         if progress.is_complete() {
@@ -145,6 +146,7 @@ impl RealtimePeriodicState for LightColourFadeState {
         entity: Entity,
         world: &mut World,
         _external_events: &mut Vec<ExternalEvent>,
+        _message_log: &mut Vec<Message>,
         _rng: &mut R,
     ) {
         match progress {

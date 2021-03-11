@@ -1,4 +1,4 @@
-use crate::{visibility::Light, ExternalEvent};
+use crate::{visibility::Light, ExternalEvent, Message};
 use entity_table::{Entity, EntityAllocator};
 use grid_2d::{Coord, Size};
 use rand::Rng;
@@ -15,8 +15,8 @@ pub mod player;
 
 mod data;
 pub use data::{
-    Armour, Disposition, EntityData, HitPoints, Item, Layer, Location, MeleeWeapon, NpcAction,
-    Oxygen, RangedWeapon, Tile,
+    Armour, Disposition, Enemy, EntityData, HitPoints, Item, Layer, Location, MeleeWeapon,
+    NpcAction, Oxygen, RangedWeapon, Tile,
 };
 use data::{Components, Npc};
 
@@ -247,9 +247,10 @@ impl World {
         &mut self,
         animation_context: &mut AnimationContext,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
         rng: &mut R,
     ) {
-        animation_context.tick(self, external_events, rng)
+        animation_context.tick(self, external_events, message_log, rng)
     }
     pub fn commit_to_next_action(&mut self, entity: Entity, next_action: NpcAction) {
         self.components.next_action.insert(entity, next_action);

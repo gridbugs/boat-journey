@@ -1,4 +1,4 @@
-use crate::{world::World, ExternalEvent};
+use crate::{world::World, ExternalEvent, Message};
 use entity_table::Entity;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,7 @@ pub trait RealtimePeriodicState {
         entity: Entity,
         world: &mut World,
         external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
         rng: &mut R,
     );
 }
@@ -56,6 +57,7 @@ macro_rules! realtime_periodic {
                     entity: entity_table::Entity,
                     world: &mut World,
                     external_events: &mut Vec<crate::ExternalEvent>,
+                    message_log: &mut Vec<Message>,
                     rng: &mut R,
                 ) {
                     $(if let Some(event) = self.$component_name {
@@ -64,6 +66,7 @@ macro_rules! realtime_periodic {
                             entity,
                             world,
                             external_events,
+                            message_log,
                             rng,
                         );
                     })*

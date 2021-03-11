@@ -330,9 +330,9 @@ pub fn space_station<R: Rng>(
         if level == 0 {
             return space_station_first_floor(player_data, spec, rng);
         }
-        //  if level == FINAL_LEVEL {
-        return space_station_last_level(5, player_data, spec, terrain_state, rng);
-        //  }
+        if level == FINAL_LEVEL {
+            return space_station_last_level(FINAL_LEVEL, player_data, spec, terrain_state, rng);
+        }
     }
     const AREA_SIZE: Size = Size::new_u16(27, 20);
     const SHIP_SIZE: Size = Size::new_u16(20, 14);

@@ -19,11 +19,32 @@ use terrain::{SpaceStationSpec, Terrain, TerrainState};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
-    player, ActionError, CharacterInfo, EntityData, HitPoints, Item, Layer, MeleeWeapon, NpcAction,
-    PlayerDied, RangedWeapon, Tile, ToRenderEntity, ToRenderEntityRealtime,
+    player, ActionError, CharacterInfo, Enemy, EntityData, HitPoints, Item, Layer, MeleeWeapon,
+    NpcAction, PlayerDied, RangedWeapon, Tile, ToRenderEntity, ToRenderEntityRealtime,
 };
 
 pub const MAP_SIZE: Size = Size::new_u16(20, 14);
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+pub enum Message {
+    MaybeThisWasntSuchAGoodIdea,
+    EquipWeapon(player::WeaponName),
+    PulledByVacuum,
+    Descend,
+    Suffocating,
+    Heal,
+    TakeCredit(u32),
+    BoomerExplodes,
+    EnemyHitPlayer(Enemy),
+    PlayerHitEnemy {
+        enemy: Enemy,
+        weapon: player::WeaponName,
+    },
+    PlayerDies,
+    EnemyDies(Enemy),
+    PlayerAdrift,
+    EnemyAdrift(Enemy),
+}
 
 pub struct Config {
     pub omniscient: Option<Omniscient>,
@@ -116,6 +137,7 @@ pub struct Game {
     won: bool,
     adrift: bool,
     terrain_state: TerrainState,
+    message_log: Vec<Message>,
 }
 
 impl Game {
@@ -124,7 +146,7 @@ impl Game {
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
         let mut terrain_state = TerrainState::new(&mut rng);
-        let debug = true;
+        let debug = false;
         let Terrain {
             mut world,
             agents,
@@ -200,10 +222,14 @@ impl Game {
             won: false,
             adrift: false,
             terrain_state,
+            message_log: Vec::new(),
         };
         game.update_visibility(config);
         game.prime_npcs();
         game
+    }
+    pub fn message_log(&self) -> &[Message] {
+        &self.message_log
     }
     pub fn player_has_usable_weapon_in_slot(&self, slot: player::RangedWeaponSlot) -> bool {
         let player = self.world.components.player.get(self.player).unwrap();
@@ -341,6 +367,7 @@ impl Game {
         self.world.animation_tick(
             &mut self.animation_context,
             &mut self.events,
+            &mut self.message_log,
             &mut self.animation_rng,
         );
         if !self.is_gameplay_blocked() {
@@ -437,6 +464,7 @@ impl Game {
                 direction,
                 &mut self.rng,
                 &mut self.events,
+                &mut self.message_log,
             ),
             Input::Wait => {
                 self.world.wait(self.player, &mut self.rng);
@@ -453,12 +481,16 @@ impl Game {
             }
             Input::Upgrade(_upgrade) => Ok(None),
             Input::EquipMeleeWeapon => {
-                self.world.equip_melee_weapon_from_ground(self.player);
+                self.world
+                    .equip_melee_weapon_from_ground(self.player, &mut self.message_log);
                 Ok(None)
             }
             Input::EquipRangedWeapon(slot) => {
-                self.world
-                    .equip_ranged_weapon_from_ground(self.player, slot);
+                self.world.equip_ranged_weapon_from_ground(
+                    self.player,
+                    slot,
+                    &mut self.message_log,
+                );
                 Ok(None)
             }
         };
@@ -480,6 +512,9 @@ impl Game {
                 .update(&self.world.spatial_table, &self.world.components);
             for (entity, direction) in to_move {
                 if let Some(player) = self.world.components.player.get(entity) {
+                    if i == 0 {
+                        self.message_log.push(Message::PulledByVacuum);
+                    }
                     if player.traits.half_vacuum_pull && i == 1 {
                         continue;
                     }
@@ -491,8 +526,12 @@ impl Game {
             self.update_last_player_info();
         }
         self.world.process_door_close_countdown();
-        self.world
-            .process_oxygen(self.player, &mut self.rng, &mut self.events);
+        self.world.process_oxygen(
+            self.player,
+            &mut self.rng,
+            &mut self.events,
+            &mut self.message_log,
+        );
         self.world
             .process_skeleton_respawn(&mut self.rng, &mut self.agents, &mut self.events);
         if let Some(layers) = self.world.spatial_table.layers_at(self.player_coord()) {
@@ -502,6 +541,7 @@ impl Game {
                         Item::Credit(amount) => {
                             if let Some(player) = self.world.components.player.get_mut(self.player)
                             {
+                                self.message_log.push(Message::TakeCredit(*amount));
                                 player.credit += amount;
                             }
                             self.world.components.to_remove.insert(item_entity, ());
@@ -509,7 +549,7 @@ impl Game {
                         Item::RangedWeapon(ranged_weapon) => {}
                         Item::MeleeWeapon(melee_weapon) => {}
                         Item::Medkit => {
-                            self.world.heal_fully(self.player);
+                            self.world.heal_fully(self.player, &mut self.message_log);
                             self.world.components.to_remove.insert(item_entity, ());
                         }
                     }
@@ -537,6 +577,7 @@ impl Game {
                         direction,
                         &mut self.rng,
                         &mut self.events,
+                        &mut self.message_log,
                     );
                 }
                 NpcAction::Wait => (),
@@ -549,6 +590,7 @@ impl Game {
         self.after_turn();
     }
     fn generate_level(&mut self, config: &Config) {
+        self.message_log.push(Message::Descend);
         let mut player_data = self.world.clone_entity_data(self.player);
         for weapon in player_data
             .player
@@ -606,6 +648,7 @@ impl Game {
             if layers.floor.is_none() {
                 self.world.components.to_remove.insert(self.player, ());
                 self.adrift = true;
+                self.message_log.push(Message::PlayerAdrift);
             }
         }
         for npc in self.world.components.npc.entities() {
@@ -613,6 +656,9 @@ impl Game {
                 if let Some(layers) = self.world.spatial_table.layers_at(coord) {
                     if layers.floor.is_none() {
                         self.world.components.to_remove.insert(npc, ());
+                        if let Some(enemy) = self.world.components.enemy.get(npc) {
+                            self.message_log.push(Message::EnemyAdrift(*enemy));
+                        }
                     }
                 }
             }

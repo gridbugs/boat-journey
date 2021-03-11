@@ -399,7 +399,7 @@ impl EventRoutine for TextOverlay {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: colours::SPACE_BACKGROUND,
+                    rgb24: colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
                     view: BorderView {
                         style: &BorderStyle {
                             padding: BorderPadding::all(1),
@@ -471,7 +471,7 @@ impl Decorate for DecorateMainMenu {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: colours::SPACE_BACKGROUND,
+                    rgb24: colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
                     view: BorderView {
                         style: &BorderStyle::new(),
                         view: &mut event_routine_view,
@@ -612,7 +612,7 @@ impl Decorate for DecorateUpgradeMenu {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: colours::SPACE_BACKGROUND,
+                    rgb24: colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
                     view: BorderView {
                         style: &BorderStyle::new(),
                         view: BoundView {
@@ -682,7 +682,7 @@ impl Decorate for DecorateConfirmMenu {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: colours::SPACE_BACKGROUND,
+                    rgb24: colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
                     view: BorderView {
                         style: &BorderStyle::new(),
                         view: ConfirmMenuWindow {
@@ -872,7 +872,7 @@ impl Decorate for DecorateOptionsMenu {
             AlignView {
                 alignment: Alignment::centre(),
                 view: FillBackgroundView {
-                    rgb24: colours::SPACE_BACKGROUND,
+                    rgb24: colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
                     view: BorderView {
                         style: &BorderStyle::new(),
                         view: &mut event_routine_view,

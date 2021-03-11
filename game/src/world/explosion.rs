@@ -2,6 +2,7 @@ use crate::world::{
     realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
     ExternalEvent, World,
 };
+use crate::Message;
 use direction::Direction;
 use entity_table::Entity;
 use grid_2d::Coord;
@@ -58,6 +59,7 @@ fn apply_indirect_hit<R: Rng>(
     explosion_to_character: LineSegment,
     rng: &mut R,
     external_events: &mut Vec<ExternalEvent>,
+    message_log: &mut Vec<Message>,
 ) {
     let CharacterEffect { push_back, damage } =
         character_effect_indirect_hit(mechanics, explosion_to_character);
@@ -74,7 +76,7 @@ fn apply_indirect_hit<R: Rng>(
             until_next_event: Duration::from_millis(0),
         },
     );
-    world.damage_character(character_entity, damage, rng, external_events);
+    world.damage_character(character_entity, damage, rng, external_events, message_log);
 }
 
 fn character_effect_direct_hit(mechanics: &spec::Mechanics) -> CharacterEffect {
@@ -92,6 +94,7 @@ fn apply_direct_hit<R: Rng>(
     character_entity: Entity,
     rng: &mut R,
     external_events: &mut Vec<ExternalEvent>,
+    message_log: &mut Vec<Message>,
 ) {
     let mut solid_neighbour_vector = Coord::new(0, 0);
     for direction in Direction::all() {
@@ -121,7 +124,7 @@ fn apply_direct_hit<R: Rng>(
             },
         );
     }
-    world.damage_character(character_entity, damage, rng, external_events);
+    world.damage_character(character_entity, damage, rng, external_events, message_log);
 }
 
 fn is_in_explosion_range(
@@ -138,6 +141,7 @@ fn apply_mechanics<R: Rng>(
     mechanics: &spec::Mechanics,
     rng: &mut R,
     external_events: &mut Vec<ExternalEvent>,
+    message_log: &mut Vec<Message>,
 ) {
     for character_entity in world.components.character.entities().collect::<Vec<_>>() {
         if let Some(character_coord) = world.spatial_table.coord_of(character_entity) {
@@ -149,6 +153,7 @@ fn apply_mechanics<R: Rng>(
                     character_entity,
                     rng,
                     external_events,
+                    message_log,
                 );
             } else {
                 if !is_in_explosion_range(explosion_coord, mechanics, character_coord) {
@@ -162,6 +167,7 @@ fn apply_mechanics<R: Rng>(
                     explosion_to_character,
                     rng,
                     external_events,
+                    message_log,
                 );
             }
         }
@@ -180,9 +186,17 @@ pub fn explode<R: Rng>(
     coord: Coord,
     explosion: spec::Explosion,
     external_events: &mut Vec<ExternalEvent>,
+    message_log: &mut Vec<Message>,
     rng: &mut R,
 ) {
     world.spawn_explosion_emitter(coord, &explosion.particle_emitter);
-    apply_mechanics(world, coord, &explosion.mechanics, rng, external_events);
+    apply_mechanics(
+        world,
+        coord,
+        &explosion.mechanics,
+        rng,
+        external_events,
+        message_log,
+    );
     external_events.push(ExternalEvent::Explosion(coord));
 }

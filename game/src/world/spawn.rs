@@ -2,9 +2,9 @@ use crate::{
     visibility::Light,
     world::{
         data::{
-            Armour, CollidesWith, Disposition, DoorState, EntityData, HitPoints, Item, Layer,
-            Location, MeleeWeapon, MoveHalfSpeed, Npc, OnCollision, Oxygen, ProjectileDamage,
-            RangedWeapon, Tile,
+            Armour, CollidesWith, Disposition, DoorState, Enemy, EntityData, HitPoints, Item,
+            Layer, Location, MeleeWeapon, MoveHalfSpeed, Npc, OnCollision, Oxygen,
+            ProjectileDamage, RangedWeapon, Tile,
         },
         explosion,
         player::{self, WeaponAbility},
@@ -348,6 +348,7 @@ impl World {
                     .abilities
                     .iter()
                     .any(|a| *a == WeaponAbility::LifeSteal),
+                weapon_name: Some(weapon.name),
             },
         );
         entity
@@ -650,6 +651,7 @@ impl World {
             .insert(entity, HitPoints::new_full(4));
         self.components.armour.insert(entity, Armour::new(2));
         self.components.damage.insert(entity, 1);
+        self.components.enemy.insert(entity, Enemy::Zombie);
         entity
     }
 
@@ -678,6 +680,7 @@ impl World {
         self.components.armour.insert(entity, Armour::new(3));
         self.components.damage.insert(entity, 1);
         self.components.skeleton.insert(entity, ());
+        self.components.enemy.insert(entity, Enemy::Skeleton);
         entity
     }
 
@@ -722,6 +725,7 @@ impl World {
         self.components.armour.insert(entity, Armour::new(10));
         self.components.damage.insert(entity, 2);
         self.components.push_back.insert(entity, ());
+        self.components.enemy.insert(entity, Enemy::Tank);
         entity
     }
 
@@ -750,6 +754,7 @@ impl World {
         self.components.armour.insert(entity, Armour::new(2));
         self.components.damage.insert(entity, 1);
         self.components.expoodes_on_death.insert(entity, ());
+        self.components.enemy.insert(entity, Enemy::Boomer);
         entity
     }
 

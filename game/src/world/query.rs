@@ -82,7 +82,8 @@ impl World {
             if let Some(feature) = spatial_cell.feature {
                 self.components.door_state.contains(feature)
                     || !(self.components.solid.contains(feature)
-                        || self.components.stairs.contains(feature))
+                        || self.components.stairs.contains(feature)
+                        || self.components.upgrade.contains(feature))
             } else {
                 true
             }
