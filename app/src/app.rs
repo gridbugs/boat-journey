@@ -4,8 +4,8 @@ use crate::controls::Controls;
 use crate::depth;
 use crate::frontend::Frontend;
 use crate::game::{
-    AimEventRoutine, ChooseWeaponSlotEventRoutine, ExamineEventRoutine, GameData, GameEventRoutine,
-    GameOverEventRoutine, GameReturn, GameStatus, InjectedInput, ScreenCoord,
+    AimEventRoutine, ChooseWeaponSlotEventRoutine, ExamineEventRoutine, Fire, GameData,
+    GameEventRoutine, GameOverEventRoutine, GameReturn, GameStatus, InjectedInput, ScreenCoord,
 };
 pub use crate::game::{GameConfig, Omniscient, RngSeed};
 use crate::menu_background::MenuBackgroundData;
@@ -1347,12 +1347,7 @@ fn keybindings() -> TextOverlay {
 
 fn aim(
     slot: RangedWeaponSlot,
-) -> impl EventRoutine<
-    Return = Option<CardinalDirection>,
-    Data = AppData,
-    View = AppView,
-    Event = CommonEvent,
-> {
+) -> impl EventRoutine<Return = Option<Fire>, Data = AppData, View = AppView, Event = CommonEvent> {
     make_either!(Ei = A | B);
     SideEffectThen::new_with_view(move |data: &mut AppData, _view: &AppView| {
         let game_relative_mouse_coord = ScreenCoord(data.last_mouse_coord);
@@ -1405,10 +1400,10 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                     GameReturn::GameOver => Handled::Return(GameLoopBreak::GameOver),
                     GameReturn::Win => Handled::Return(GameLoopBreak::Win),
                     GameReturn::Aim(slot) => {
-                        Handled::Continue(Ei::B(aim(slot).and_then(|maybe_direction| {
+                        Handled::Continue(Ei::B(aim(slot).and_then(|maybe_fire| {
                             make_either!(Ei = A | B);
-                            if let Some(direction) = maybe_direction {
-                                Ei::A(game_injecting_inputs(vec![InjectedInput::Fire(direction)]))
+                            if let Some(fire) = maybe_fire {
+                                Ei::A(game_injecting_inputs(vec![InjectedInput::Fire(fire)]))
                             } else {
                                 Ei::B(game())
                             }

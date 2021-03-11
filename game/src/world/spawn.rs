@@ -31,7 +31,7 @@ pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
         player: Some(player::Player::new()),
         light: Some(Light {
             colour: Rgb24::new_grey(200),
-            vision_distance: Circle::new_squared(120),
+            vision_distance: Circle::new_squared(70),
             diminish: Rational {
                 numerator: 1,
                 denominator: 8,
@@ -212,7 +212,7 @@ impl World {
         entity
     }
 
-    pub fn spawn_bullet(&mut self, start: Coord, target: Coord) -> Entity {
+    pub fn spawn_bullet(&mut self, start: Coord, target: Coord, weapon: &player::Weapon) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -240,29 +240,57 @@ impl World {
                 until_next_event: Duration::from_millis(0),
             },
         );
+        let particle_emitter = if let Some(light_colour) = weapon.light_colour {
+            use particle::spec::*;
+            ParticleEmitter {
+                emit_particle_every_period: Duration::from_millis(8),
+                fade_out_duration: None,
+                particle: Particle {
+                    tile: None,
+                    movement: None,
+                    fade_duration: Some(Duration::from_millis(1000)),
+                    possible_light: Some(Possible {
+                        chance: Rational {
+                            numerator: 1,
+                            denominator: 1,
+                        },
+                        value: Light {
+                            colour: light_colour,
+                            vision_distance: Circle::new_squared(50),
+                            diminish: Rational {
+                                numerator: 10,
+                                denominator: 1,
+                            },
+                        },
+                    }),
+                    ..Default::default()
+                },
+            }
+        } else {
+            use particle::spec::*;
+            ParticleEmitter {
+                emit_particle_every_period: Duration::from_micros(2000),
+                fade_out_duration: None,
+                particle: Particle {
+                    tile: None,
+                    movement: Some(Movement {
+                        angle_range: Radians::uniform_range_all(),
+                        cardinal_period_range: UniformInclusiveRange {
+                            low: Duration::from_millis(200),
+                            high: Duration::from_millis(500),
+                        },
+                    }),
+                    fade_duration: Some(Duration::from_millis(1000)),
+                    possible_light: None,
+                    ..Default::default()
+                },
+            }
+        }
+        .build();
         self.realtime_components.particle_emitter.insert(
             entity,
             ScheduledRealtimePeriodicState {
-                state: {
-                    use particle::spec::*;
-                    ParticleEmitter {
-                        emit_particle_every_period: Duration::from_micros(2000),
-                        fade_out_duration: None,
-                        particle: Particle {
-                            tile: None,
-                            movement: Some(Movement {
-                                angle_range: Radians::uniform_range_all(),
-                                cardinal_period_range: UniformInclusiveRange {
-                                    low: Duration::from_millis(200),
-                                    high: Duration::from_millis(500),
-                                },
-                            }),
-                            fade_duration: Some(Duration::from_millis(1000)),
-                            ..Default::default()
-                        },
-                    }
-                    .build()
-                },
+                state: particle_emitter,
                 until_next_event: Duration::from_millis(0),
             },
         );
@@ -277,10 +305,13 @@ impl World {
         self.components.projectile_damage.insert(
             entity,
             ProjectileDamage {
-                hit_points: 2,
-                push_back: false,
-                pen: 3,
-                hull_pen_percent: 50,
+                hit_points: weapon.dmg,
+                push_back: weapon
+                    .abilities
+                    .iter()
+                    .any(|a| *a == player::WeaponAbility::KnockBack),
+                pen: weapon.pen,
+                hull_pen_percent: weapon.hull_pen_percent,
             },
         );
         entity

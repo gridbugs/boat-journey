@@ -118,7 +118,13 @@ impl World {
         direction: CardinalDirection,
         rng: &mut R,
     ) {
-        let player = self.components.player.get(attacker).unwrap();
+        let player = self.components.player.get_mut(attacker).unwrap();
+        let remove = if let Some(ammo) = player.melee_weapon.ammo.as_mut() {
+            ammo.current = ammo.current.saturating_sub(1);
+            ammo.current == 0
+        } else {
+            false
+        };
         let pen = player.melee_pen();
         if pen
             >= self
@@ -144,6 +150,10 @@ impl World {
                 }
                 _ => (),
             }
+        }
+        let player = self.components.player.get_mut(attacker).unwrap();
+        if remove {
+            player.melee_weapon = player::Weapon::new_bare_hands();
         }
         self.wait(attacker, rng);
     }
@@ -243,13 +253,29 @@ impl World {
         }
     }
 
-    pub fn character_fire_bullet(&mut self, character: Entity, target: Coord) {
+    pub fn character_fire_bullet(
+        &mut self,
+        character: Entity,
+        target: Coord,
+        slot: player::RangedWeaponSlot,
+    ) {
         let character_coord = self.spatial_table.coord_of(character).unwrap();
         if character_coord == target {
             return;
         }
-        self.spawn_bullet(character_coord, target);
-        self.spawn_flash(character_coord);
+        let player = self.components.player.get_mut(character).unwrap();
+        if let Some(weapon) = player.ranged_weapons[slot.index()].as_mut() {
+            if let Some(ammo) = weapon.ammo.as_mut() {
+                if ammo.current == 0 {
+                    return;
+                } else {
+                    ammo.current -= 1;
+                }
+            }
+            let weapon = weapon.clone();
+            self.spawn_bullet(character_coord, target, &weapon);
+            self.spawn_flash(character_coord);
+        }
     }
 
     fn blink<R: Rng>(&mut self, entity: Entity, coord: Coord, rng: &mut R) {
@@ -333,6 +359,7 @@ impl World {
                         || (collides_with.character
                             && self.components.character.contains(entity_in_cell))
                     {
+                        let mut stop = true;
                         if let Some(&projectile_damage) =
                             self.components.projectile_damage.get(projectile_entity)
                         {
@@ -347,11 +374,14 @@ impl World {
                                 if rng.gen_range(0..100) < hull_pen_percent {
                                     self.components.remove_entity(entity_in_cell);
                                     self.spatial_table.remove(entity_in_cell);
+                                    stop = false;
                                 }
                             }
                         }
-                        self.projectile_stop(projectile_entity, external_events, rng);
-                        return;
+                        if stop {
+                            self.projectile_stop(projectile_entity, external_events, rng);
+                            return;
+                        }
                     }
                 }
                 let _ignore_err = self
@@ -411,8 +441,16 @@ impl World {
     ) {
         if let Some(armour) = self.components.armour.get(entity_to_damage).cloned() {
             if let Some(remaining_pen) = projectile_damage.pen.checked_sub(armour.value) {
-                self.damage_character(entity_to_damage, projectile_damage.hit_points, rng);
+                let mut damage = projectile_damage.hit_points;
                 if projectile_damage.push_back {
+                    damage /= 2; // spread the damage out over 2 ticks because the projectile will hit the character a second time
+                }
+                self.damage_character(entity_to_damage, damage, rng);
+                if projectile_damage.push_back {
+                    self.character_push_in_direction(
+                        entity_to_damage,
+                        projectile_movement_direction,
+                    );
                     self.character_push_in_direction(
                         entity_to_damage,
                         projectile_movement_direction,

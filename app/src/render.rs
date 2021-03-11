@@ -72,8 +72,12 @@ impl GameView {
                     match visibility_cell.visibility(vis_count) {
                         CellVisibility::CurrentlyVisibleWithLightColour(Some(light_colour)) => {
                             let light_colour = match game_to_render.game.warning_light(coord) {
-                                Some(WarningLight::NoAir) => Rgb24::new(127, 127, 255),
-                                Some(WarningLight::Decompression) => Rgb24::new(255, 127, 127),
+                                Some(WarningLight::NoAir) => {
+                                    Rgb24::new(127, 127, 255).normalised_mul(light_colour)
+                                }
+                                Some(WarningLight::Decompression) => {
+                                    Rgb24::new(255, 127, 127).normalised_mul(light_colour)
+                                }
                                 None => light_colour,
                             };
                             tile_3x3::render_3x3_from_visibility(

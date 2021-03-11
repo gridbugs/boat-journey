@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use shadowcast::{vision_distance, Context as ShadowcastContext, DirectionBitmap, InputGrid};
 
 const AMBIENT_COL: Rgb24 = Rgb24::new_grey(31);
-const VISION_DISTANCE_SQUARED: u32 = 70;
+const VISION_DISTANCE_SQUARED: u32 = 400;
 pub const VISION_DISTANCE: vision_distance::Circle =
     vision_distance::Circle::new_squared(VISION_DISTANCE_SQUARED);
 
@@ -186,35 +186,6 @@ impl VisibilityGrid {
                     cell.visible_directions = visible_directions;
                     cell.last_lit = count;
                     cell.light_colour = AMBIENT_COL;
-                    let layers = world.spatial_table.layers_at_checked(coord);
-                    if let Some(entity) = layers.floor {
-                        if let Some(&tile) = world.components.tile.get(entity) {
-                            cell.tile_layers.floor = Some(EntityTile { entity, tile });
-                        }
-                    } else {
-                        cell.tile_layers.floor = None;
-                    }
-                    if let Some(entity) = layers.feature {
-                        if let Some(&tile) = world.components.tile.get(entity) {
-                            cell.tile_layers.feature = Some(EntityTile { entity, tile });
-                        }
-                    } else {
-                        cell.tile_layers.feature = None;
-                    }
-                    if let Some(entity) = layers.character {
-                        if let Some(&tile) = world.components.tile.get(entity) {
-                            cell.tile_layers.character = Some(EntityTile { entity, tile });
-                        }
-                    } else {
-                        cell.tile_layers.character = None;
-                    }
-                    if let Some(entity) = layers.item {
-                        if let Some(&tile) = world.components.tile.get(entity) {
-                            cell.tile_layers.item = Some(EntityTile { entity, tile });
-                        }
-                    } else {
-                        cell.tile_layers.item = None;
-                    }
                 },
             );
         }
@@ -238,6 +209,35 @@ impl VisibilityGrid {
                             .light_colour
                             .saturating_add(light_colour.normalised_scalar_mul(visibility));
                         if cell.light_colour.saturating_channel_total() > 31 {
+                            let layers = world.spatial_table.layers_at_checked(cell_coord);
+                            if let Some(entity) = layers.floor {
+                                if let Some(&tile) = world.components.tile.get(entity) {
+                                    cell.tile_layers.floor = Some(EntityTile { entity, tile });
+                                }
+                            } else {
+                                cell.tile_layers.floor = None;
+                            }
+                            if let Some(entity) = layers.feature {
+                                if let Some(&tile) = world.components.tile.get(entity) {
+                                    cell.tile_layers.feature = Some(EntityTile { entity, tile });
+                                }
+                            } else {
+                                cell.tile_layers.feature = None;
+                            }
+                            if let Some(entity) = layers.character {
+                                if let Some(&tile) = world.components.tile.get(entity) {
+                                    cell.tile_layers.character = Some(EntityTile { entity, tile });
+                                }
+                            } else {
+                                cell.tile_layers.character = None;
+                            }
+                            if let Some(entity) = layers.item {
+                                if let Some(&tile) = world.components.tile.get(entity) {
+                                    cell.tile_layers.item = Some(EntityTile { entity, tile });
+                                }
+                            } else {
+                                cell.tile_layers.item = None;
+                            }
                             cell.last_seen = count;
                         }
                     }

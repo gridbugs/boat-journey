@@ -57,7 +57,10 @@ pub enum GameControlFlow {
 pub enum Input {
     Walk(CardinalDirection),
     Wait,
-    Fire(CardinalDirection),
+    Fire {
+        direction: CardinalDirection,
+        slot: player::RangedWeaponSlot,
+    },
     Upgrade(player::Upgrade),
     EquipMeleeWeapon,
     EquipRangedWeapon(player::RangedWeaponSlot),
@@ -105,7 +108,7 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        let debug = true;
+        let debug = false;
         let Terrain {
             mut world,
             agents,
@@ -120,8 +123,20 @@ impl Game {
                 &mut rng,
             )
         };
-        if debug {
-            world.components.player.get_mut(player).unwrap().credit = 1000;
+        if true {
+            world
+                .components
+                .player
+                .get_mut(player)
+                .unwrap()
+                .ranged_weapons[0] = Some(player::Weapon::new_railgun());
+            world
+                .components
+                .player
+                .get_mut(player)
+                .unwrap()
+                .melee_weapon = player::Weapon::new_chainsaw();
+
             /*
             let _ = world.apply_upgrade(
                 player,
@@ -166,8 +181,22 @@ impl Game {
         game.prime_npcs();
         game
     }
+    pub fn player_has_usable_weapon_in_slot(&self, slot: player::RangedWeaponSlot) -> bool {
+        let player = self.world.components.player.get(self.player).unwrap();
+        if slot.index() >= player.ranged_weapons.len() {
+            return false;
+        }
+        if let Some(weapon) = player.ranged_weapons[slot.index()].as_ref() {
+            weapon.ammo.map(|a| a.current > 0).unwrap_or(true)
+        } else {
+            false
+        }
+    }
     pub fn player_has_weapon_in_slot(&self, slot: player::RangedWeaponSlot) -> bool {
         let player = self.world.components.player.get(self.player).unwrap();
+        if slot.index() >= player.ranged_weapons.len() {
+            return false;
+        }
         player.ranged_weapons[slot.index()].is_some()
     }
     pub fn player_has_third_weapon_slot(&self) -> bool {
@@ -387,10 +416,11 @@ impl Game {
                 self.world.wait(self.player, &mut self.rng);
                 Ok(None)
             }
-            Input::Fire(direction) => {
+            Input::Fire { direction, slot } => {
                 self.world.character_fire_bullet(
                     self.player,
                     self.player_coord() + (direction.coord() * 100),
+                    slot,
                 );
                 Ok(None)
             }
@@ -482,7 +512,30 @@ impl Game {
         self.after_turn();
     }
     fn generate_level(&mut self, config: &Config) {
-        let player_data = self.world.clone_entity_data(self.player);
+        let mut player_data = self.world.clone_entity_data(self.player);
+        for weapon in player_data
+            .player
+            .as_mut()
+            .unwrap()
+            .ranged_weapons
+            .iter_mut()
+        {
+            if let Some(weapon) = weapon.as_mut() {
+                if let Some(ammo) = weapon.ammo.as_mut() {
+                    ammo.current = ammo.max;
+                }
+            }
+        }
+        if let Some(ammo) = player_data
+            .player
+            .as_mut()
+            .unwrap()
+            .melee_weapon
+            .ammo
+            .as_mut()
+        {
+            ammo.current = ammo.max;
+        }
         let Terrain {
             mut world,
             agents,
@@ -518,6 +571,15 @@ impl Game {
             }
         }
         for npc in self.world.components.npc.entities() {
+            if let Some(coord) = self.world.spatial_table.coord_of(npc) {
+                if let Some(layers) = self.world.spatial_table.layers_at(coord) {
+                    if layers.floor.is_none() {
+                        self.world.components.to_remove.insert(npc, ());
+                    }
+                }
+            }
+        }
+        for npc in self.world.components.item.entities() {
             if let Some(coord) = self.world.spatial_table.coord_of(npc) {
                 if let Some(layers) = self.world.spatial_table.layers_at(coord) {
                     if layers.floor.is_none() {

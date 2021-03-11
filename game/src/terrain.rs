@@ -165,6 +165,7 @@ pub fn space_station_first_floor<R: Rng>(
     let mut player_data = Some(player_data);
     let mut player = None;
     let mut door_coord = None;
+    let mut above_door = None;
     for (coord, cell) in grid.enumerate() {
         let coord = coord + SHIP_OFFSET;
         use procgen::GameCell;
@@ -178,6 +179,7 @@ pub fn space_station_first_floor<R: Rng>(
             }
             GameCell::Space => {}
             GameCell::Door(axis) => {
+                above_door = Some(coord - Coord::new(0, 1));
                 door_coord = Some(coord);
                 world.spawn_floor(coord);
                 world.spawn_door(coord, *axis);
@@ -210,6 +212,13 @@ pub fn space_station_first_floor<R: Rng>(
             }
         }
     }
+    let above_door = above_door.unwrap();
+    let starter_gun = if rng.gen::<bool>() {
+        RangedWeapon::Shotgun
+    } else {
+        RangedWeapon::Rifle
+    };
+    world.spawn_ranged_weapon(above_door, starter_gun);
     let door_coord = door_coord.unwrap();
     world.components.tile.insert(
         world

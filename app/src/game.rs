@@ -140,7 +140,7 @@ fn loop_music(
 }
 
 pub enum InjectedInput {
-    Fire(CardinalDirection),
+    Fire(Fire),
     Upgrade(player::Upgrade),
     GetMeleeWeapon,
     GetRangedWeapon(RangedWeaponSlot),
@@ -535,6 +535,12 @@ impl EventRoutine for ExamineEventRoutine {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct Fire {
+    direction: CardinalDirection,
+    slot: RangedWeaponSlot,
+}
+
 pub struct AimEventRoutine {
     screen_coord: Option<ScreenCoord>,
     duration: Duration,
@@ -552,7 +558,7 @@ impl AimEventRoutine {
 }
 
 impl EventRoutine for AimEventRoutine {
-    type Return = Option<CardinalDirection>;
+    type Return = Option<Fire>;
     type Data = GameData;
     type View = GameView;
     type Event = CommonEvent;
@@ -580,6 +586,7 @@ impl EventRoutine for AimEventRoutine {
         let game_config = &data.game_config;
         let current_music_handle = &mut data.music_handle;
         let config = &data.config;
+        let slot = self.slot;
         if let Some(instance) = data.instance.as_mut() {
             event_or_peek_with_handled(event_or_peek, self, |mut s, event| {
                 let aim = match event {
@@ -615,7 +622,7 @@ impl EventRoutine for AimEventRoutine {
                 match aim {
                     Aim::KeyboardFinalise(direction) => {
                         *last_aim_with_mouse = false;
-                        Handled::Return(Some(direction))
+                        Handled::Return(Some(Fire { direction, slot }))
                     }
                     Aim::KeyboardDirection(direction) => {
                         *last_aim_with_mouse = false;
@@ -827,10 +834,10 @@ impl EventRoutine for GameEventRoutine {
             let player_coord = GameCoord::of_player(instance.game.player_info());
             for injected_input in self.injected_inputs.drain(..) {
                 match injected_input {
-                    InjectedInput::Fire(direction) => {
+                    InjectedInput::Fire(Fire { direction, slot }) => {
                         let _ = instance
                             .game
-                            .handle_input(GameInput::Fire(direction), game_config);
+                            .handle_input(GameInput::Fire { direction, slot }, game_config);
                     }
                     InjectedInput::Upgrade(upgrade) => {
                         let _ = instance
@@ -910,7 +917,11 @@ impl EventRoutine for GameEventRoutine {
                                             return Handled::Return(GameReturn::Examine)
                                         }
                                         AppInput::Aim(slot) => {
-                                            return Handled::Return(GameReturn::Aim(slot))
+                                            if instance.game.player_has_usable_weapon_in_slot(slot)
+                                            {
+                                                return Handled::Return(GameReturn::Aim(slot));
+                                            }
+                                            Ok(None)
                                         }
                                         AppInput::Get => {
                                             if let Some(weapon) =
