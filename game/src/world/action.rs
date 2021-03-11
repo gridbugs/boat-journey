@@ -538,6 +538,20 @@ impl World {
                     damage /= 2; // spread the damage out over 2 ticks because the projectile will hit the character a second time
                 }
                 self.damage_character(entity_to_damage, damage, rng, external_events);
+                if projectile_damage.life_steal {
+                    if let Some(player) = self.components.player.entities().next() {
+                        if let Some(hit_points) = self.components.hit_points.get_mut(player) {
+                            hit_points.current = (hit_points.current + damage).min(hit_points.max);
+                        }
+                    }
+                }
+                if projectile_damage.oxidise {
+                    if let Some(player) = self.components.player.entities().next() {
+                        if let Some(oxygen) = self.components.oxygen.get_mut(player) {
+                            oxygen.current = (oxygen.current + damage).min(oxygen.max);
+                        }
+                    }
+                }
                 if projectile_damage.push_back {
                     self.character_push_in_direction(
                         entity_to_damage,

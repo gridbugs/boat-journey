@@ -205,6 +205,8 @@ impl RealtimePeriodicState for ParticleEmitterState {
                     push_back: d.push_back,
                     pen: 0,
                     hull_pen_percent: 0,
+                    life_steal: false,
+                    oxidise: false,
                 })
             }),
         };

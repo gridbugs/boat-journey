@@ -192,6 +192,8 @@ pub struct ProjectileDamage {
     pub push_back: bool,
     pub pen: u32,
     pub hull_pen_percent: u32,
+    pub life_steal: bool,
+    pub oxidise: bool,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]

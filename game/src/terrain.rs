@@ -5,6 +5,7 @@ use crate::{
     world::{Layer, Location, MeleeWeapon, RangedWeapon},
     Tile, World,
 };
+use direction::Directions;
 use entity_table::{ComponentTable, Entity};
 use grid_2d::CoordIter;
 use grid_2d::{coord_2d::Axis, Coord, Size};
@@ -511,8 +512,23 @@ fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World) {
             world.spawn_credit(coord, 1);
         }
     }
-    if let Some(coord) = empty_coords.pop() {
+    for _ in 0..1 {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_medkit(coord);
+        }
+    }
+    'outer: for (i, &coord) in empty_coords.iter().enumerate() {
+        for direction in Directions {
+            let nei = coord + direction.coord();
+            if let Some(layers) = world.spatial_table.layers_at(nei) {
+                if layers.feature.is_some() {
+                    continue 'outer;
+                }
+            }
+        }
         world.spawn_upgrade(coord);
+        empty_coords.swap_remove(i);
+        break;
     }
 }
 

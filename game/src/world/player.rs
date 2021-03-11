@@ -115,6 +115,7 @@ pub struct Weapon {
     pub hull_pen_percent: u32,
     pub abilities: Vec<WeaponAbility>,
     pub light_colour: Option<Rgb24>,
+    pub bright: bool,
 }
 
 impl Weapon {
@@ -127,6 +128,7 @@ impl Weapon {
             hull_pen_percent: 0,
             abilities: vec![WeaponAbility::KnockBack],
             light_colour: None,
+            bright: false,
         }
     }
     pub fn new_chainsaw() -> Self {
@@ -138,6 +140,7 @@ impl Weapon {
             hull_pen_percent: 0,
             abilities: vec![],
             light_colour: None,
+            bright: false,
         }
     }
     pub fn new_shotgun() -> Self {
@@ -149,6 +152,7 @@ impl Weapon {
             hull_pen_percent: 30,
             abilities: vec![WeaponAbility::KnockBack],
             light_colour: None,
+            bright: false,
         }
     }
     pub fn new_railgun() -> Self {
@@ -160,6 +164,7 @@ impl Weapon {
             hull_pen_percent: 100,
             abilities: vec![],
             light_colour: Some(Rgb24::new(0, 255, 255)),
+            bright: true,
         }
     }
     pub fn new_rifle() -> Self {
@@ -171,6 +176,7 @@ impl Weapon {
             hull_pen_percent: 20,
             abilities: vec![],
             light_colour: None,
+            bright: false,
         }
     }
     pub fn new_gaus_cannon() -> Self {
@@ -182,28 +188,31 @@ impl Weapon {
             hull_pen_percent: 0,
             abilities: vec![],
             light_colour: Some(Rgb24::new(127, 0, 255)),
+            bright: true,
         }
     }
     pub fn new_oxidiser() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::Oxidiser),
-            ammo: Some(Ammo::new_full(4)),
-            pen: 3,
+            ammo: Some(Ammo::new_full(20)),
+            pen: 2,
             dmg: 1,
             hull_pen_percent: 0,
             abilities: vec![WeaponAbility::Oxidise],
-            light_colour: None,
+            light_colour: Some(Rgb24::new(0, 0, 255)),
+            bright: false,
         }
     }
     pub fn new_life_stealer() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::LifeStealer),
-            ammo: Some(Ammo::new_full(4)),
-            pen: 3,
+            ammo: Some(Ammo::new_full(20)),
+            pen: 2,
             dmg: 1,
             hull_pen_percent: 0,
             abilities: vec![WeaponAbility::LifeSteal],
-            light_colour: None,
+            light_colour: Some(Rgb24::new(255, 0, 0)),
+            bright: false,
         }
     }
     pub fn is_ranged(&self) -> bool {

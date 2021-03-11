@@ -129,7 +129,13 @@ impl Game {
                 .player
                 .get_mut(player)
                 .unwrap()
-                .ranged_weapons[0] = Some(player::Weapon::new_rifle());
+                .ranged_weapons[0] = Some(player::Weapon::new_life_stealer());
+            world
+                .components
+                .player
+                .get_mut(player)
+                .unwrap()
+                .ranged_weapons[1] = Some(player::Weapon::new_oxidiser());
             world
                 .components
                 .player

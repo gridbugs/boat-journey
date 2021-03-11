@@ -6,7 +6,8 @@ use crate::{
             Location, MeleeWeapon, MoveHalfSpeed, Npc, OnCollision, Oxygen, ProjectileDamage,
             RangedWeapon, Tile,
         },
-        explosion, player,
+        explosion,
+        player::{self, WeaponAbility},
         realtime_periodic::{
             core::ScheduledRealtimePeriodicState,
             data::{period_per_frame, FadeState, LightColourFadeState},
@@ -242,29 +243,56 @@ impl World {
         );
         let particle_emitter = if let Some(light_colour) = weapon.light_colour {
             use particle::spec::*;
-            ParticleEmitter {
-                emit_particle_every_period: Duration::from_millis(8),
-                fade_out_duration: None,
-                particle: Particle {
-                    tile: None,
-                    movement: None,
-                    fade_duration: Some(Duration::from_millis(1000)),
-                    possible_light: Some(Possible {
-                        chance: Rational {
-                            numerator: 1,
-                            denominator: 1,
-                        },
-                        value: Light {
-                            colour: light_colour,
-                            vision_distance: Circle::new_squared(50),
-                            diminish: Rational {
-                                numerator: 10,
+            if weapon.bright {
+                ParticleEmitter {
+                    emit_particle_every_period: Duration::from_millis(8),
+                    fade_out_duration: None,
+                    particle: Particle {
+                        tile: None,
+                        movement: None,
+                        fade_duration: Some(Duration::from_millis(1000)),
+                        possible_light: Some(Possible {
+                            chance: Rational {
+                                numerator: 1,
                                 denominator: 1,
                             },
-                        },
-                    }),
-                    ..Default::default()
-                },
+                            value: Light {
+                                colour: light_colour,
+                                vision_distance: Circle::new_squared(50),
+                                diminish: Rational {
+                                    numerator: 10,
+                                    denominator: 1,
+                                },
+                            },
+                        }),
+                        ..Default::default()
+                    },
+                }
+            } else {
+                ParticleEmitter {
+                    emit_particle_every_period: Duration::from_millis(1),
+                    fade_out_duration: None,
+                    particle: Particle {
+                        tile: None,
+                        movement: None,
+                        fade_duration: Some(Duration::from_millis(100)),
+                        possible_light: Some(Possible {
+                            chance: Rational {
+                                numerator: 1,
+                                denominator: 1,
+                            },
+                            value: Light {
+                                colour: light_colour,
+                                vision_distance: Circle::new_squared(7),
+                                diminish: Rational {
+                                    numerator: 100,
+                                    denominator: 1,
+                                },
+                            },
+                        }),
+                        ..Default::default()
+                    },
+                }
             }
         } else {
             use particle::spec::*;
@@ -312,6 +340,14 @@ impl World {
                     .any(|a| *a == player::WeaponAbility::KnockBack),
                 pen: weapon.pen,
                 hull_pen_percent: weapon.hull_pen_percent,
+                oxidise: weapon
+                    .abilities
+                    .iter()
+                    .any(|a| *a == WeaponAbility::Oxidise),
+                life_steal: weapon
+                    .abilities
+                    .iter()
+                    .any(|a| *a == WeaponAbility::LifeSteal),
             },
         );
         entity
