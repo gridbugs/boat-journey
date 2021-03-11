@@ -148,7 +148,7 @@ impl Weapon {
             name: WeaponName::RangedWeapon(RangedWeapon::Shotgun),
             ammo: Some(Ammo::new_full(8)),
             pen: 3,
-            dmg: 5,
+            dmg: 2,
             hull_pen_percent: 30,
             abilities: vec![WeaponAbility::KnockBack],
             light_colour: None,

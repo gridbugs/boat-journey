@@ -330,9 +330,9 @@ pub fn space_station<R: Rng>(
         if level == 0 {
             return space_station_first_floor(player_data, spec, rng);
         }
-        if level == FINAL_LEVEL {
-            return space_station_last_level(level, player_data, spec, terrain_state, rng);
-        }
+        //  if level == FINAL_LEVEL {
+        return space_station_last_level(5, player_data, spec, terrain_state, rng);
+        //  }
     }
     const AREA_SIZE: Size = Size::new_u16(27, 20);
     const SHIP_SIZE: Size = Size::new_u16(20, 14);
@@ -486,13 +486,6 @@ fn space_station_last_level<R: Rng>(
         .into_iter()
         .filter(|&c| c != stairs_coord)
         .collect::<Vec<_>>();
-    let num_npcs = if spec.demo { 2 } else { FINAL_LEVEL * 3 + 3 };
-    for _ in 0..num_npcs {
-        if let Some(coord) = empty_coords.pop() {
-            let entity = world.spawn_zombie(coord, rng);
-            agents.insert(entity, Agent::new(AREA_SIZE));
-        }
-    }
     world.components.tile.insert(
         world
             .spatial_table
@@ -552,7 +545,7 @@ struct EnemyCounts {
 impl EnemyCounts {
     fn new() -> Self {
         Self {
-            zombie: vec![5, 6, 7, 8, 9],
+            zombie: vec![5, 6, 7, 7, 7],
             skeleton: vec![1, 2, 2, 3, 3],
             boomer: vec![0, 1, 1, 2, 2],
             tank: vec![0, 0, 0, 1, 2],

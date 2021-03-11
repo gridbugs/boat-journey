@@ -13,6 +13,7 @@ use crate::{
 use direction::{CardinalDirection, Direction};
 use entity_table::{ComponentTable, Entity};
 use grid_2d::Coord;
+use line_2d::LineSegment;
 use rand::{seq::IteratorRandom, seq::SliceRandom, Rng};
 use std::collections::{HashSet, VecDeque};
 use std::time::Duration;
@@ -559,9 +560,6 @@ impl World {
         if let Some(armour) = self.components.armour.get(entity_to_damage).cloned() {
             if let Some(remaining_pen) = projectile_damage.pen.checked_sub(armour.value) {
                 let mut damage = projectile_damage.hit_points;
-                if projectile_damage.push_back {
-                    damage /= 2; // spread the damage out over 2 ticks because the projectile will hit the character a second time
-                }
                 self.damage_character(entity_to_damage, damage, rng, external_events);
                 if projectile_damage.life_steal {
                     if let Some(player) = self.components.player.entities().next() {
@@ -578,13 +576,18 @@ impl World {
                     }
                 }
                 if projectile_damage.push_back {
-                    self.character_push_in_direction(
+                    self.components.realtime.insert(entity_to_damage, ());
+                    self.realtime_components.movement.insert(
                         entity_to_damage,
-                        projectile_movement_direction,
-                    );
-                    self.character_push_in_direction(
-                        entity_to_damage,
-                        projectile_movement_direction,
+                        ScheduledRealtimePeriodicState {
+                            state: movement::spec::Movement {
+                                path: projectile_movement_direction.coord(),
+                                repeat: movement::spec::Repeat::Steps(2),
+                                cardinal_step_duration: Duration::from_millis(100),
+                            }
+                            .build(),
+                            until_next_event: Duration::from_millis(0),
+                        },
                     );
                 }
                 if remaining_pen > 0 {
