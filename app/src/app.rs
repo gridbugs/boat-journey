@@ -198,7 +198,7 @@ impl AppView {
             normal: Style {
                 to: To {
                     foreground: colours::STRIPE,
-                    background: colours::SPACE_BACKGROUND,
+                    background: colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
                     bold: false,
                     underline: false,
                 },

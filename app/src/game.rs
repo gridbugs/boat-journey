@@ -113,9 +113,7 @@ impl<'a> EffectContext<'a> {
                 *self.current_music_handle = Some(handle);
             }
             ExternalEvent::SoundEffect(sound_effect) => {
-                const BASE_VOLUME: f32 = 50.;
-                let volume = BASE_VOLUME;
-                self.play_audio(Audio::SoundEffect(sound_effect), volume);
+                self.play_audio(Audio::SoundEffect(sound_effect), 30.);
             }
         }
     }

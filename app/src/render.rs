@@ -393,21 +393,22 @@ pub fn render_stars_all<R: Rng, F: Frame, C: ColModify>(
         } else {
             Star::None
         };
+        let bg = colours::SPACE_BACKGROUND.saturating_scalar_mul_div(30 + coord.y as u32, 90);
         let (ch, style) = match star {
-            Star::None => (' ', Style::new().with_background(colours::SPACE_BACKGROUND)),
+            Star::None => (' ', Style::new().with_background(bg)),
             Star::Dim => (
                 '.',
                 Style::new()
                     .with_bold(false)
                     .with_foreground(colours::SPACE_FOREGROUND_DIM)
-                    .with_background(colours::SPACE_BACKGROUND),
+                    .with_background(bg),
             ),
             Star::Bright => (
                 '.',
                 Style::new()
                     .with_bold(true)
                     .with_foreground(colours::SPACE_FOREGROUND)
-                    .with_background(colours::SPACE_BACKGROUND),
+                    .with_background(bg),
             ),
         };
         frame.set_cell_relative(
@@ -439,6 +440,7 @@ pub fn render_stars<R: Rng, F: Frame, C: ColModify>(
         } else {
             Star::None
         };
+        let bg = colours::SPACE_BACKGROUND.saturating_scalar_mul_div(30 + coord.y as u32, 90);
         match visibility {
             CellVisibility::NeverVisible => {
                 frame.set_cell_relative(
@@ -495,20 +497,20 @@ pub fn render_stars<R: Rng, F: Frame, C: ColModify>(
             }
             CellVisibility::CurrentlyVisibleWithLightColour(_) => {
                 let (ch, style) = match star {
-                    Star::None => (' ', Style::new().with_background(colours::SPACE_BACKGROUND)),
+                    Star::None => (' ', Style::new().with_background(bg)),
                     Star::Dim => (
                         '.',
                         Style::new()
                             .with_bold(false)
                             .with_foreground(colours::SPACE_FOREGROUND_DIM)
-                            .with_background(colours::SPACE_BACKGROUND),
+                            .with_background(bg),
                     ),
                     Star::Bright => (
                         '.',
                         Style::new()
                             .with_bold(true)
                             .with_foreground(colours::SPACE_FOREGROUND)
-                            .with_background(colours::SPACE_BACKGROUND),
+                            .with_background(bg),
                     ),
                 };
                 frame.set_cell_relative(
