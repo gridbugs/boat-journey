@@ -395,15 +395,15 @@ pub fn space_station<R: Rng>(
         }
     }
     empty_coords.shuffle(rng);
-    let num_npcs = if spec.demo { 2 } else { level * 3 + 3 };
-    for _ in 0..num_npcs {
-        if let Some(coord) = empty_coords.pop() {
-            let entity = world.spawn_zombie(coord, rng);
-            agents.insert(entity, Agent::new(AREA_SIZE));
+    if spec.demo {
+        for _ in 0..2 {
+            if let Some(coord) = empty_coords.pop() {
+                let entity = world.spawn_zombie(coord, rng);
+                agents.insert(entity, Agent::new(AREA_SIZE));
+            }
         }
-    }
-    if !spec.demo {
-        spawn_items(&mut empty_coords, &mut world, terrain_state);
+    } else {
+        spawn_items(level, &mut empty_coords, &mut world, terrain_state, rng);
     }
     let player = player.expect("didn't create player");
     Terrain {
@@ -533,7 +533,7 @@ fn space_station_last_level<R: Rng>(
             .unwrap(),
         fuel_light,
     );
-    spawn_items(&mut empty_coords, &mut world, terrain_state);
+    spawn_items(level, &mut empty_coords, &mut world, terrain_state, rng);
     let player = player.expect("didn't create player");
     Terrain {
         world,
@@ -542,7 +542,31 @@ fn space_station_last_level<R: Rng>(
     }
 }
 
-fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World, terrain_state: &mut TerrainState) {
+struct EnemyCounts {
+    zombie: Vec<usize>,
+    skeleton: Vec<usize>,
+    boomer: Vec<usize>,
+    tank: Vec<usize>,
+}
+
+impl EnemyCounts {
+    fn new() -> Self {
+        Self {
+            zombie: vec![5, 6, 7, 8, 9],
+            skeleton: vec![1, 2, 2, 3, 3],
+            boomer: vec![0, 1, 1, 2, 2],
+            tank: vec![0, 0, 0, 1, 2],
+        }
+    }
+}
+
+fn spawn_items<R: Rng>(
+    level: u32,
+    empty_coords: &mut Vec<Coord>,
+    world: &mut World,
+    terrain_state: &mut TerrainState,
+    rng: &mut R,
+) {
     for _ in 0..2 {
         if let Some(coord) = empty_coords.pop() {
             world.spawn_credit(coord, 2);
@@ -575,6 +599,28 @@ fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World, terrain_state: 
         world.spawn_upgrade(coord);
         empty_coords.swap_remove(i);
         break;
+    }
+    let index = level as usize - 1;
+    let enemy_count = EnemyCounts::new();
+    for _ in 0..enemy_count.zombie[index] {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_zombie(coord, rng);
+        }
+    }
+    for _ in 0..enemy_count.skeleton[index] {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_skeleton(coord, rng);
+        }
+    }
+    for _ in 0..enemy_count.boomer[index] {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_boomer(coord, rng);
+        }
+    }
+    for _ in 0..enemy_count.tank[index] {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_tank(coord, rng);
+        }
     }
 }
 
