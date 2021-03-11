@@ -16,12 +16,50 @@ use rand::{
 use rand_isaac::Isaac64Rng;
 use rational::Rational;
 use rgb24::Rgb24;
+use serde::{Deserialize, Serialize};
 use shadowcast::vision_distance::Circle;
+use std::collections::HashSet;
 
 pub struct Terrain {
     pub world: World,
     pub player: Entity,
     pub agents: ComponentTable<Agent>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TerrainState {
+    ranged_weapons: Vec<RangedWeapon>,
+    chainsaw_floors: HashSet<u32>,
+}
+
+impl TerrainState {
+    pub fn new<R: Rng>(rng: &mut R) -> Self {
+        let mut ranged_weapons = vec![
+            RangedWeapon::Shotgun,
+            RangedWeapon::Rifle,
+            RangedWeapon::Railgun,
+            RangedWeapon::GausCannon,
+            RangedWeapon::LifeStealer,
+            RangedWeapon::Oxidiser,
+            RangedWeapon::Shotgun,
+            RangedWeapon::Rifle,
+            RangedWeapon::Railgun,
+            RangedWeapon::GausCannon,
+            RangedWeapon::LifeStealer,
+            RangedWeapon::Oxidiser,
+        ];
+        ranged_weapons.shuffle(rng);
+        let mut floors = (1..=5).collect::<Vec<_>>();
+        floors.shuffle(rng);
+        let mut chainsaw_floors = HashSet::new();
+        for _ in 0..2 {
+            chainsaw_floors.insert(floors.pop().unwrap());
+        }
+        Self {
+            ranged_weapons,
+            chainsaw_floors,
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -285,6 +323,7 @@ pub fn space_station<R: Rng>(
     level: u32,
     player_data: EntityData,
     spec: &SpaceStationSpec,
+    terrain_state: &mut TerrainState,
     rng: &mut R,
 ) -> Terrain {
     if !spec.demo {
@@ -292,7 +331,7 @@ pub fn space_station<R: Rng>(
             return space_station_first_floor(player_data, spec, rng);
         }
         if level == FINAL_LEVEL {
-            return space_station_last_level(player_data, spec, rng);
+            return space_station_last_level(level, player_data, spec, terrain_state, rng);
         }
     }
     const AREA_SIZE: Size = Size::new_u16(27, 20);
@@ -364,7 +403,7 @@ pub fn space_station<R: Rng>(
         }
     }
     if !spec.demo {
-        spawn_items(&mut empty_coords, &mut world);
+        spawn_items(&mut empty_coords, &mut world, terrain_state);
     }
     let player = player.expect("didn't create player");
     Terrain {
@@ -375,8 +414,10 @@ pub fn space_station<R: Rng>(
 }
 
 fn space_station_last_level<R: Rng>(
+    level: u32,
     player_data: EntityData,
     spec: &SpaceStationSpec,
+    terrain_state: &mut TerrainState,
     rng: &mut R,
 ) -> Terrain {
     const AREA_SIZE: Size = Size::new_u16(27, 20);
@@ -492,7 +533,7 @@ fn space_station_last_level<R: Rng>(
             .unwrap(),
         fuel_light,
     );
-    spawn_items(&mut empty_coords, &mut world);
+    spawn_items(&mut empty_coords, &mut world, terrain_state);
     let player = player.expect("didn't create player");
     Terrain {
         world,
@@ -501,7 +542,7 @@ fn space_station_last_level<R: Rng>(
     }
 }
 
-fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World) {
+fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World, terrain_state: &mut TerrainState) {
     for _ in 0..2 {
         if let Some(coord) = empty_coords.pop() {
             world.spawn_credit(coord, 2);
@@ -515,6 +556,11 @@ fn spawn_items(empty_coords: &mut Vec<Coord>, world: &mut World) {
     for _ in 0..1 {
         if let Some(coord) = empty_coords.pop() {
             world.spawn_medkit(coord);
+        }
+    }
+    for _ in 0..2 {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_ranged_weapon(coord, terrain_state.ranged_weapons.pop().unwrap());
         }
     }
     'outer: for (i, &coord) in empty_coords.iter().enumerate() {

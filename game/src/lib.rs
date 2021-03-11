@@ -15,7 +15,7 @@ use behaviour::{Agent, BehaviourContext};
 use entity_table::ComponentTable;
 pub use entity_table::Entity;
 pub use terrain::FINAL_LEVEL;
-use terrain::{SpaceStationSpec, Terrain};
+use terrain::{SpaceStationSpec, Terrain, TerrainState};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
 use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
@@ -101,6 +101,7 @@ pub struct Game {
     star_rng_seed: u64,
     won: bool,
     adrift: bool,
+    terrain_state: TerrainState,
 }
 
 impl Game {
@@ -108,7 +109,8 @@ impl Game {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
-        let debug = true;
+        let mut terrain_state = TerrainState::new(&mut rng);
+        let debug = false;
         let Terrain {
             mut world,
             agents,
@@ -120,6 +122,7 @@ impl Game {
                 0,
                 make_player(&mut rng),
                 &SpaceStationSpec { demo: config.demo },
+                &mut terrain_state,
                 &mut rng,
             )
         };
@@ -182,6 +185,7 @@ impl Game {
             star_rng_seed,
             won: false,
             adrift: false,
+            terrain_state,
         };
         game.update_visibility(config);
         game.prime_npcs();
@@ -562,6 +566,7 @@ impl Game {
             self.world.level + 1,
             player_data,
             &SpaceStationSpec { demo: config.demo },
+            &mut self.terrain_state,
             &mut self.rng,
         );
         world.air.init(&world.spatial_table, &world.components);
