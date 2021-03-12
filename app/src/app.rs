@@ -1290,7 +1290,7 @@ fn cannot_afford() -> TextOverlay {
         .with_foreground(colours::STRIPE)
         .with_bold(false);
     let t = |text: &str, style| text::RichTextPartOwned::new(text.to_string(), style);
-    TextOverlay::new(1, vec![t("You can't afford that upgrade!", normal)])
+    TextOverlay::new(1, vec![t("You can't afford that!", normal)])
 }
 
 fn story() -> TextOverlay {
@@ -1351,8 +1351,8 @@ fn help() -> TextOverlay {
             t("Movement/Aim: Arrows/WASD/HJKL\n"),
             t("Cancel Aim: Escape\n"),
             t("Wait: Space\n"),
-            t("Examine: x\n"),
-            t("Get Weapon: g\n"),
+            t("Examine: X\n"),
+            t("Get Weapon: G\n"),
             t("Fire Ranged Weapon: 1-3\n\n"),
             b("Gamepad Controls\n"),
             t("Movement/Aim: D-Pad\n"),
@@ -1401,7 +1401,7 @@ enum GameLoopBreak {
 
 fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent>
 {
-    make_either!(Ei = A | B | C | D | E | F);
+    make_either!(Ei = A | B | C | D | E | F | G);
     SideEffect::new_with_view(|data: &mut AppData, _: &_| data.game.pre_game_loop())
         .then(|| {
             Ei::A(game())
@@ -1495,6 +1495,29 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                                 vec![]
                             };
                             game_injecting_inputs(inputs)
+                        }),
+                    )),
+                    GameReturn::UnlockMap => Handled::Continue(Ei::G(
+                        confirm_menu("Spend $2 credit to unlock map?").and_then(|yes| {
+                            make_either!(Ei = A | B);
+                            if yes {
+                                Ei::A(SideEffectThen::new_with_view(
+                                    move |data: &mut AppData, _: &_| {
+                                        make_either!(Ei = A | B);
+                                        if data.game.instance().unwrap().game().player().credit < 2
+                                        {
+                                            Ei::A(cannot_afford().then(|| game()))
+                                        } else {
+                                            println!("a");
+                                            Ei::B(game_injecting_inputs(vec![
+                                                InjectedInput::UnlockMap,
+                                            ]))
+                                        }
+                                    },
+                                ))
+                            } else {
+                                Ei::B(game())
+                            }
                         }),
                     )),
                 })

@@ -625,6 +625,8 @@ fn tile_str(tile: Tile) -> Option<TileLabel> {
         Tile::Credit1 => TileLabel::Name("a $1 credit chip"),
         Tile::Credit2 => TileLabel::Name("a $2 credit chip"),
         Tile::Upgrade => TileLabel::Name("an upgrade store"),
+        Tile::Map => TileLabel::Name("a map terminal"),
+        Tile::MapLocked => TileLabel::Name("a locked map terminal"),
         Tile::Medkit => TileLabel::Name("a medkit"),
         Tile::Chainsaw => {
             TileLabel::Literal("A chainsaw - melee weapon with high DMG and limited uses.")

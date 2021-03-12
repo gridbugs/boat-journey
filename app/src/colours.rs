@@ -37,3 +37,5 @@ pub const OXYGEN: Rgb24 = Rgb24::new(127, 127, 255);
 pub const HEALTH: Rgb24 = Rgb24::new(255, 0, 0);
 pub const MEDKIT: Rgb24 = Rgb24::new_grey(200);
 pub const MEDKIT_TOP: Rgb24 = Rgb24::new_grey(150);
+pub const MAP_FOREGROUND: Rgb24 = Rgb24::new(0, 63, 0);
+pub const MAP_BACKGROUND: Rgb24 = Rgb24::new(0, 255, 0);

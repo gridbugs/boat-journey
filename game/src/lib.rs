@@ -87,6 +87,7 @@ pub enum GameControlFlow {
     Win,
     LevelChange,
     Upgrade,
+    UnlockMap,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -100,6 +101,7 @@ pub enum Input {
     Upgrade(player::Upgrade),
     EquipMeleeWeapon,
     EquipRangedWeapon(player::RangedWeaponSlot),
+    UnlockMap,
 }
 
 pub enum WarningLight {
@@ -147,7 +149,7 @@ impl Game {
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
         let mut terrain_state = TerrainState::new(&mut rng);
-        let debug = false;
+        let debug = true;
         let Terrain {
             mut world,
             agents,
@@ -191,6 +193,7 @@ impl Game {
                     level: player::UpgradeLevel::Level1,
                 },
             );*/
+            world.components.player.get_mut(player).unwrap().credit = 100;
         }
         world.air.init(&world.spatial_table, &world.components);
         let last_player_info = world
@@ -427,6 +430,10 @@ impl Game {
             self.world.apply_upgrade(self.player, upgrade)?;
             return Ok(None);
         }
+        if let Input::UnlockMap = input {
+            self.world.unlock_map(self.player);
+            return Ok(None);
+        }
         if self.generate_frame_countdown.is_some() {
             return Ok(None);
         }
@@ -491,6 +498,7 @@ impl Game {
                 );
                 Ok(None)
             }
+            Input::UnlockMap => Ok(None),
         };
         if result.is_ok() {
             if self.is_gameplay_blocked() {

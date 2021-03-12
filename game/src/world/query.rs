@@ -83,7 +83,8 @@ impl World {
                 self.components.door_state.contains(feature)
                     || !(self.components.solid.contains(feature)
                         || self.components.stairs.contains(feature)
-                        || self.components.upgrade.contains(feature))
+                        || self.components.upgrade.contains(feature)
+                        || self.components.map.contains(feature))
             } else {
                 true
             }

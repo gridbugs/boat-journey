@@ -115,6 +115,10 @@ pub fn from_str(s: &str, player_data: EntityData) -> Terrain {
                     world.spawn_upgrade(coord);
                     world.spawn_floor(coord);
                 }
+                'm' => {
+                    world.spawn_map(coord);
+                    world.spawn_floor(coord);
+                }
                 '$' => {
                     world.spawn_credit(coord, 2);
                     world.spawn_floor(coord);

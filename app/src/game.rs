@@ -144,6 +144,7 @@ pub enum InjectedInput {
     Upgrade(player::Upgrade),
     GetMeleeWeapon,
     GetRangedWeapon(RangedWeaponSlot),
+    UnlockMap,
 }
 
 #[derive(Clone, Copy)]
@@ -852,6 +853,7 @@ pub enum GameReturn {
     Upgrade,
     EquipRanged,
     ConfirmReplaceMelee,
+    UnlockMap,
 }
 
 impl EventRoutine for GameEventRoutine {
@@ -897,6 +899,12 @@ impl EventRoutine for GameEventRoutine {
                         let _ = instance
                             .game
                             .handle_input(GameInput::EquipRangedWeapon(slot), game_config);
+                    }
+                    InjectedInput::UnlockMap => {
+                        println!("b");
+                        let _ = instance
+                            .game
+                            .handle_input(GameInput::UnlockMap, game_config);
                     }
                 }
             }
@@ -971,6 +979,11 @@ impl EventRoutine for GameEventRoutine {
                                                     GameControlFlow::Upgrade => {
                                                         return Handled::Return(GameReturn::Upgrade)
                                                     }
+                                                    GameControlFlow::UnlockMap => {
+                                                        return Handled::Return(
+                                                            GameReturn::UnlockMap,
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -1038,6 +1051,9 @@ impl EventRoutine for GameEventRoutine {
                                             GameControlFlow::Upgrade => {
                                                 return Handled::Return(GameReturn::Upgrade)
                                             }
+                                            GameControlFlow::UnlockMap => {
+                                                return Handled::Return(GameReturn::UnlockMap)
+                                            }
                                         },
                                     }
                                 }
@@ -1078,6 +1094,9 @@ impl EventRoutine for GameEventRoutine {
                             }
                             GameControlFlow::Upgrade => {
                                 return Handled::Return(GameReturn::Upgrade)
+                            }
+                            GameControlFlow::UnlockMap => {
+                                return Handled::Return(GameReturn::UnlockMap)
                             }
                         }
                     }

@@ -47,6 +47,7 @@ declare_entity_module! {
         skeleton: (),
         skeleton_respawn: u32,
         enemy: Enemy,
+        map: bool,
     }
 }
 pub use components::Components;
@@ -85,6 +86,8 @@ pub enum Tile {
     Oxidiser,
     LifeStealer,
     Medkit,
+    Map,
+    MapLocked,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

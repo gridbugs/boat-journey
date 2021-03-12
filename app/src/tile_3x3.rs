@@ -86,6 +86,8 @@ pub fn render_3x3_from_visibility<F: Frame, C: ColModify>(
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
+        Tile::Map => map(view_context, frame),
+        Tile::MapLocked => map_locked(view_context, frame),
         Tile::Chainsaw => chainsaw(view_context, frame),
         Tile::Shotgun => shotgun(view_context, frame),
         Tile::Railgun => railgun(view_context, frame),
@@ -159,6 +161,8 @@ pub fn render_3x3_from_visibility_remembered<F: Frame, C: ColModify>(
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
+        Tile::Map => map(view_context, frame),
+        Tile::MapLocked => map_locked(view_context, frame),
         Tile::Chainsaw => chainsaw(view_context, frame),
         Tile::Shotgun => shotgun(view_context, frame),
         Tile::Railgun => railgun(view_context, frame),
@@ -240,6 +244,8 @@ pub fn render_3x3<F: Frame, C: ColModify>(
         Tile::Credit1 => credit1(view_context, frame),
         Tile::Credit2 => credit2(view_context, frame),
         Tile::Upgrade => upgrade(view_context, frame),
+        Tile::Map => map(view_context, frame),
+        Tile::MapLocked => map_locked(view_context, frame),
         Tile::Chainsaw => chainsaw(view_context, frame),
         Tile::Shotgun => shotgun(view_context, frame),
         Tile::Railgun => railgun(view_context, frame),
@@ -1196,6 +1202,30 @@ pub fn upgrade<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut
     view.view("UPG", view_context, frame);
     view.view("RAD", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
     view.view("E++", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
+}
+
+pub fn map_locked<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    let mut view = StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::MAP_FOREGROUND)
+            .with_background(colours::MAP_BACKGROUND)
+            .with_bold(true),
+    );
+    view.view("***", view_context, frame);
+    view.view("MAP", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
+    view.view("***", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
+}
+
+pub fn map<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {
+    let mut view = StringViewSingleLine::new(
+        Style::new()
+            .with_foreground(colours::MAP_FOREGROUND)
+            .with_background(colours::MAP_BACKGROUND)
+            .with_bold(true),
+    );
+    view.view("   ", view_context, frame);
+    view.view("MAP", view_context.add_offset(Coord { x: 0, y: 1 }), frame);
+    view.view("   ", view_context.add_offset(Coord { x: 0, y: 2 }), frame);
 }
 
 pub fn chainsaw<F: Frame, C: ColModify>(view_context: ViewContext<C>, frame: &mut F) {

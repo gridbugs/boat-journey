@@ -94,6 +94,11 @@ impl World {
                         return Err(Error::WalkIntoSolidCell);
                     }
                 }
+                if let Some(&locked) = self.components.map.get(feature_entity) {
+                    if locked {
+                        return Ok(Some(crate::GameControlFlow::UnlockMap));
+                    }
+                }
             }
         } else {
             return Err(Error::WalkIntoSolidCell);
@@ -779,6 +784,21 @@ impl World {
             external_events.push(ExternalEvent::SoundEffect(SoundEffect::Heal));
             message_log.push(Message::Heal);
             hit_points.current = hit_points.max;
+        }
+    }
+
+    pub fn unlock_map(&mut self, entity: Entity) {
+        println!("unlock");
+        let player = self.components.player.get_mut(entity).unwrap();
+        let cost = 2;
+        if player.credit < cost {
+            return;
+        }
+        println!("unlock 2");
+        player.credit -= cost;
+        for (entity, locked) in self.components.map.iter_mut() {
+            *locked = false;
+            self.components.tile.insert(entity, Tile::Map);
         }
     }
 }
