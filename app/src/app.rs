@@ -40,7 +40,7 @@ enum MainMenuEntry {
     Clear,
     Options,
     Story,
-    Keybindings,
+    Help,
     EndText,
 }
 
@@ -49,12 +49,12 @@ impl MainMenuEntry {
         use MainMenuEntry::*;
         let (items, hotkeys) = match frontend {
             Frontend::Graphical | Frontend::AnsiTerminal => (
-                vec![NewGame, Options, Keybindings, Story, Quit],
-                hashmap!['n' => NewGame, 'o' => Options, 'k' => Keybindings, 'b' => Story, 'q' => Quit],
+                vec![NewGame, Options, Help, Story, Quit],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story, 'q' => Quit],
             ),
             Frontend::Web => (
-                vec![NewGame, Options, Keybindings, Story],
-                hashmap!['n' => NewGame, 'o' => Options, 'k' => Keybindings, 'b' => Story],
+                vec![NewGame, Options, Help, Story],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story],
             ),
         };
         menu::MenuInstanceBuilder {
@@ -69,12 +69,12 @@ impl MainMenuEntry {
         use MainMenuEntry::*;
         let (items, hotkeys) = match frontend {
             Frontend::Graphical | Frontend::AnsiTerminal => (
-                vec![NewGame, Options, Keybindings, Story, EndText, Quit],
-                hashmap!['n' => NewGame, 'o' => Options, 'k' => Keybindings, 'b' => Story, 'e' => EndText, 'q' => Quit],
+                vec![NewGame, Options, Help, Story, EndText, Quit],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story, 'e' => EndText, 'q' => Quit],
             ),
             Frontend::Web => (
-                vec![NewGame, Options, Keybindings, Story, EndText],
-                hashmap!['n' => NewGame, 'o' => Options, 'k' => Keybindings, 'b' => Story, 'e' => EndText],
+                vec![NewGame, Options, Help, Story, EndText],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story, 'e' => EndText],
             ),
         };
         menu::MenuInstanceBuilder {
@@ -89,20 +89,12 @@ impl MainMenuEntry {
         use MainMenuEntry::*;
         let (items, hotkeys) = match frontend {
             Frontend::Graphical | Frontend::AnsiTerminal => (
-                vec![
-                    Resume,
-                    SaveQuit,
-                    NewGame,
-                    Options,
-                    Keybindings,
-                    Story,
-                    Clear,
-                ],
-                hashmap!['r' => Resume, 'q' => SaveQuit, 'o' => Options, 'k' => Keybindings, 'b'=> Story, 'n' => NewGame, 'c' => Clear],
+                vec![Resume, SaveQuit, NewGame, Options, Help, Story, Clear],
+                hashmap!['r' => Resume, 'q' => SaveQuit, 'o' => Options, 'h' => Help, 'b'=> Story, 'n' => NewGame, 'c' => Clear],
             ),
             Frontend::Web => (
-                vec![Resume, Save, NewGame, Options, Keybindings, Story, Clear],
-                hashmap!['r' => Resume, 's' => Save, 'o' => Options, 'k' => Keybindings, 'b' => Story, 'n' => NewGame, 'c' => Clear],
+                vec![Resume, Save, NewGame, Options, Help, Story, Clear],
+                hashmap!['r' => Resume, 's' => Save, 'o' => Options, 'h' => Help, 'b' => Story, 'n' => NewGame, 'c' => Clear],
             ),
         };
         menu::MenuInstanceBuilder {
@@ -1129,7 +1121,7 @@ fn main_menu(
                         MainMenuEntry::Clear => "(c) Clear",
                         MainMenuEntry::Options => "(o) Options",
                         MainMenuEntry::Story => "(p) Prologue",
-                        MainMenuEntry::Keybindings => "(k) Keybindings",
+                        MainMenuEntry::Help => "(h) Help",
                         MainMenuEntry::EndText => "(e) Epilogue",
                     };
                     write!(buf, "{}", s).unwrap();
@@ -1332,7 +1324,7 @@ fn story() -> TextOverlay {
     ])
 }
 
-fn keybindings() -> TextOverlay {
+fn help() -> TextOverlay {
     let normal = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -1559,13 +1551,11 @@ fn main_menu_cycle(
                 data.menu_background_data.tick(*since_prev);
             }
         })),
-        Ok(MainMenuEntry::Keybindings) => {
-            Ei::I(keybindings().map(|()| None).on_event(|data, event| {
-                if let CommonEvent::Frame(since_prev) = event {
-                    data.menu_background_data.tick(*since_prev);
-                }
-            }))
-        }
+        Ok(MainMenuEntry::Help) => Ei::I(help().map(|()| None).on_event(|data, event| {
+            if let CommonEvent::Frame(since_prev) = event {
+                data.menu_background_data.tick(*since_prev);
+            }
+        })),
         Ok(MainMenuEntry::EndText) => Ei::J(
             SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
                 data.game.loop_music(Audio::EndTextHappy, 0.2);

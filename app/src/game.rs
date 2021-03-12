@@ -109,7 +109,9 @@ impl<'a> EffectContext<'a> {
                 *self.current_music_handle = Some(handle);
             }
             ExternalEvent::SoundEffect(sound_effect) => {
-                self.play_audio(Audio::SoundEffect(sound_effect), 0.5);
+                if self.config.sfx {
+                    self.play_audio(Audio::SoundEffect(sound_effect), 0.5);
+                }
             }
         }
     }
