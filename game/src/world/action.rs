@@ -162,8 +162,19 @@ impl World {
             use player::WeaponAbility;
             match ability {
                 WeaponAbility::KnockBack => {
-                    self.character_push_in_direction(victim, direction.direction());
-                    self.character_push_in_direction(victim, direction.direction());
+                    self.components.realtime.insert(victim, ());
+                    self.realtime_components.movement.insert(
+                        victim,
+                        ScheduledRealtimePeriodicState {
+                            state: movement::spec::Movement {
+                                path: direction.coord(),
+                                repeat: movement::spec::Repeat::Steps(2),
+                                cardinal_step_duration: Duration::from_millis(50),
+                            }
+                            .build(),
+                            until_next_event: Duration::from_millis(0),
+                        },
+                    );
                 }
                 _ => (),
             }

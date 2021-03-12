@@ -1327,17 +1327,42 @@ fn story() -> TextOverlay {
 fn help() -> TextOverlay {
     let normal = Style::new()
         .with_foreground(colours::STRIPE)
-        .with_bold(true);
+        .with_bold(false);
     let faint = Style::new().with_foreground(colours::STRIPE);
+    let b = |s: &str| text::RichTextPartOwned::new(s.to_string(), normal.with_bold(true));
+    let t = |s: &str| text::RichTextPartOwned::new(s.to_string(), normal);
     TextOverlay::new(
-        20,
+        52,
         vec![
-            text::RichTextPartOwned::new("Movement/Aim: arrows/WASD/HJKL\n\n".to_string(), normal),
-            text::RichTextPartOwned::new("Cancel Aim: escape\n\n".to_string(), normal),
-            text::RichTextPartOwned::new("Wait: space\n\n".to_string(), normal),
-            text::RichTextPartOwned::new("Examine: x\n\n".to_string(), normal),
-            text::RichTextPartOwned::new("Get Weapon: g\n\n".to_string(), normal),
-            text::RichTextPartOwned::new("Fire Ranged Weapon: 1-3\n\n".to_string(), normal),
+            b("Combat\n"),
+            t("Each weapon has a DMG(♥) and PEN(♦) stat, and each enemy has heatlh(♥) and armour(♦). "),
+            t("If an enemy is hit with a weapon that has a higher PEN than their armour, their health is "),
+            t("reduced by the weapon's DMG. If a projectile's PEN exceeds an enemy's armour, it continues "),
+            t("on its path with its PEN reduced by the enemy's armour. If it hits the hull, it has a "),
+            t("chance to breach the hull (its HULL PEN stat).\n\n"),
+            b("Hull Breaches\n"),
+            t("If the hull is breached the air is sucked out of connected areas of the station. "),
+            t("For several turns, characters and items in connected areas are pulled towards the breach. "),
+            t("This is indicated by a red light. "),
+            t("After the air is drained, the light will turn blue indicating vacuum. "),
+            t("Your oxygen will start decreasing, and if it runs out then your health will start decreasing "),
+            t("until you get back into a pressurised area.\n\n"),
+            b("Keyboard Controls\n"),
+            t("Movement/Aim: Arrows/WASD/HJKL\n"),
+            t("Cancel Aim: Escape\n"),
+            t("Wait: Space\n"),
+            t("Examine: x\n"),
+            t("Get Weapon: g\n"),
+            t("Fire Ranged Weapon: 1-3\n\n"),
+            b("Gamepad Controls\n"),
+            t("Movement/Aim: D-Pad\n"),
+            t("Cancel Aim: Select\n"),
+            t("Wait: Select\n"),
+            t("Examine: Right Bumper\n"),
+            t("Get Weapon: Y/Triangle\n"),
+            t("Fire Ranged Weapon Slot 1: X/Square\n"),
+            t("Fire Ranged Weapon Slot 2: A/Cross\n"),
+            t("Fire Ranged Weapon Slot 2: B/Circle\n"),
             text::RichTextPartOwned::new("\n\n\n\n\nPress any key...".to_string(), faint),
         ],
     )
