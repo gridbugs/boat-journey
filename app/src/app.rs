@@ -50,11 +50,11 @@ impl MainMenuEntry {
         let (items, hotkeys) = match frontend {
             Frontend::Graphical | Frontend::AnsiTerminal => (
                 vec![NewGame, Options, Help, Story, Quit],
-                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story, 'q' => Quit],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'p' => Story, 'q' => Quit],
             ),
             Frontend::Web => (
                 vec![NewGame, Options, Help, Story],
-                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'p' => Story],
             ),
         };
         menu::MenuInstanceBuilder {
@@ -70,11 +70,11 @@ impl MainMenuEntry {
         let (items, hotkeys) = match frontend {
             Frontend::Graphical | Frontend::AnsiTerminal => (
                 vec![NewGame, Options, Help, Story, EndText, Quit],
-                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story, 'e' => EndText, 'q' => Quit],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'p' => Story, 'e' => EndText, 'q' => Quit],
             ),
             Frontend::Web => (
                 vec![NewGame, Options, Help, Story, EndText],
-                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'b' => Story, 'e' => EndText],
+                hashmap!['n' => NewGame, 'o' => Options, 'h' => Help, 'p' => Story, 'e' => EndText],
             ),
         };
         menu::MenuInstanceBuilder {
@@ -90,11 +90,11 @@ impl MainMenuEntry {
         let (items, hotkeys) = match frontend {
             Frontend::Graphical | Frontend::AnsiTerminal => (
                 vec![Resume, SaveQuit, NewGame, Options, Help, Story, Clear],
-                hashmap!['r' => Resume, 'q' => SaveQuit, 'o' => Options, 'h' => Help, 'b'=> Story, 'n' => NewGame, 'c' => Clear],
+                hashmap!['r' => Resume, 'q' => SaveQuit, 'o' => Options, 'h' => Help, 'p'=> Story, 'n' => NewGame, 'c' => Clear],
             ),
             Frontend::Web => (
                 vec![Resume, Save, NewGame, Options, Help, Story, Clear],
-                hashmap!['r' => Resume, 's' => Save, 'o' => Options, 'h' => Help, 'b' => Story, 'n' => NewGame, 'c' => Clear],
+                hashmap!['r' => Resume, 's' => Save, 'o' => Options, 'h' => Help, 'p' => Story, 'n' => NewGame, 'c' => Clear],
             ),
         };
         menu::MenuInstanceBuilder {
