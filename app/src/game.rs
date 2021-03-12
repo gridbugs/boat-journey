@@ -498,7 +498,9 @@ impl EventRoutine for ExamineEventRoutine {
                     Examine::Ignore => Handled::Continue(s),
                     Examine::Frame(since_last) => {
                         let game_control_flow = instance.game.handle_tick(since_last, game_config);
-                        assert!(game_control_flow.is_none(), "meaningful event while aiming");
+                        if game_control_flow.is_some() {
+                            log::warn!("meaningful event while aiming");
+                        }
                         let mut event_context = EffectContext {
                             rng: &mut instance.rng,
                             screen_shake: &mut instance.screen_shake,
@@ -656,7 +658,9 @@ impl EventRoutine for AimEventRoutine {
                     Aim::Ignore => Handled::Continue(s),
                     Aim::Frame(since_last) => {
                         let game_control_flow = instance.game.handle_tick(since_last, game_config);
-                        assert!(game_control_flow.is_none(), "meaningful event while aiming");
+                        if game_control_flow.is_some() {
+                            log::warn!("meaningful event while aiming");
+                        }
                         let mut event_context = EffectContext {
                             rng: &mut instance.rng,
                             screen_shake: &mut instance.screen_shake,
