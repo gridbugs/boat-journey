@@ -127,10 +127,10 @@ fn enemy_text(enemy: Enemy) -> RichTextPartOwned {
         )
     };
     match enemy {
-        Enemy::Zombie => t("Zombie", colours::ZOMBIE),
+        Enemy::Zombie => t("Zombie", colours::ZOMBIE.saturating_scalar_mul_div(3, 2)),
         Enemy::Skeleton => t("Skeleton", colours::SKELETON),
         Enemy::Boomer => t("Boomer", colours::BOOMER),
-        Enemy::Tank => t("Tank", colours::TANK),
+        Enemy::Tank => t("Tank", colours::TANK.saturating_scalar_mul_div(3, 2)),
     }
 }
 
@@ -338,6 +338,9 @@ pub fn view_message_log<F: Frame, C: ColModify>(
             Message::TakeCredit(2) => {
                 vec![t("You gain $2 of credit.", plain)]
             }
+            Message::TakeCredit(_) => {
+                vec![]
+            }
             Message::BoomerExplodes => {
                 vec![
                     t("The ", plain),
@@ -376,7 +379,16 @@ pub fn view_message_log<F: Frame, C: ColModify>(
                     t(" falls into the void.", plain),
                 ]
             }
-            _ => vec![],
+            Message::MapTerminal => {
+                vec![
+                    t("You access the ", plain),
+                    t(
+                        "Map Terminal",
+                        bold.with_foreground(colours::MAP_BACKGROUND),
+                    ),
+                    t(".", plain),
+                ]
+            }
         };
         let text = text.iter().map(|t| t.as_rich_text_part());
         view.view(text, context.add_offset(offset), frame);

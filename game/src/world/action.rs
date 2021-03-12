@@ -21,6 +21,8 @@ pub enum Error {
     CannotAffordUpgrade,
 }
 
+const KNOCKBACK: usize = 3;
+
 impl World {
     pub fn character_pull_in_direction<R: Rng>(
         &mut self,
@@ -85,18 +87,27 @@ impl World {
                         self.open_door(feature_entity);
                         return Ok(None);
                     }
-                    return Err(Error::WalkIntoSolidCell);
-                }
-                if self.components.upgrade.contains(feature_entity) {
-                    if self.components.player.contains(character) {
-                        return Ok(Some(crate::GameControlFlow::Upgrade));
-                    } else {
-                        return Err(Error::WalkIntoSolidCell);
+                    if self.components.upgrade.contains(feature_entity) {
+                        if self.components.player.contains(character) {
+                            return Ok(Some(crate::GameControlFlow::Upgrade));
+                        } else {
+                            return Err(Error::WalkIntoSolidCell);
+                        }
                     }
+                    if let Some(&locked) = self.components.map.get(feature_entity) {
+                        if locked {
+                            return Ok(Some(crate::GameControlFlow::UnlockMap));
+                        } else {
+                            message_log.push(Message::MapTerminal);
+                        }
+                    }
+                    return Err(Error::WalkIntoSolidCell);
                 }
                 if let Some(&locked) = self.components.map.get(feature_entity) {
                     if locked {
                         return Ok(Some(crate::GameControlFlow::UnlockMap));
+                    } else {
+                        message_log.push(Message::MapTerminal);
                     }
                 }
             }
@@ -173,7 +184,7 @@ impl World {
                         ScheduledRealtimePeriodicState {
                             state: movement::spec::Movement {
                                 path: direction.coord(),
-                                repeat: movement::spec::Repeat::Steps(2),
+                                repeat: movement::spec::Repeat::Steps(KNOCKBACK),
                                 cardinal_step_duration: Duration::from_millis(50),
                             }
                             .build(),
@@ -632,7 +643,7 @@ impl World {
                         ScheduledRealtimePeriodicState {
                             state: movement::spec::Movement {
                                 path: projectile_movement_direction.coord(),
-                                repeat: movement::spec::Repeat::Steps(2),
+                                repeat: movement::spec::Repeat::Steps(KNOCKBACK),
                                 cardinal_step_duration: Duration::from_millis(100),
                             }
                             .build(),
@@ -797,6 +808,7 @@ impl World {
         for (entity, locked) in self.components.map.iter_mut() {
             *locked = false;
             self.components.tile.insert(entity, Tile::Map);
+            self.components.solid.remove(entity);
         }
     }
 }

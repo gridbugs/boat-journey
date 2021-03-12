@@ -16,6 +16,7 @@ use crate::{
         World,
     },
 };
+use direction::CardinalDirections;
 use entity_table::Entity;
 use grid_2d::coord_2d::Axis;
 use grid_2d::Coord;
@@ -38,7 +39,7 @@ pub fn make_player() -> EntityData {
             },
         }),
         hit_points: Some(HitPoints::new_full(10)),
-        oxygen: Some(Oxygen::new_full(10)),
+        oxygen: Some(Oxygen::new_full(20)),
         ..Default::default()
     }
 }
@@ -623,6 +624,7 @@ impl World {
             .unwrap();
         self.components.tile.insert(entity, Tile::Upgrade);
         self.components.upgrade.insert(entity, ());
+        self.components.solid.insert(entity, ());
         entity
     }
 
@@ -639,6 +641,7 @@ impl World {
             .unwrap();
         self.components.tile.insert(entity, Tile::MapLocked);
         self.components.map.insert(entity, true);
+        self.components.solid.insert(entity, ());
         entity
     }
 
@@ -691,15 +694,32 @@ impl World {
         self.components.character.insert(entity, ());
         self.components
             .hit_points
-            .insert(entity, HitPoints::new_full(8));
-        self.components.armour.insert(entity, Armour::new(3));
+            .insert(entity, HitPoints::new_full(4));
+        self.components.armour.insert(entity, Armour::new(4));
         self.components.damage.insert(entity, 1);
         self.components.skeleton.insert(entity, ());
         self.components.enemy.insert(entity, Enemy::Skeleton);
         entity
     }
 
-    pub fn spawn_skeleton_respawn(&mut self, coord: Coord) -> Entity {
+    pub fn spawn_skeleton_respawn(&mut self, mut coord: Coord) -> Option<Entity> {
+        if self.spatial_table.layers_at_checked(coord).item.is_some() {
+            let mut new_coord = None;
+            for direction in CardinalDirections {
+                let nei_coord = coord + direction.coord();
+                if let Some(layers) = self.spatial_table.layers_at(nei_coord) {
+                    if layers.item.is_none() {
+                        new_coord = Some(nei_coord);
+                        break;
+                    }
+                }
+            }
+            if let Some(new_coord) = new_coord {
+                coord = new_coord;
+            } else {
+                return None;
+            }
+        }
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -712,7 +732,7 @@ impl World {
             .unwrap();
         self.components.tile.insert(entity, Tile::SkeletonRespawn);
         self.components.skeleton_respawn.insert(entity, 11);
-        entity
+        Some(entity)
     }
 
     pub fn spawn_tank(&mut self, coord: Coord) -> Entity {
@@ -765,8 +785,8 @@ impl World {
         self.components.character.insert(entity, ());
         self.components
             .hit_points
-            .insert(entity, HitPoints::new_full(2));
-        self.components.armour.insert(entity, Armour::new(2));
+            .insert(entity, HitPoints::new_full(4));
+        self.components.armour.insert(entity, Armour::new(4));
         self.components.damage.insert(entity, 1);
         self.components.expoodes_on_death.insert(entity, ());
         self.components.enemy.insert(entity, Enemy::Boomer);

@@ -521,9 +521,9 @@ struct EnemyCounts {
 impl EnemyCounts {
     fn new() -> Self {
         Self {
-            zombie: vec![5, 6, 7, 7, 7],
-            skeleton: vec![1, 2, 2, 3, 3],
-            boomer: vec![0, 1, 1, 2, 2],
+            zombie: vec![5, 7, 7, 7, 6],
+            skeleton: vec![1, 1, 1, 2, 2],
+            boomer: vec![0, 0, 1, 1, 2],
             tank: vec![0, 0, 0, 1, 2],
         }
     }
@@ -554,6 +554,11 @@ fn spawn_items<R: Rng>(
     for _ in 0..2 {
         if let Some(coord) = empty_coords.pop() {
             world.spawn_ranged_weapon(coord, terrain_state.ranged_weapons.pop().unwrap());
+        }
+    }
+    if terrain_state.chainsaw_floors.contains(&level) {
+        if let Some(coord) = empty_coords.pop() {
+            world.spawn_melee_weapon(coord, MeleeWeapon::Chainsaw);
         }
     }
     'outer1: for (i, &coord) in empty_coords.iter().enumerate() {

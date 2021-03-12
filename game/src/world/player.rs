@@ -146,7 +146,7 @@ impl Weapon {
     pub fn new_shotgun() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::Shotgun),
-            ammo: Some(Ammo::new_full(8)),
+            ammo: Some(Ammo::new_full(4)),
             pen: 4,
             dmg: 8,
             hull_pen_percent: 40,
@@ -158,10 +158,10 @@ impl Weapon {
     pub fn new_railgun() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::Railgun),
-            ammo: Some(Ammo::new_full(8)),
+            ammo: Some(Ammo::new_full(4)),
             pen: 100,
-            dmg: 5,
-            hull_pen_percent: 100,
+            dmg: 10,
+            hull_pen_percent: 75,
             abilities: vec![],
             light_colour: Some(Rgb24::new(0, 255, 255)),
             bright: true,
@@ -170,8 +170,8 @@ impl Weapon {
     pub fn new_rifle() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::Rifle),
-            ammo: Some(Ammo::new_full(8)),
-            pen: 8,
+            ammo: Some(Ammo::new_full(4)),
+            pen: 6,
             dmg: 4,
             hull_pen_percent: 40,
             abilities: vec![],
@@ -194,9 +194,9 @@ impl Weapon {
     pub fn new_oxidiser() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::Oxidiser),
-            ammo: Some(Ammo::new_full(20)),
+            ammo: Some(Ammo::new_full(10)),
             pen: 2,
-            dmg: 1,
+            dmg: 4,
             hull_pen_percent: 0,
             abilities: vec![WeaponAbility::Oxidise],
             light_colour: Some(Rgb24::new(0, 0, 255)),
@@ -206,9 +206,9 @@ impl Weapon {
     pub fn new_life_stealer() -> Self {
         Self {
             name: WeaponName::RangedWeapon(RangedWeapon::LifeStealer),
-            ammo: Some(Ammo::new_full(20)),
+            ammo: Some(Ammo::new_full(10)),
             pen: 2,
-            dmg: 1,
+            dmg: 4,
             hull_pen_percent: 0,
             abilities: vec![WeaponAbility::LifeSteal],
             light_colour: Some(Rgb24::new(255, 0, 0)),
