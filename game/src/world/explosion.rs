@@ -36,33 +36,16 @@ pub mod spec {
     }
 }
 
-struct CharacterEffect {
-    push_back: u32,
-    damage: u32,
-}
-
-fn character_effect_indirect_hit(
-    mechanics: &spec::Mechanics,
-    explosion_to_character: LineSegment,
-) -> CharacterEffect {
-    let push_back = 2;
-    CharacterEffect {
-        push_back,
-        damage: 2,
-    }
-}
-
 fn apply_indirect_hit<R: Rng>(
     world: &mut World,
-    mechanics: &spec::Mechanics,
     character_entity: Entity,
     explosion_to_character: LineSegment,
     rng: &mut R,
     external_events: &mut Vec<ExternalEvent>,
     message_log: &mut Vec<Message>,
 ) {
-    let CharacterEffect { push_back, damage } =
-        character_effect_indirect_hit(mechanics, explosion_to_character);
+    let push_back = 2;
+    let damage = 2;
     world.components.realtime.insert(character_entity, ());
     world.realtime_components.movement.insert(
         character_entity,
@@ -79,18 +62,9 @@ fn apply_indirect_hit<R: Rng>(
     world.damage_character(character_entity, damage, rng, external_events, message_log);
 }
 
-fn character_effect_direct_hit(mechanics: &spec::Mechanics) -> CharacterEffect {
-    let push_back = 2;
-    CharacterEffect {
-        push_back,
-        damage: 2,
-    }
-}
-
 fn apply_direct_hit<R: Rng>(
     world: &mut World,
     explosion_coord: Coord,
-    mechanics: &spec::Mechanics,
     character_entity: Entity,
     rng: &mut R,
     external_events: &mut Vec<ExternalEvent>,
@@ -105,7 +79,8 @@ fn apply_direct_hit<R: Rng>(
             }
         }
     }
-    let CharacterEffect { push_back, damage } = character_effect_direct_hit(mechanics);
+    let push_back = 2;
+    let damage = 2;
     if solid_neighbour_vector.is_zero() {
         log::warn!("Direct hit with no solid neighbours shouldn't be possible.");
     } else {
@@ -149,7 +124,6 @@ fn apply_mechanics<R: Rng>(
                 apply_direct_hit(
                     world,
                     explosion_coord,
-                    mechanics,
                     character_entity,
                     rng,
                     external_events,
@@ -162,7 +136,6 @@ fn apply_mechanics<R: Rng>(
                 let explosion_to_character = LineSegment::new(explosion_coord, character_coord);
                 apply_indirect_hit(
                     world,
-                    mechanics,
                     character_entity,
                     explosion_to_character,
                     rng,

@@ -3,7 +3,7 @@ use chargrid::render::{
     grid_2d::coord_2d::Axis, ColModify, Coord, Frame, Size, Style, View, ViewCell, ViewContext,
 };
 use chargrid::text::StringViewSingleLine;
-use orbital_decay_game::{EntityTile, Game, Tile, ToRenderEntity, VisibilityCell, VisibilityGrid};
+use orbital_decay_game::{EntityTile, Game, Tile, ToRenderEntity, VisibilityCell};
 
 pub const OFFSETS: [Coord; 9] = [
     Coord::new(0, 0),

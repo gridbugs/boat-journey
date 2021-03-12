@@ -6,7 +6,7 @@ use chargrid::text::{
 };
 use orbital_decay_game::{
     player::{self, Player, Weapon, WeaponAbility, WeaponName},
-    CharacterInfo, Enemy, HitPoints, MeleeWeapon, Message, RangedWeapon,
+    CharacterInfo, Enemy, MeleeWeapon, Message, RangedWeapon,
 };
 
 pub struct Ui<'a> {

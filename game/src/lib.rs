@@ -151,11 +151,11 @@ impl Game {
             agents,
             player,
         } = if debug {
-            terrain::from_str(include_str!("terrain.txt"), make_player(&mut rng), &mut rng)
+            terrain::from_str(include_str!("terrain.txt"), make_player())
         } else {
             terrain::space_station(
                 0,
-                make_player(&mut rng),
+                make_player(),
                 &SpaceStationSpec { demo: config.demo },
                 &mut terrain_state,
                 &mut rng,
@@ -465,10 +465,7 @@ impl Game {
                 &mut self.events,
                 &mut self.message_log,
             ),
-            Input::Wait => {
-                self.world.wait(self.player, &mut self.rng);
-                Ok(None)
-            }
+            Input::Wait => Ok(None),
             Input::Fire { direction, slot } => {
                 self.world.character_fire_bullet(
                     self.player,
@@ -545,8 +542,8 @@ impl Game {
                             }
                             self.world.components.to_remove.insert(item_entity, ());
                         }
-                        Item::RangedWeapon(ranged_weapon) => {}
-                        Item::MeleeWeapon(melee_weapon) => {}
+                        Item::RangedWeapon(_) => {}
+                        Item::MeleeWeapon(_) => {}
                         Item::Medkit => {
                             self.world.heal_fully(self.player, &mut self.message_log);
                             self.world.components.to_remove.insert(item_entity, ());

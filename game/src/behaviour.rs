@@ -224,7 +224,6 @@ impl<'a> CanEnter for WorldCanEnterIgnoreCharacters<'a> {
 
 struct WorldCanEnterAvoidNpcs<'a> {
     world: &'a World,
-    entity: Entity,
 }
 
 impl<'a> CanEnter for WorldCanEnterAvoidNpcs<'a> {
@@ -363,7 +362,7 @@ impl Agent {
             Behaviour::Flee => {
                 let maybe_cardinal_direction =
                     behaviour_context.distance_map_search_context.search_first(
-                        &WorldCanEnterAvoidNpcs { world, entity },
+                        &WorldCanEnterAvoidNpcs { world },
                         coord,
                         5,
                         &behaviour_context.player_flee,
@@ -383,7 +382,7 @@ impl Agent {
                 if accurate {
                     let maybe_cardinal_direction =
                         behaviour_context.distance_map_search_context.search_first(
-                            &WorldCanEnterAvoidNpcs { world, entity },
+                            &WorldCanEnterAvoidNpcs { world },
                             coord,
                             5,
                             &behaviour_context.player_approach,
@@ -400,7 +399,7 @@ impl Agent {
                         .point_to_point_search_context
                         .point_to_point_search_first(
                             expand::JumpPoint,
-                            &WorldCanEnterAvoidNpcs { world, entity },
+                            &WorldCanEnterAvoidNpcs { world },
                             coord,
                             last_seen_player_coord,
                         );

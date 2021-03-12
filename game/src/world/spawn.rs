@@ -3,8 +3,8 @@ use crate::{
     world::{
         data::{
             Armour, CollidesWith, Disposition, DoorState, Enemy, EntityData, HitPoints, Item,
-            Layer, Location, MeleeWeapon, MoveHalfSpeed, Npc, OnCollision, Oxygen,
-            ProjectileDamage, RangedWeapon, Tile,
+            Layer, Location, MeleeWeapon, Npc, OnCollision, Oxygen, ProjectileDamage, RangedWeapon,
+            Tile,
         },
         explosion,
         player::{self, WeaponAbility},
@@ -19,13 +19,12 @@ use crate::{
 use entity_table::Entity;
 use grid_2d::coord_2d::Axis;
 use grid_2d::Coord;
-use rand::Rng;
 use rational::Rational;
 use rgb24::Rgb24;
 use shadowcast::vision_distance::Circle;
 use std::time::Duration;
 
-pub fn make_player<R: Rng>(rng: &mut R) -> EntityData {
+pub fn make_player() -> EntityData {
     EntityData {
         tile: Some(Tile::Player),
         character: Some(()),
@@ -627,7 +626,7 @@ impl World {
         entity
     }
 
-    pub fn spawn_zombie<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+    pub fn spawn_zombie(&mut self, coord: Coord) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -655,7 +654,7 @@ impl World {
         entity
     }
 
-    pub fn spawn_skeleton<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+    pub fn spawn_skeleton(&mut self, coord: Coord) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -684,7 +683,7 @@ impl World {
         entity
     }
 
-    pub fn spawn_skeleton_respawn<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+    pub fn spawn_skeleton_respawn(&mut self, coord: Coord) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -700,7 +699,7 @@ impl World {
         entity
     }
 
-    pub fn spawn_tank<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+    pub fn spawn_tank(&mut self, coord: Coord) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(
@@ -729,7 +728,7 @@ impl World {
         entity
     }
 
-    pub fn spawn_boomer<R: Rng>(&mut self, coord: Coord, rng: &mut R) -> Entity {
+    pub fn spawn_boomer(&mut self, coord: Coord) -> Entity {
         let entity = self.entity_allocator.alloc();
         self.spatial_table
             .update(

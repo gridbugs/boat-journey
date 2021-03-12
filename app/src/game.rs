@@ -550,7 +550,7 @@ pub struct AimEventRoutine {
 }
 
 impl AimEventRoutine {
-    pub fn new(screen_coord: ScreenCoord, slot: RangedWeaponSlot) -> Self {
+    pub fn new(slot: RangedWeaponSlot) -> Self {
         Self {
             screen_coord: None,
             duration: Duration::from_millis(0),
@@ -568,14 +568,13 @@ impl EventRoutine for AimEventRoutine {
     fn handle<EP>(
         self,
         data: &mut Self::Data,
-        view: &Self::View,
+        _view: &Self::View,
         event_or_peek: EP,
     ) -> Handled<Self::Return, Self>
     where
         EP: EventOrPeek<Event = Self::Event>,
     {
         enum Aim {
-            KeyboardDirection(CardinalDirection),
             KeyboardFinalise(CardinalDirection),
             Cancel,
             Ignore,
@@ -625,10 +624,6 @@ impl EventRoutine for AimEventRoutine {
                     Aim::KeyboardFinalise(direction) => {
                         *last_aim_with_mouse = false;
                         Handled::Return(Some(Fire { direction, slot }))
-                    }
-                    Aim::KeyboardDirection(direction) => {
-                        *last_aim_with_mouse = false;
-                        Handled::Continue(s)
                     }
                     Aim::Cancel => Handled::Return(None),
                     Aim::Ignore => Handled::Continue(s),
@@ -695,14 +690,14 @@ impl EventRoutine for ChooseWeaponSlotEventRoutine {
     fn handle<EP>(
         self,
         data: &mut Self::Data,
-        view: &Self::View,
+        _view: &Self::View,
         event_or_peek: EP,
     ) -> Handled<Self::Return, Self>
     where
         EP: EventOrPeek<Event = Self::Event>,
     {
         let controls = &data.controls;
-        event_or_peek_with_handled(event_or_peek, self, |mut s, event| match event {
+        event_or_peek_with_handled(event_or_peek, self, |s, event| match event {
             CommonEvent::Input(input) => match input {
                 Input::Keyboard(keyboard_input) => {
                     if let Some(app_input) = controls.get(keyboard_input) {

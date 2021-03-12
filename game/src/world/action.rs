@@ -1,21 +1,18 @@
 use crate::{
     behaviour::Agent,
     world::{
-        data::{DoorState, Item, MeleeWeapon, OnCollision, ProjectileDamage, RangedWeapon, Tile},
+        data::{DoorState, MeleeWeapon, OnCollision, ProjectileDamage, RangedWeapon, Tile},
         explosion, player,
         player::WeaponName,
         realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
-        spatial::{Layer, Location, SpatialTable},
         ActionError, ExternalEvent, World,
     },
-    Message, SoundEffect, VisibilityGrid,
+    Message, SoundEffect,
 };
 use direction::{CardinalDirection, Direction};
 use entity_table::{ComponentTable, Entity};
 use grid_2d::Coord;
-use line_2d::LineSegment;
-use rand::{seq::IteratorRandom, seq::SliceRandom, Rng};
-use std::collections::{HashSet, VecDeque};
+use rand::Rng;
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug)]
@@ -25,18 +22,11 @@ pub enum Error {
 }
 
 impl World {
-    pub fn wait<R: Rng>(&mut self, entity: Entity, rng: &mut R) {
-        if let Some(coord) = self.spatial_table.coord_of(entity) {
-            self.after_player_move(entity, coord, rng);
-        }
-    }
-    fn after_player_move<R: Rng>(&mut self, character: Entity, target_coord: Coord, rng: &mut R) {}
-
     pub fn character_pull_in_direction<R: Rng>(
         &mut self,
         character: Entity,
         direction: CardinalDirection,
-        rng: &mut R,
+        _rng: &mut R,
     ) {
         let current_coord = if let Some(coord) = self.spatial_table.coord_of(character) {
             coord
@@ -121,10 +111,6 @@ impl World {
                 external_events,
                 message_log,
             );
-        } else {
-            if self.components.player.contains(character) {
-                self.after_player_move(character, target_coord, rng);
-            }
         }
         Ok(None)
     }
@@ -186,7 +172,6 @@ impl World {
         if remove {
             player.melee_weapon = player::Weapon::new_bare_hands();
         }
-        self.wait(attacker, rng);
     }
 
     fn npc_melee_attack<R: Rng>(
@@ -304,9 +289,9 @@ impl World {
 
     pub fn process_skeleton_respawn<R: Rng>(
         &mut self,
-        rng: &mut R,
+        _rng: &mut R,
         agents: &mut ComponentTable<Agent>,
-        external_events: &mut Vec<ExternalEvent>,
+        _external_events: &mut Vec<ExternalEvent>,
     ) {
         let mut to_spawn = Vec::new();
         for (entity, respawn) in self.components.skeleton_respawn.iter_mut() {
@@ -325,7 +310,7 @@ impl World {
             }
         }
         for coord in to_spawn {
-            let entity = self.spawn_skeleton(coord, rng);
+            let entity = self.spawn_skeleton(coord);
             agents.insert(entity, Agent::new(self.spatial_table.grid_size()));
         }
     }
@@ -391,13 +376,6 @@ impl World {
             }
             self.spawn_bullet(character_coord, target, &weapon);
             self.spawn_flash(character_coord);
-        }
-    }
-
-    fn blink<R: Rng>(&mut self, entity: Entity, coord: Coord, rng: &mut R) {
-        self.spatial_table.update_coord(entity, coord).unwrap();
-        if self.components.player.contains(entity) {
-            self.after_player_move(entity, coord, rng);
         }
     }
 
@@ -567,7 +545,7 @@ impl World {
         }
         if self.components.skeleton.contains(character) {
             if let Some(coord) = self.spatial_table.coord_of(character) {
-                self.spawn_skeleton_respawn(coord, rng);
+                self.spawn_skeleton_respawn(coord);
             }
         }
     }
@@ -614,7 +592,7 @@ impl World {
                         message_log.push(Message::PlayerHitEnemy { enemy, weapon });
                     }
                 }
-                let mut damage = projectile_damage.hit_points;
+                let damage = projectile_damage.hit_points;
                 self.damage_character(entity_to_damage, damage, rng, external_events, message_log);
                 if projectile_damage.life_steal {
                     if let Some(player) = self.components.player.entities().next() {

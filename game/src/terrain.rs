@@ -7,13 +7,8 @@ use crate::{
 };
 use direction::Directions;
 use entity_table::{ComponentTable, Entity};
-use grid_2d::CoordIter;
-use grid_2d::{coord_2d::Axis, Coord, Size};
-use rand::{
-    seq::{IteratorRandom, SliceRandom},
-    Rng, SeedableRng,
-};
-use rand_isaac::Isaac64Rng;
+use grid_2d::{Coord, Size};
+use rand::{seq::SliceRandom, Rng};
 use rational::Rational;
 use rgb24::Rgb24;
 use serde::{Deserialize, Serialize};
@@ -63,7 +58,7 @@ impl TerrainState {
 }
 
 #[allow(dead_code)]
-pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrain {
+pub fn from_str(s: &str, player_data: EntityData) -> Terrain {
     let rows = s.split('\n').filter(|s| !s.is_empty()).collect::<Vec<_>>();
     let size = Size::new_u16(rows[0].len() as u16, rows.len() as u16);
     let mut world = World::new(size, 0);
@@ -97,35 +92,35 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                     world.spawn_floor(coord);
                 }
                 'z' => {
-                    let entity = world.spawn_zombie(coord, rng);
+                    let entity = world.spawn_zombie(coord);
                     agents.insert(entity, Agent::new(size));
                     world.spawn_floor(coord);
                 }
                 't' => {
-                    let entity = world.spawn_tank(coord, rng);
+                    let entity = world.spawn_tank(coord);
                     agents.insert(entity, Agent::new(size));
                     world.spawn_floor(coord);
                 }
                 's' => {
-                    let entity = world.spawn_skeleton(coord, rng);
+                    let entity = world.spawn_skeleton(coord);
                     agents.insert(entity, Agent::new(size));
                     world.spawn_floor(coord);
                 }
                 'b' => {
-                    let entity = world.spawn_boomer(coord, rng);
+                    let entity = world.spawn_boomer(coord);
                     agents.insert(entity, Agent::new(size));
                     world.spawn_floor(coord);
                 }
                 'u' => {
-                    let entity = world.spawn_upgrade(coord);
+                    world.spawn_upgrade(coord);
                     world.spawn_floor(coord);
                 }
                 '$' => {
-                    let entity = world.spawn_credit(coord, 2);
+                    world.spawn_credit(coord, 2);
                     world.spawn_floor(coord);
                 }
                 'h' => {
-                    let entity = world.spawn_medkit(coord);
+                    world.spawn_medkit(coord);
                     world.spawn_floor(coord);
                 }
                 '0'..='5' => {
@@ -139,7 +134,7 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                         '5' => LifeStealer,
                         _ => panic!(),
                     };
-                    let entity = world.spawn_ranged_weapon(coord, weapon);
+                    world.spawn_ranged_weapon(coord, weapon);
                     world.spawn_floor(coord);
                 }
                 '6'..='6' => {
@@ -148,7 +143,7 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
                         '6' => Chainsaw,
                         _ => panic!(),
                     };
-                    let entity = world.spawn_melee_weapon(coord, weapon);
+                    world.spawn_melee_weapon(coord, weapon);
                     world.spawn_floor(coord);
                 }
 
@@ -175,29 +170,6 @@ pub fn from_str<R: Rng>(s: &str, player_data: EntityData, rng: &mut R) -> Terrai
         agents,
     }
 }
-
-#[derive(Clone, Copy)]
-enum NpcType {}
-
-fn spawn_npc<R: Rng>(world: &mut World, npc_type: NpcType, coord: Coord, rng: &mut R) -> Entity {
-    match npc_type {}
-}
-
-const ENEMY_TYPES: &[NpcType] = &[];
-
-#[derive(Clone, Copy)]
-enum Item {
-    CreditChip,
-}
-
-impl Item {
-    fn spawn(self, world: &mut World, coord: Coord, special: bool) {
-        todo!()
-    }
-}
-
-const ALL_ITEMS: &[Item] = &[Item::CreditChip];
-const BALANCED_ITEMS: &[Item] = &[Item::CreditChip];
 
 pub struct SpaceStationSpec {
     pub demo: bool,
@@ -398,7 +370,7 @@ pub fn space_station<R: Rng>(
     if spec.demo {
         for _ in 0..2 {
             if let Some(coord) = empty_coords.pop() {
-                let entity = world.spawn_zombie(coord, rng);
+                let entity = world.spawn_zombie(coord);
                 agents.insert(entity, Agent::new(AREA_SIZE));
             }
         }
@@ -431,7 +403,7 @@ fn space_station_last_level<R: Rng>(
         rng,
     );
     let mut world = World::new(AREA_SIZE, FINAL_LEVEL);
-    let mut agents = ComponentTable::default();
+    let agents = ComponentTable::default();
     let mut player_data = Some(player_data);
     let mut player = None;
     let mut empty_coords = Vec::new();
@@ -558,7 +530,7 @@ fn spawn_items<R: Rng>(
     empty_coords: &mut Vec<Coord>,
     world: &mut World,
     terrain_state: &mut TerrainState,
-    rng: &mut R,
+    _rng: &mut R,
 ) {
     for _ in 0..2 {
         if let Some(coord) = empty_coords.pop() {
@@ -597,22 +569,22 @@ fn spawn_items<R: Rng>(
     let enemy_count = EnemyCounts::new();
     for _ in 0..enemy_count.zombie[index] {
         if let Some(coord) = empty_coords.pop() {
-            world.spawn_zombie(coord, rng);
+            world.spawn_zombie(coord);
         }
     }
     for _ in 0..enemy_count.skeleton[index] {
         if let Some(coord) = empty_coords.pop() {
-            world.spawn_skeleton(coord, rng);
+            world.spawn_skeleton(coord);
         }
     }
     for _ in 0..enemy_count.boomer[index] {
         if let Some(coord) = empty_coords.pop() {
-            world.spawn_boomer(coord, rng);
+            world.spawn_boomer(coord);
         }
     }
     for _ in 0..enemy_count.tank[index] {
         if let Some(coord) = empty_coords.pop() {
-            world.spawn_tank(coord, rng);
+            world.spawn_tank(coord);
         }
     }
 }

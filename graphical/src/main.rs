@@ -1,6 +1,6 @@
 #![windows_subsystem = "windows"]
 use chargrid_graphical as graphical;
-use orbital_decay_app::{app, AutoPlay, Frontend, Fullscreen};
+use orbital_decay_app::{app, Frontend, Fullscreen};
 use orbital_decay_native::{meap, NativeCommon};
 
 const FULLSCREEN_SUPPORTED: bool = true;

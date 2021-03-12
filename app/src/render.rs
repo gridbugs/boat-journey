@@ -1,17 +1,14 @@
-use crate::{blink::Blink, colours, depth, game::GameStatus, tile_3x3, ui};
+use crate::{colours, depth, game::GameStatus, tile_3x3, ui};
 use chargrid::render::{
     blend_mode, ColModify, Coord, Frame, Rgb24, Size, Style, View, ViewCell, ViewContext,
 };
 use chargrid::text::{wrap, StringView, StringViewSingleLine, TextView};
-use direction::CardinalDirection;
-use line_2d::{Config as LineConfig, LineSegment};
 use orbital_decay_game::{
-    player::RangedWeaponSlot, ActionError, CellVisibility, Game, Layer, NpcAction, Tile,
-    ToRenderEntity, VisibilityGrid, WarningLight, MAP_SIZE,
+    player::RangedWeaponSlot, ActionError, CellVisibility, Game, Layer, Tile, VisibilityGrid,
+    WarningLight, MAP_SIZE,
 };
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
-use std::time::Duration;
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -30,7 +27,6 @@ pub struct GameToRender<'a> {
 
 pub struct GameView {
     last_offset: Coord,
-    blink: Blink,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -43,7 +39,6 @@ impl GameView {
     pub fn new() -> Self {
         Self {
             last_offset: Coord::new(0, 0),
-            blink: Blink::new(),
         }
     }
 

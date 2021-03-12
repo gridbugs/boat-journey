@@ -17,7 +17,6 @@ pub const STAIRS_1: Rgb24 = Rgb24::new_grey(0x88);
 pub const STAIRS_2: Rgb24 = Rgb24::new_grey(0x66);
 pub const PLAYER: Rgb24 = Rgb24::new_grey(0x00);
 pub const ZOMBIE: Rgb24 = Rgb24::new(0x3F, 0x3E, 0x0B);
-pub const BLOAT: Rgb24 = Rgb24::new(0x4F, 0x09, 0x55);
 pub const TANK: Rgb24 = Rgb24::new(0x51, 0x0C, 0x03);
 pub const SKELETON: Rgb24 = Rgb24::new(0x03, 0x51, 0x45);
 pub const BOOMER: Rgb24 = Rgb24::new(0x17, 0x80, 0x14);

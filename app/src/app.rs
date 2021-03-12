@@ -14,7 +14,6 @@ use chargrid::input::*;
 use chargrid::*;
 use common_event::*;
 use decorator::*;
-use direction::CardinalDirection;
 use event_routine::*;
 use general_storage_static::StaticStorage;
 use maplit::hashmap;
@@ -336,10 +335,10 @@ impl ViewSelector for SelectConfirmMenu {
     type ViewInput = AppView;
     type ViewOutput = FadeMenuInstanceView;
     fn view<'a>(&self, input: &'a Self::ViewInput) -> &'a Self::ViewOutput {
-        &input.upgrade_menu
+        &input.confirm_menu
     }
     fn view_mut<'a>(&self, input: &'a mut Self::ViewInput) -> &'a mut Self::ViewOutput {
-        &mut input.upgrade_menu
+        &mut input.confirm_menu
     }
 }
 impl DataSelector for SelectConfirmMenu {
@@ -1355,19 +1354,9 @@ fn keybindings() -> TextOverlay {
 fn aim(
     slot: RangedWeaponSlot,
 ) -> impl EventRoutine<Return = Option<Fire>, Data = AppData, View = AppView, Event = CommonEvent> {
-    make_either!(Ei = A | B);
-    SideEffectThen::new_with_view(move |data: &mut AppData, _view: &AppView| {
-        let game_relative_mouse_coord = ScreenCoord(data.last_mouse_coord);
-        if let Ok(initial_aim_coord) = data.game.initial_aim_coord(game_relative_mouse_coord) {
-            Ei::A(
-                AimEventRoutine::new(initial_aim_coord, slot)
-                    .select(SelectGame)
-                    .decorated(DecorateGame),
-            )
-        } else {
-            Ei::B(Value::new(None))
-        }
-    })
+    AimEventRoutine::new(slot)
+        .select(SelectGame)
+        .decorated(DecorateGame)
 }
 
 fn examine() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent>

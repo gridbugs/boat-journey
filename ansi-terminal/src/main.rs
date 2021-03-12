@@ -1,5 +1,5 @@
 use chargrid_ansi_terminal::{col_encode, Context};
-use orbital_decay_app::{app, AutoPlay, EnvNull, Frontend, RngSeed};
+use orbital_decay_app::{app, EnvNull, Frontend, RngSeed};
 use orbital_decay_native::{meap, NativeCommon};
 use rand::Rng;
 
