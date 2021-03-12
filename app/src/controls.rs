@@ -39,7 +39,6 @@ impl Controls {
             KeyboardInput::Char('1') => AppInput::Aim(RangedWeaponSlot::Slot1),
             KeyboardInput::Char('2') => AppInput::Aim(RangedWeaponSlot::Slot2),
             KeyboardInput::Char('3') => AppInput::Aim(RangedWeaponSlot::Slot3),
-            KeyboardInput::Char('3') => AppInput::Aim(RangedWeaponSlot::Slot3),
             KeyboardInput::Char('g') => AppInput::Get,
             KeyboardInput::Char(' ') => AppInput::Wait,
         ];
@@ -48,6 +47,12 @@ impl Controls {
             GamepadButton::DPadRight => AppInput::Move(CardinalDirection::East),
             GamepadButton::DPadUp => AppInput::Move(CardinalDirection::North),
             GamepadButton::DPadDown => AppInput::Move(CardinalDirection::South),
+            GamepadButton::Select => AppInput::Wait,
+            GamepadButton::North => AppInput::Get,
+            GamepadButton::West => AppInput::Aim(RangedWeaponSlot::Slot1),
+            GamepadButton::South => AppInput::Aim(RangedWeaponSlot::Slot2),
+            GamepadButton::East => AppInput::Aim(RangedWeaponSlot::Slot3),
+            GamepadButton::RightBumper => AppInput::Examine,
         ];
         Self { keys, gamepad }
     }

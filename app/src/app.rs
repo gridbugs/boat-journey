@@ -1100,13 +1100,13 @@ fn main_menu(
                     MainMenuType::Pause => (),
                 }
             } else {
+                if !data.game.is_music_playing() {
+                    data.game.loop_music(Audio::Menu, 0.2);
+                }
                 if data.game.config().won {
                     data.main_menu = MainMenuEntry::won(data.frontend).into_choose_or_escape();
                     data.main_menu_type = MainMenuType::Init;
                 } else {
-                    if !data.game.is_music_playing() {
-                        data.game.loop_music(Audio::Menu, 0.2);
-                    }
                     match data.main_menu_type {
                         MainMenuType::Init => (),
                         MainMenuType::Pause => {
@@ -1567,14 +1567,22 @@ fn main_menu_cycle(
             }))
         }
         Ok(MainMenuEntry::EndText) => Ei::J(
-            win_text()
-                .then(|| win_text2())
-                .map(|()| None)
-                .on_event(|data, event| {
-                    if let CommonEvent::Frame(since_prev) = event {
-                        data.menu_background_data.tick(*since_prev);
-                    }
-                }),
+            SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
+                data.game.loop_music(Audio::EndTextHappy, 0.2);
+                win_text()
+            })
+            .then(|| {
+                SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
+                    data.game.loop_music(Audio::EndTextSad, 0.2);
+                    win_text2()
+                })
+            })
+            .map(|()| None)
+            .on_event(|data, event| {
+                if let CommonEvent::Frame(since_prev) = event {
+                    data.menu_background_data.tick(*since_prev);
+                }
+            }),
         ),
     })
 }

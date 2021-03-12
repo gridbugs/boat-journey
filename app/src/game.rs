@@ -22,8 +22,8 @@ use std::time::Duration;
 
 const CONFIG_KEY: &str = "config.json";
 
-const GAME_MUSIC_VOLUME: f32 = 0.05;
-const MENU_MUSIC_VOLUME: f32 = 0.02;
+const GAME_MUSIC_VOLUME: f32 = 0.5;
+const MENU_MUSIC_VOLUME: f32 = 0.2;
 
 const STORAGE_FORMAT: format::Bincode = format::Bincode;
 
@@ -113,7 +113,7 @@ impl<'a> EffectContext<'a> {
                 *self.current_music_handle = Some(handle);
             }
             ExternalEvent::SoundEffect(sound_effect) => {
-                self.play_audio(Audio::SoundEffect(sound_effect), 30.);
+                self.play_audio(Audio::SoundEffect(sound_effect), 5.);
             }
         }
     }
@@ -429,7 +429,21 @@ impl EventRoutine for ExamineEventRoutine {
             event_or_peek_with_handled(event_or_peek, self, |mut s, event| {
                 let examine = match event {
                     CommonEvent::Input(input) => match input {
-                        Input::Gamepad(_) => Examine::Ignore,
+                        Input::Gamepad(gamepad_input) => match gamepad_input.button {
+                            GamepadButton::DPadUp => {
+                                Examine::KeyboardDirection(CardinalDirection::North)
+                            }
+                            GamepadButton::DPadLeft => {
+                                Examine::KeyboardDirection(CardinalDirection::West)
+                            }
+                            GamepadButton::DPadRight => {
+                                Examine::KeyboardDirection(CardinalDirection::East)
+                            }
+                            GamepadButton::DPadDown => {
+                                Examine::KeyboardDirection(CardinalDirection::South)
+                            }
+                            _ => Examine::Cancel,
+                        },
                         Input::Keyboard(keyboard_input) => {
                             if let Some(app_input) = controls.get(keyboard_input) {
                                 match app_input {
@@ -592,7 +606,22 @@ impl EventRoutine for AimEventRoutine {
             event_or_peek_with_handled(event_or_peek, self, |mut s, event| {
                 let aim = match event {
                     CommonEvent::Input(input) => match input {
-                        Input::Gamepad(_) => Aim::Ignore,
+                        Input::Gamepad(gamepad_input) => match gamepad_input.button {
+                            GamepadButton::DPadUp => {
+                                Aim::KeyboardFinalise(CardinalDirection::North)
+                            }
+                            GamepadButton::DPadLeft => {
+                                Aim::KeyboardFinalise(CardinalDirection::West)
+                            }
+                            GamepadButton::DPadRight => {
+                                Aim::KeyboardFinalise(CardinalDirection::East)
+                            }
+                            GamepadButton::DPadDown => {
+                                Aim::KeyboardFinalise(CardinalDirection::South)
+                            }
+                            GamepadButton::Select => Aim::Cancel,
+                            _ => Aim::Ignore,
+                        },
                         Input::Keyboard(keyboard_input) => {
                             if let Some(app_input) = controls.get(keyboard_input) {
                                 match app_input {
@@ -699,6 +728,29 @@ impl EventRoutine for ChooseWeaponSlotEventRoutine {
         let controls = &data.controls;
         event_or_peek_with_handled(event_or_peek, self, |s, event| match event {
             CommonEvent::Input(input) => match input {
+                Input::Gamepad(gamepad_input) => {
+                    if let Some(app_input) = controls.get_gamepad(gamepad_input.button) {
+                        match app_input {
+                            AppInput::Aim(slot) => {
+                                if let RangedWeaponSlot::Slot3 = slot {
+                                    if !data
+                                        .instance
+                                        .as_ref()
+                                        .unwrap()
+                                        .game
+                                        .player_has_third_weapon_slot()
+                                    {
+                                        return Handled::Return(None);
+                                    }
+                                }
+                                Handled::Return(Some(slot))
+                            }
+                            _ => Handled::Return(None),
+                        }
+                    } else {
+                        Handled::Return(None)
+                    }
+                }
                 Input::Keyboard(keyboard_input) => {
                     if let Some(app_input) = controls.get(keyboard_input) {
                         match app_input {
@@ -869,7 +921,41 @@ impl EventRoutine for GameEventRoutine {
                                                     game_config,
                                                 )
                                             }
-                                            _ => Ok(None),
+                                            AppInput::Wait => instance
+                                                .game
+                                                .handle_input(GameInput::Wait, game_config),
+                                            AppInput::Examine => {
+                                                return Handled::Return(GameReturn::Examine)
+                                            }
+                                            AppInput::Aim(slot) => {
+                                                if instance
+                                                    .game
+                                                    .player_has_usable_weapon_in_slot(slot)
+                                                {
+                                                    return Handled::Return(GameReturn::Aim(slot));
+                                                }
+                                                Ok(None)
+                                            }
+                                            AppInput::Get => {
+                                                if let Some(weapon) =
+                                                    instance.game.weapon_under_player()
+                                                {
+                                                    if weapon.is_ranged() {
+                                                        return Handled::Return(
+                                                            GameReturn::EquipRanged,
+                                                        );
+                                                    }
+                                                    if weapon.is_melee() {
+                                                        return Handled::Return(
+                                                            GameReturn::ConfirmReplaceMelee,
+                                                        );
+                                                    } else {
+                                                        Ok(None)
+                                                    }
+                                                } else {
+                                                    Ok(None)
+                                                }
+                                            }
                                         };
                                         match game_control_flow {
                                             Err(error) => s.action_error = Some(error),
