@@ -129,7 +129,6 @@ fn loop_music(
         Music::Gameplay0 => Audio::Gameplay0,
         Music::Gameplay1 => Audio::Gameplay1,
         Music::Gameplay2 => Audio::Gameplay2,
-        Music::Boss => Audio::Boss,
     };
     let volume = GAME_MUSIC_VOLUME;
     log::info!("Looping audio {:?} at volume {:?}", audio, volume);

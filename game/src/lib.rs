@@ -56,7 +56,6 @@ pub enum Music {
     Gameplay0,
     Gameplay1,
     Gameplay2,
-    Boss,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -634,13 +633,9 @@ impl Game {
         self.update_last_player_info();
         self.update_visibility(config);
         self.prime_npcs();
-        if self.world.level == terrain::FINAL_LEVEL {
-            self.events.push(ExternalEvent::LoopMusic(Music::Boss));
-        } else {
-            self.events.push(ExternalEvent::LoopMusic(
-                self.gameplay_music[self.world.level as usize % self.gameplay_music.len()],
-            ));
-        }
+        self.events.push(ExternalEvent::LoopMusic(
+            self.gameplay_music[self.world.level as usize % self.gameplay_music.len()],
+        ));
     }
 
     fn after_turn(&mut self) {

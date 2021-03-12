@@ -7,21 +7,32 @@ pub type AppAudioPlayer = Option<StaticAudioPlayer>;
 pub type AppSound = Option<StaticSound>;
 pub type AppHandle = Option<StaticHandle>;
 
-const GAMEPLAY0: &[u8] = include_bytes!("./audio/Terminant.ogg");
-const GAMEPLAY1: &[u8] = include_bytes!("./audio/Disconnected.ogg");
-const GAMEPLAY2: &[u8] = include_bytes!("./audio/Absolute+Terror.ogg");
-const BOSS: &[u8] = include_bytes!("./audio/Panthalassa.ogg");
-const END_TEXT: &[u8] = include_bytes!("./audio/Bush+Week.ogg");
-const MENU: &[u8] = include_bytes!("./audio/10,000+People+Chanting,+-I'm+an+Individual-.ogg");
-const EXPLOSION: &[u8] = include_bytes!("./audio/explosion.ogg");
+const GAMEPLAY0: &[u8] = include_bytes!("./audio/Level 1.mp3");
+const GAMEPLAY1: &[u8] = include_bytes!("./audio/Level 2.mp3");
+const GAMEPLAY2: &[u8] = include_bytes!("./audio/Level 3.mp3");
+const END_TEXT_HAPPY: &[u8] = include_bytes!("./audio/Orbital Decay.mp3");
+const END_TEXT_SAD: &[u8] = include_bytes!("./audio/Sad Orbital Decay.mp3");
+const MENU: &[u8] = include_bytes!("./audio/Menu.mp3");
+
+const EXPLOSION: &[u8] = include_bytes!("./audio/Explosion.mp3");
+
+const SHOTGUN: &[u8] = include_bytes!("./audio/Shotgun.mp3");
+const RIFLE: &[u8] = include_bytes!("./audio/Rifle.mp3");
+const RAILGUN: &[u8] = include_bytes!("./audio/Rail Gun.mp3");
+const GAUS_CANNON: &[u8] = include_bytes!("./audio/Gaus Cannon.mp3");
+const LIFE_STEALER: &[u8] = include_bytes!("./audio/Health Gun.mp3");
+const OXIDISER: &[u8] = include_bytes!("./audio/Oxygen Gun.mp3");
+const CHAINSAW: &[u8] = include_bytes!("./audio/Chainsaw.mp3");
+const PUNCH: &[u8] = include_bytes!("./audio/Punch.mp3");
+const DOOR_OPEN: &[u8] = include_bytes!("./audio/Science Fiction Door Opening.mp3");
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub enum Audio {
     Gameplay0,
     Gameplay1,
     Gameplay2,
-    Boss,
-    EndText,
+    EndTextHappy,
+    EndTextSad,
     Menu,
     Explosion,
     SoundEffect(SoundEffect),
@@ -37,8 +48,8 @@ impl AudioTable {
             Audio::Gameplay0 => audio_player.load_sound(GAMEPLAY0),
             Audio::Gameplay1 => audio_player.load_sound(GAMEPLAY1),
             Audio::Gameplay2=> audio_player.load_sound(GAMEPLAY2),
-            Audio::Boss => audio_player.load_sound(BOSS),
-            Audio::EndText => audio_player.load_sound(END_TEXT),
+            Audio::EndTextHappy => audio_player.load_sound(END_TEXT_HAPPY),
+            Audio::EndTextSad => audio_player.load_sound(END_TEXT_SAD),
             Audio::Menu => audio_player.load_sound(MENU),
             Audio::Explosion => audio_player.load_sound(EXPLOSION),
             Audio::SoundEffect(SoundEffect::Shotgun) => audio_player.load_sound(EXPLOSION),

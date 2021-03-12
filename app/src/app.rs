@@ -1275,15 +1275,22 @@ fn win_text2() -> TextOverlay {
 
 fn win() -> impl EventRoutine<Return = (), Data = AppData, View = AppView, Event = CommonEvent> {
     SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
-        data.game.loop_music(Audio::EndText, 0.2);
+        data.game.loop_music(Audio::EndTextHappy, 0.2);
         let mut config = data.game.config();
         config.won = true;
         data.game.set_config(config);
-        win_text().then(|| win_text2()).on_event(|data, event| {
-            if let CommonEvent::Frame(since_prev) = event {
-                data.menu_background_data.tick(*since_prev);
-            }
-        })
+        win_text()
+            .then(|| {
+                SideEffectThen::new_with_view(|data: &mut AppData, _: &_| {
+                    data.game.loop_music(Audio::EndTextSad, 0.2);
+                    win_text2()
+                })
+            })
+            .on_event(|data, event| {
+                if let CommonEvent::Frame(since_prev) = event {
+                    data.menu_background_data.tick(*since_prev);
+                }
+            })
     })
 }
 
