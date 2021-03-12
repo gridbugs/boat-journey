@@ -521,7 +521,7 @@ struct EnemyCounts {
 impl EnemyCounts {
     fn new() -> Self {
         Self {
-            zombie: vec![5, 7, 7, 7, 6],
+            zombie: vec![5, 7, 7, 8, 8],
             skeleton: vec![1, 1, 1, 2, 2],
             boomer: vec![0, 0, 1, 1, 2],
             tank: vec![0, 0, 0, 1, 2],

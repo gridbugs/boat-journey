@@ -621,11 +621,19 @@ impl World {
                     }
                 }
                 let damage = projectile_damage.hit_points;
+                let victim_health = self
+                    .components
+                    .hit_points
+                    .get(entity_to_damage)
+                    .map(|hp| hp.current)
+                    .unwrap_or(0);
+                let actual_damage = damage.min(victim_health);
                 self.damage_character(entity_to_damage, damage, rng, external_events, message_log);
                 if projectile_damage.life_steal {
                     if let Some(player) = self.components.player.entities().next() {
                         if let Some(hit_points) = self.components.hit_points.get_mut(player) {
-                            hit_points.current = (hit_points.current + damage).min(hit_points.max);
+                            hit_points.current =
+                                (hit_points.current + actual_damage).min(hit_points.max);
                         }
                     }
                 }
