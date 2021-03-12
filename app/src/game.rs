@@ -100,7 +100,7 @@ impl<'a> EffectContext<'a> {
                     direction,
                 });
                 if self.config.sfx {
-                    self.play_audio(Audio::Explosion, 10.);
+                    self.play_audio(Audio::Explosion, 1.);
                 }
             }
             ExternalEvent::LoopMusic(music) => {
@@ -109,7 +109,7 @@ impl<'a> EffectContext<'a> {
                 *self.current_music_handle = Some(handle);
             }
             ExternalEvent::SoundEffect(sound_effect) => {
-                self.play_audio(Audio::SoundEffect(sound_effect), 5.);
+                self.play_audio(Audio::SoundEffect(sound_effect), 0.5);
             }
         }
     }

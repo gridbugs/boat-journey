@@ -1,9 +1,11 @@
 use crate::colours;
-use chargrid::render::{ColModify, Coord, Frame, Style, ViewCell, ViewContext};
+use chargrid::render::{ColModify, Coord, Frame, Size, Style, ViewCell, ViewContext};
 use orbital_decay_game::{Config, Game, Omniscient, ToRenderEntity};
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
 use std::time::Duration;
+
+const SIZE: Size = Size::new_u16(80, 60);
 
 pub struct MenuBackgroundData {
     game: Game,
@@ -30,9 +32,12 @@ impl MenuBackgroundData {
     pub fn render<F: Frame, C: ColModify>(&self, context: ViewContext<C>, frame: &mut F) {
         let mut rng = XorShiftRng::seed_from_u64(self.star_rng_seed);
         render_stars(&mut rng, context, frame);
-        let context = context.add_offset(Coord { x: 38, y: 5 });
+        let offset = Coord { x: 38, y: 5 };
+        let context = context.add_offset(offset);
         for entity in self.game.to_render_entities() {
-            render_entity(&entity, &self.game, context, frame);
+            if (entity.coord * 3 + context.offset).is_valid(SIZE) {
+                render_entity(&entity, &self.game, context, frame);
+            }
         }
     }
 
@@ -66,7 +71,7 @@ pub fn render_stars<R: Rng, F: Frame, C: ColModify>(
         Dim,
         Bright,
     }
-    for coord in context.size.coord_iter_row_major() {
+    for coord in SIZE.coord_iter_row_major() {
         let star = if star_rng.gen::<u32>() % 60 == 0 {
             Star::Bright
         } else if star_rng.gen::<u32>() % 60 == 0 {
