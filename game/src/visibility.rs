@@ -171,7 +171,36 @@ impl VisibilityGrid {
                 cell.last_seen = count;
                 cell.visible_directions = DirectionBitmap::all();
                 cell.last_lit = count;
-                cell.light_colour = Rgb24::new_grey(187);
+                cell.light_colour = Rgb24::new_grey(255);
+                let layers = world.spatial_table.layers_at_checked(coord);
+                if let Some(entity) = layers.floor {
+                    if let Some(&tile) = world.components.tile.get(entity) {
+                        cell.tile_layers.floor = Some(EntityTile { entity, tile });
+                    }
+                } else {
+                    cell.tile_layers.floor = None;
+                }
+                if let Some(entity) = layers.feature {
+                    if let Some(&tile) = world.components.tile.get(entity) {
+                        cell.tile_layers.feature = Some(EntityTile { entity, tile });
+                    }
+                } else {
+                    cell.tile_layers.feature = None;
+                }
+                if let Some(entity) = layers.character {
+                    if let Some(&tile) = world.components.tile.get(entity) {
+                        cell.tile_layers.character = Some(EntityTile { entity, tile });
+                    }
+                } else {
+                    cell.tile_layers.character = None;
+                }
+                if let Some(entity) = layers.item {
+                    if let Some(&tile) = world.components.tile.get(entity) {
+                        cell.tile_layers.item = Some(EntityTile { entity, tile });
+                    }
+                } else {
+                    cell.tile_layers.item = None;
+                }
             }
         } else {
             shadowcast_context.for_each_visible(

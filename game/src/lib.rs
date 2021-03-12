@@ -149,7 +149,7 @@ impl Game {
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
         let mut terrain_state = TerrainState::new(&mut rng);
-        let debug = true;
+        let debug = false;
         let Terrain {
             mut world,
             agents,
@@ -316,11 +316,19 @@ impl Game {
     }
     pub fn update_visibility(&mut self, config: &Config) {
         if let Some(player_coord) = self.world.entity_coord(self.player) {
+            let mut map = None;
+            if let Some(layers) = self.world.spatial_table.layers_at(player_coord) {
+                if let Some(feature) = layers.feature {
+                    if self.world.components.map.contains(feature) {
+                        map = Some(Omniscient);
+                    }
+                }
+            }
             self.visibility_grid.update(
                 player_coord,
                 &self.world,
                 &mut self.shadowcast_context,
-                config.omniscient,
+                config.omniscient.or(map),
             );
         }
     }

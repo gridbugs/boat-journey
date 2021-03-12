@@ -788,13 +788,11 @@ impl World {
     }
 
     pub fn unlock_map(&mut self, entity: Entity) {
-        println!("unlock");
         let player = self.components.player.get_mut(entity).unwrap();
         let cost = 2;
         if player.credit < cost {
             return;
         }
-        println!("unlock 2");
         player.credit -= cost;
         for (entity, locked) in self.components.map.iter_mut() {
             *locked = false;

@@ -556,16 +556,29 @@ fn spawn_items<R: Rng>(
             world.spawn_ranged_weapon(coord, terrain_state.ranged_weapons.pop().unwrap());
         }
     }
-    'outer: for (i, &coord) in empty_coords.iter().enumerate() {
+    'outer1: for (i, &coord) in empty_coords.iter().enumerate() {
         for direction in Directions {
             let nei = coord + direction.coord();
             if let Some(layers) = world.spatial_table.layers_at(nei) {
                 if layers.feature.is_some() {
-                    continue 'outer;
+                    continue 'outer1;
                 }
             }
         }
         world.spawn_upgrade(coord);
+        empty_coords.swap_remove(i);
+        break;
+    }
+    'outer2: for (i, &coord) in empty_coords.iter().enumerate() {
+        for direction in Directions {
+            let nei = coord + direction.coord();
+            if let Some(layers) = world.spatial_table.layers_at(nei) {
+                if layers.feature.is_some() {
+                    continue 'outer2;
+                }
+            }
+        }
+        world.spawn_map(coord);
         empty_coords.swap_remove(i);
         break;
     }

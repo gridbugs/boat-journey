@@ -1508,7 +1508,6 @@ fn game_loop() -> impl EventRoutine<Return = (), Data = AppData, View = AppView,
                                         {
                                             Ei::A(cannot_afford().then(|| game()))
                                         } else {
-                                            println!("a");
                                             Ei::B(game_injecting_inputs(vec![
                                                 InjectedInput::UnlockMap,
                                             ]))

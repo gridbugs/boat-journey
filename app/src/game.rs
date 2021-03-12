@@ -901,7 +901,6 @@ impl EventRoutine for GameEventRoutine {
                             .handle_input(GameInput::EquipRangedWeapon(slot), game_config);
                     }
                     InjectedInput::UnlockMap => {
-                        println!("b");
                         let _ = instance
                             .game
                             .handle_input(GameInput::UnlockMap, game_config);
