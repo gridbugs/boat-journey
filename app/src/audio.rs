@@ -25,6 +25,8 @@ const OXIDISER: &[u8] = include_bytes!("./audio/Oxygen Gun.mp3");
 const CHAINSAW: &[u8] = include_bytes!("./audio/Chainsaw.mp3");
 const PUNCH: &[u8] = include_bytes!("./audio/Punch.mp3");
 const DOOR_OPEN: &[u8] = include_bytes!("./audio/Science Fiction Door Opening.mp3");
+const HEAL: &[u8] = include_bytes!("./audio/Heal.mp3");
+const DIE: &[u8] = include_bytes!("./audio/Die.mp3");
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub enum Audio {
@@ -61,6 +63,8 @@ impl AudioTable {
             Audio::SoundEffect(SoundEffect::Chainsaw) => audio_player.load_sound(CHAINSAW),
             Audio::SoundEffect(SoundEffect::Punch) => audio_player.load_sound(PUNCH),
             Audio::SoundEffect(SoundEffect::DoorOpen) => audio_player.load_sound(DOOR_OPEN),
+            Audio::SoundEffect(SoundEffect::Heal) => audio_player.load_sound(HEAL),
+            Audio::SoundEffect(SoundEffect::Die) => audio_player.load_sound(DIE),
         ];
         Self { map }
     }

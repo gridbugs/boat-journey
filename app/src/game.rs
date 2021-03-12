@@ -75,7 +75,6 @@ struct EffectContext<'a> {
     current_music_handle: &'a mut Option<AppHandle>,
     audio_player: &'a AppAudioPlayer,
     audio_table: &'a AudioTable,
-    player_coord: GameCoord,
     config: &'a Config,
 }
 
@@ -94,17 +93,14 @@ impl<'a> EffectContext<'a> {
     }
     fn handle_event(&mut self, event: ExternalEvent) {
         match event {
-            ExternalEvent::Explosion(coord) => {
+            ExternalEvent::Explosion(_coord) => {
                 let direction: Direction = self.rng.gen();
                 *self.screen_shake = Some(ScreenShake {
                     remaining_frames: 2,
                     direction,
                 });
                 if self.config.sfx {
-                    const BASE_VOLUME: f32 = 50.;
-                    let distance_squared = (self.player_coord.0 - coord).magnitude2();
-                    let volume = (BASE_VOLUME / (distance_squared as f32).max(1.)).min(1.);
-                    self.play_audio(Audio::Explosion, volume);
+                    self.play_audio(Audio::Explosion, 10.);
                 }
             }
             ExternalEvent::LoopMusic(music) => {
@@ -507,7 +503,6 @@ impl EventRoutine for ExamineEventRoutine {
                             current_music_handle,
                             audio_player,
                             audio_table,
-                            player_coord: GameCoord::of_player(instance.game.player_info()),
                             config,
                         };
                         event_context.next_frame();
@@ -666,7 +661,6 @@ impl EventRoutine for AimEventRoutine {
                             current_music_handle,
                             audio_player,
                             audio_table,
-                            player_coord: GameCoord::of_player(instance.game.player_info()),
                             config,
                         };
                         event_context.next_frame();
@@ -880,7 +874,6 @@ impl EventRoutine for GameEventRoutine {
         let current_music_handle = &mut data.music_handle;
         let config = &data.config;
         if let Some(instance) = data.instance.as_mut() {
-            let player_coord = GameCoord::of_player(instance.game.player_info());
             for injected_input in self.injected_inputs.drain(..) {
                 match injected_input {
                     InjectedInput::Fire(Fire { direction, slot }) => {
@@ -1066,7 +1059,6 @@ impl EventRoutine for GameEventRoutine {
                         current_music_handle,
                         audio_player,
                         audio_table,
-                        player_coord,
                         config,
                     };
                     event_context.next_frame();
@@ -1175,7 +1167,6 @@ impl EventRoutine for GameOverEventRoutine {
                         current_music_handle,
                         audio_player,
                         audio_table,
-                        player_coord: GameCoord::of_player(instance.game.player_info()),
                         config,
                     };
                     event_context.next_frame();

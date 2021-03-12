@@ -520,6 +520,7 @@ impl World {
         message_log: &mut Vec<Message>,
     ) {
         if self.components.player.contains(character) {
+            external_events.push(ExternalEvent::SoundEffect(SoundEffect::Die));
             message_log.push(Message::PlayerDies);
         } else if let Some(enemy) = self.components.enemy.get(character) {
             message_log.push(Message::EnemyDies(*enemy));
@@ -757,8 +758,14 @@ impl World {
         }
     }
 
-    pub fn heal_fully(&mut self, entity: Entity, message_log: &mut Vec<Message>) {
+    pub fn heal_fully(
+        &mut self,
+        entity: Entity,
+        external_events: &mut Vec<ExternalEvent>,
+        message_log: &mut Vec<Message>,
+    ) {
         if let Some(hit_points) = self.components.hit_points.get_mut(entity) {
+            external_events.push(ExternalEvent::SoundEffect(SoundEffect::Heal));
             message_log.push(Message::Heal);
             hit_points.current = hit_points.max;
         }

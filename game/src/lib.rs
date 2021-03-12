@@ -69,6 +69,8 @@ pub enum SoundEffect {
     Chainsaw,
     Punch,
     DoorOpen,
+    Heal,
+    Die,
 }
 
 /// Events which the game can report back to the io layer so it can
@@ -145,7 +147,7 @@ impl Game {
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
         let mut terrain_state = TerrainState::new(&mut rng);
-        let debug = false;
+        let debug = true;
         let Terrain {
             mut world,
             agents,
@@ -545,7 +547,11 @@ impl Game {
                         Item::RangedWeapon(_) => {}
                         Item::MeleeWeapon(_) => {}
                         Item::Medkit => {
-                            self.world.heal_fully(self.player, &mut self.message_log);
+                            self.world.heal_fully(
+                                self.player,
+                                &mut self.events,
+                                &mut self.message_log,
+                            );
                             self.world.components.to_remove.insert(item_entity, ());
                         }
                     }
