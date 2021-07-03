@@ -5,11 +5,10 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2018"
 
 [features]
-force_vulkan = ["chargrid_graphical/force_vulkan"]
 force_dedicated_audio_thread = ["orbital_decay_native/force_dedicated_audio_thread"]
 
 [dependencies]
 orbital_decay_app = { path = "../app" }
 orbital_decay_native = { path = "../native" }
 env_logger = "0.8"
-chargrid_graphical = { version = "0.4", features = ["gamepad"] }
+chargrid_graphical = { version = "0.5", features = ["gamepad"] }
