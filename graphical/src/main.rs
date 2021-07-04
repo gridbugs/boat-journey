@@ -116,33 +116,28 @@ fn main() {
             },
         fullscreen,
     } = Args::parser().with_help_default().parse_env_or_exit();
-    let context = Context::new(ContextDescriptor {
+    let context = Context::new(Config {
         font_bytes: FontBytes {
             normal: include_bytes!("./fonts/PxPlus_IBM_CGAthin-with-quadrant-blocks.ttf").to_vec(),
             bold: include_bytes!("./fonts/PxPlus_IBM_CGA-with-quadrant-blocks.ttf").to_vec(),
         },
         title: "Orbital Decay".to_string(),
-        window_dimensions: Dimensions {
+        window_dimensions_px: Dimensions {
             width: 960.,
             height: 720.,
         },
-        cell_dimensions: Dimensions {
+        cell_dimensions_px: Dimensions {
             width: CELL_SIZE,
             height: CELL_SIZE,
         },
-        font_dimensions: Dimensions {
+        font_scale: Dimensions {
             width: CELL_SIZE,
             height: CELL_SIZE,
         },
-        font_source_dimensions: Dimensions {
-            width: CELL_SIZE as f32,
-            height: CELL_SIZE as f32,
-        },
-        underline_width: 0.1,
-        underline_top_offset: 0.8,
+        underline_width_cell_ratio: 0.1,
+        underline_top_offset_cell_ratio: 0.8,
         resizable: false,
-    })
-    .unwrap();
+    });
     let env = GraphicalEnv::new(context.window_handle());
     let app = app(
         game_config,
