@@ -1,27 +1,33 @@
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const WasmPackPlugin = require('@wasm-tool/wasm-pack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
 module.exports = async (env, argv) => {
-  let revision_output = await exec("git rev-parse HEAD");
-  let revision = revision_output.stdout.trim();
+  const revision = (await exec('git rev-parse HEAD')).stdout.trim();
   return {
-    entry: './index.js',
+    entry: {
+      main: './index.js',
+    },
     output: {
       path: path.resolve(__dirname, 'dist'),
+      // Various levels of caching on the web will mean that updates to wasm
+      // and js files can take a long time to become visible. Prevent this by
+      // including the revision hash of the repository in the names of these
+      // files.
       filename: `index.${revision}.js`,
       webassemblyModuleFilename: `app.${revision}.wasm`,
     },
     plugins: [
       new HtmlWebpackPlugin({
-        template: './index.html'
+        template: './index.html',
       }),
       new WasmPackPlugin({
-        crateDirectory: path.resolve(__dirname, ".")
+        crateDirectory: path.resolve(__dirname, '.'),
+        extraArgs: '--no-typescript',
       }),
       // Required to work in Edge
       new webpack.ProvidePlugin({
@@ -29,11 +35,13 @@ module.exports = async (env, argv) => {
         TextEncoder: ['text-encoding', 'TextEncoder']
       }),
       new CopyWebpackPlugin({
-        patterns: [{ from: "static_web" }],
+        patterns: [
+          { from: 'static_web' },
+        ],
       }),
     ],
-    devServer: {
-      disableHostCheck: true,
-    }
-  }
+    experiments: {
+      asyncWebAssembly: true,
+    },
+  };
 };

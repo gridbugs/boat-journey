@@ -1,1 +1,1 @@
-import('./pkg/orbital_decay_web').catch(console.error)
+import('./pkg/index').catch(console.error)

@@ -127,9 +127,9 @@ for:
           TARGET: wasm32-unknown-unknown
     install:
       - sh: >-
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
 
-          nvm use v12
+          nvm use v16
 
           curl -sSf https://sh.rustup.rs | sh -s -- --quiet --default-host $HOST --default-toolchain stable --profile minimal -y
 
@@ -137,7 +137,7 @@ for:
 
           rustup target add $TARGET
 
-          cargo install wasm-bindgen-cli --force --version 0.2.69 # this has to match the version in Cargo.lock
+          cargo install wasm-bindgen-cli --force --version 0.2.75 # this has to match the version in Cargo.lock
 
           cargo install wasm-pack
 
@@ -157,7 +157,7 @@ for:
             BUILD_MODE=development
           fi
 
-          npm run build -- --mode $BUILD_MODE
+          npm run build-production
 
           mkdir orbital-decay
 

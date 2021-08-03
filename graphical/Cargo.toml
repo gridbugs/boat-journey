@@ -12,5 +12,5 @@ force_dedicated_audio_thread = ["orbital_decay_native/force_dedicated_audio_thre
 [dependencies]
 orbital_decay_app = { path = "../app" }
 orbital_decay_native = { path = "../native" }
-env_logger = "0.8"
+env_logger = "0.9"
 chargrid_graphical = { version = "0.7", default-features = false }

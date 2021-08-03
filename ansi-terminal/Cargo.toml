@@ -7,6 +7,6 @@ edition = "2018"
 [dependencies]
 orbital_decay_native = { path = "../native" }
 orbital_decay_app = { path = "../app" }
-env_logger = "0.8"
+env_logger = "0.9"
 rand = "0.8"
 chargrid_ansi_terminal = { version = "0.2", features = ["gamepad"] }

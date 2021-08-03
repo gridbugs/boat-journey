@@ -12,7 +12,6 @@ enum ColEncodeChoice {
 
 impl ColEncodeChoice {
     fn parser() -> impl meap::Parser<Item = Self> {
-        use meap::Parser;
         use ColEncodeChoice::*;
         meap::choose_at_most_one!(
             flag("true-colour").some_if(TrueColour),
