@@ -11,6 +11,8 @@ members = [
     "graphical",
     "ansi-terminal",
     "web",
+    "app-wip",
+    "ggez-wip",
 ]
 
 [profile.release]
