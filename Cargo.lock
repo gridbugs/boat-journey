@@ -42,7 +42,7 @@ version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43bb833f0bf979d8475d38fbf09ed3b8a55e1885fe93ad3f93239fc6a4f17b98"
 dependencies = [
- "getrandom 0.2.3",
+ "getrandom",
  "once_cell",
  "version_check",
 ]
@@ -308,9 +308,9 @@ dependencies = [
 
 [[package]]
 name = "cargo-platform"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0226944a63d1bf35a3b5f948dd7c59e263db83695c9e8bffc4037de02e30f1d7"
+checksum = "cbdb825da8a5df079a43676dbe042702f1707b1109f713a01420fbb4cc71fa27"
 dependencies = [
  "serde",
 ]
@@ -397,7 +397,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "chargrid_core",
 ]
@@ -438,7 +438,7 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
@@ -481,7 +481,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -506,7 +506,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "chargrid_graphical_common 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -536,7 +536,7 @@ checksum = "a228b0997467e00764ff0a3c3a954adce59f93034382903460b5a5a739f56b3f"
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 
 [[package]]
 name = "chargrid_input"
@@ -551,7 +551,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "coord_2d",
  "serde",
@@ -585,7 +585,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "chargrid_core",
 ]
@@ -639,7 +639,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+source = "git+https://github.com/gridbugs/chargrid#20f4056b39de206c48afb37a7d1145a3c97813a1"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -1072,7 +1072,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c56672976b806b6fe8e41998c6d0503cd02479c6059c47451ce8addc7871271"
 dependencies = [
  "coord_2d",
- "rand 0.8.4",
+ "rand",
  "serde",
 ]
 
@@ -1411,17 +1411,6 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.1.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fc3cb4d91f53b50155bdcfd23f6a4c39ae1969c2ae85982b135750cccaf5fce"
-dependencies = [
- "cfg-if 1.0.0",
- "libc",
- "wasi 0.9.0+wasi-snapshot-preview1",
-]
-
-[[package]]
-name = "getrandom"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcd999463524c52659517fe2cea98493cfe485d10565e7b0fb07dbba7ad2753"
@@ -1429,7 +1418,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "js-sys",
  "libc",
- "wasi 0.10.2+wasi-snapshot-preview1",
+ "wasi",
  "wasm-bindgen",
 ]
 
@@ -2111,9 +2100,9 @@ checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
 
 [[package]]
 name = "jobserver"
-version = "0.1.22"
+version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "972f5ae5d1cb9c6ae417789196c803205313edde988685da5e3aae0827b9e7fd"
+checksum = "f5ca711fd837261e14ec9e674f092cbb931d3fa1482b017ae59328ddc6f3212b"
 dependencies = [
  "libc",
 ]
@@ -2848,7 +2837,7 @@ dependencies = [
  "env_logger",
  "orbital_decay_app",
  "orbital_decay_native",
- "rand 0.8.4",
+ "rand",
 ]
 
 [[package]]
@@ -2859,12 +2848,12 @@ dependencies = [
  "direction",
  "general_audio_static",
  "general_storage_static",
- "getrandom 0.2.3",
+ "getrandom",
  "line_2d",
  "log",
  "maplit",
  "orbital_decay_game",
- "rand 0.8.4",
+ "rand",
  "rand_isaac",
  "rand_xorshift",
  "rgb24",
@@ -2879,11 +2868,12 @@ dependencies = [
  "direction",
  "general_audio_static",
  "general_storage_static",
- "getrandom 0.2.3",
+ "getrandom",
+ "grid_2d",
  "line_2d",
  "log",
  "orbital_decay_game",
- "rand 0.8.4",
+ "rand",
  "rand_isaac",
  "rand_xorshift",
  "rgb24",
@@ -2901,7 +2891,7 @@ dependencies = [
  "line_2d",
  "log",
  "procgen",
- "rand 0.8.4",
+ "rand",
  "rand_isaac",
  "rand_range",
  "rational",
@@ -3143,7 +3133,7 @@ dependencies = [
  "direction",
  "grid_2d",
  "meap",
- "rand 0.8.4",
+ "rand",
  "rand_isaac",
  "wfc",
 ]
@@ -3176,37 +3166,14 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a6b1679d49b24bbfe0c803429aa1874472f50d9b363131f0e89fc356b544d03"
-dependencies = [
- "getrandom 0.1.16",
- "libc",
- "rand_chacha 0.2.2",
- "rand_core 0.5.1",
- "rand_hc 0.2.0",
-]
-
-[[package]]
-name = "rand"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e7573632e6454cf6b99d7aac4ccca54be06da05aca2ef7423d22d27d4d4bcd8"
 dependencies = [
  "libc",
- "rand_chacha 0.3.1",
- "rand_core 0.6.3",
- "rand_hc 0.3.1",
-]
-
-[[package]]
-name = "rand_chacha"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4c8ed856279c9737206bf725bf36935d8666ead7aa69b52be55af369d193402"
-dependencies = [
- "ppv-lite86",
- "rand_core 0.5.1",
+ "rand_chacha",
+ "rand_core",
+ "rand_hc",
 ]
 
 [[package]]
@@ -3216,16 +3183,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.6.3",
-]
-
-[[package]]
-name = "rand_core"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90bde5296fc891b0cef12a6d03ddccc162ce7b2aff54160af9338f8d40df6d19"
-dependencies = [
- "getrandom 0.1.16",
+ "rand_core",
 ]
 
 [[package]]
@@ -3234,17 +3192,8 @@ version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
 dependencies = [
- "getrandom 0.2.3",
+ "getrandom",
  "serde",
-]
-
-[[package]]
-name = "rand_hc"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
-dependencies = [
- "rand_core 0.5.1",
 ]
 
 [[package]]
@@ -3253,7 +3202,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d51e9f596de227fda2ea6c84607f5558e196eeaf43c986b724ba4fb8fdf497e7"
 dependencies = [
- "rand_core 0.6.3",
+ "rand_core",
 ]
 
 [[package]]
@@ -3262,7 +3211,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fac4373cd91b4f55722c553fb0f286edbb81ef3ff6eec7b99d1898a4110a0b28"
 dependencies = [
- "rand_core 0.6.3",
+ "rand_core",
  "serde",
 ]
 
@@ -3270,7 +3219,7 @@ dependencies = [
 name = "rand_range"
 version = "0.1.0"
 dependencies = [
- "rand 0.8.4",
+ "rand",
  "serde",
 ]
 
@@ -3280,7 +3229,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d25bf25ec5ae4a3f1b92f929810509a2f53d7dca2f50b794ff57e3face536c8f"
 dependencies = [
- "rand_core 0.6.3",
+ "rand_core",
 ]
 
 [[package]]
@@ -3293,7 +3242,7 @@ checksum = "63e935c45e09cc6dcf00d2f0b2d630a58f4095320223d47fc68918722f0538b6"
 name = "rational"
 version = "0.1.0"
 dependencies = [
- "rand 0.8.4",
+ "rand",
  "serde",
 ]
 
@@ -3333,9 +3282,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.2.9"
+version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ab49abadf3f9e1c4bc499e8845e152ad87d2ad2d30371841171169e9d75feee"
+checksum = "8383f39639269cde97d255a32bdb68c047337295414940c68bdd30c2e13203ff"
 dependencies = [
  "bitflags",
 ]
@@ -3346,7 +3295,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "528532f3d801c87aec9def2add9ca802fe569e44a544afe633765267840abe64"
 dependencies = [
- "getrandom 0.2.3",
+ "getrandom",
  "redox_syscall",
 ]
 
@@ -3388,7 +3337,7 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5c053c8a6ea11b5ae150f4d518c8da12f04a8d1f2d0f3df618310fa37e0cf19"
 dependencies = [
- "rand 0.8.4",
+ "rand",
  "serde",
 ]
 
@@ -3619,9 +3568,9 @@ dependencies = [
 
 [[package]]
 name = "slab"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f173ac3d1a7e3b28003f40de0b5ce7fe2710f9b9dc3fc38664cebee46b3b6527"
+checksum = "c307a32c1c5c437f38c7fd45d753050587732ba8628319fbdf12a7e289ccc590"
 
 [[package]]
 name = "slice-deque"
@@ -3817,7 +3766,7 @@ checksum = "dac1c663cfc93810f88aed9b8941d48cabf856a1b111c29a40439018d870eb22"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
- "rand 0.8.4",
+ "rand",
  "redox_syscall",
  "remove_dir_all",
  "winapi 0.3.9",
@@ -3918,12 +3867,12 @@ checksum = "7ae2f58a822f08abdaf668897e96a5656fe72f5a9ce66422423e8849384872e6"
 
 [[package]]
 name = "twox-hash"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
+checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
- "cfg-if 0.1.10",
- "rand 0.7.3",
+ "cfg-if 1.0.0",
+ "rand",
  "static_assertions",
 ]
 
@@ -3971,7 +3920,7 @@ name = "vector"
 version = "0.1.0"
 dependencies = [
  "coord_2d",
- "rand 0.8.4",
+ "rand",
  "rand_range",
  "serde",
 ]
@@ -3998,12 +3947,6 @@ dependencies = [
  "winapi 0.3.9",
  "winapi-util",
 ]
-
-[[package]]
-name = "wasi"
-version = "0.9.0+wasi-snapshot-preview1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
 
 [[package]]
 name = "wasi"
@@ -4195,10 +4138,10 @@ checksum = "b31fae781a315006d1a5a36a9342650c089c13f5c33e81398c3f9a9300e18897"
 dependencies = [
  "coord_2d",
  "direction",
- "getrandom 0.2.3",
+ "getrandom",
  "grid_2d",
  "hashbrown 0.11.2",
- "rand 0.8.4",
+ "rand",
 ]
 
 [[package]]

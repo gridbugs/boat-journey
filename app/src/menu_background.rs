@@ -18,6 +18,7 @@ impl MenuBackgroundData {
         let config = Config {
             omniscient: Some(Omniscient),
             demo: true,
+            debug: false,
         };
         let mut rng = XorShiftRng::from_entropy();
         let game = Game::new(&config, &mut rng);

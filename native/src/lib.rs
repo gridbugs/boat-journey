@@ -81,6 +81,7 @@ impl NativeCommon {
                         None
                     },
                     demo: false,
+                    debug: false,
                 };
                 Self {
                     rng_seed,

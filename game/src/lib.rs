@@ -50,6 +50,7 @@ pub enum Message {
 pub struct Config {
     pub omniscient: Option<Omniscient>,
     pub demo: bool,
+    pub debug: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
@@ -150,12 +151,11 @@ impl Game {
         let animation_rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let star_rng_seed = base_rng.gen();
         let mut terrain_state = TerrainState::new(&mut rng);
-        let debug = false;
         let Terrain {
             mut world,
             agents,
             player,
-        } = if debug {
+        } = if config.debug {
             terrain::from_str(include_str!("terrain.txt"), make_player())
         } else {
             terrain::space_station(
@@ -166,7 +166,7 @@ impl Game {
                 &mut rng,
             )
         };
-        if debug {
+        if config.debug {
             /*
             world
                 .components

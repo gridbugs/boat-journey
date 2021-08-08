@@ -19,6 +19,7 @@ pub fn run() -> Result<(), JsValue> {
         GameConfig {
             omniscient: None,
             demo: false,
+            debug: false,
         },
         Frontend::Web,
         Controls::default(),
