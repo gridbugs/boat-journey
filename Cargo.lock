@@ -410,7 +410,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f95a6939fd305006fb8d6855d70e98488c08c439fe48a6dbd49d451b1e278186"
 dependencies = [
  "chargrid_app",
- "chargrid_gamepad",
+ "chargrid_gamepad 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_render",
  "libc",
@@ -479,6 +479,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "chargrid_gamepad"
+version = "0.2.0"
+source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+dependencies = [
+ "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "gilrs",
+ "log",
+]
+
+[[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -514,7 +524,7 @@ checksum = "3a278efc8ae66c0c0f966d8bd16b21ca275c1b41d79c8eba3d4b76f0f9ff1454"
 dependencies = [
  "chargrid_ggez 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_graphical_common 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_wgpu",
+ "chargrid_wgpu 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -613,10 +623,29 @@ checksum = "6012d49b101538e35d6e084fb43615ea3b7de9e9bd55387e4b03085080de32bc"
 dependencies = [
  "async-executor",
  "chargrid_app",
- "chargrid_gamepad",
+ "chargrid_gamepad 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_graphical_common 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_render",
+ "grid_2d",
+ "log",
+ "pollster",
+ "wgpu",
+ "wgpu_glyph",
+ "winit 0.25.0",
+ "zerocopy",
+]
+
+[[package]]
+name = "chargrid_wgpu"
+version = "0.1.0"
+source = "git+https://github.com/gridbugs/chargrid#868329a240f94c2e9b2d8761ddd112a0313ba63e"
+dependencies = [
+ "async-executor",
+ "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_graphical_common 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_runtime",
  "grid_2d",
  "log",
  "pollster",
@@ -2930,6 +2959,19 @@ dependencies = [
  "orbital_decay_app",
  "wasm-bindgen",
  "wasm-logger",
+]
+
+[[package]]
+name = "orbital_decay_wgpu_wip"
+version = "0.1.0"
+dependencies = [
+ "chargrid_wgpu 0.1.0 (git+https://github.com/gridbugs/chargrid)",
+ "env_logger",
+ "general_audio_static",
+ "general_storage_static",
+ "meap",
+ "orbital_decay_app_wip",
+ "serde_json",
 ]
 
 [[package]]

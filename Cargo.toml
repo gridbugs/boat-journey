@@ -13,6 +13,7 @@ members = [
     "web",
     "app-wip",
     "ggez-wip",
+    "wgpu-wip",
 ]
 
 [profile.release]
