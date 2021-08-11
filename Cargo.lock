@@ -3244,6 +3244,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d25bf25ec5ae4a3f1b92f929810509a2f53d7dca2f50b794ff57e3face536c8f"
 dependencies = [
  "rand_core",
+ "serde",
 ]
 
 [[package]]
@@ -3357,9 +3358,9 @@ dependencies = [
 
 [[package]]
 name = "rgba32"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0aa489041cb9e21f82ef3fe72e236a442e920fe840c94cfe3fbbb22a67fd48b"
+checksum = "1a393a2f04c225e24993569e4490876804a9ec40db0b9ee70ff9e047b730bf63"
 
 [[package]]
 name = "rodio"

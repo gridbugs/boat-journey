@@ -4,6 +4,7 @@ use rand::SeedableRng;
 use rand_isaac::Isaac64Rng;
 
 mod colours;
+mod stars;
 mod tile_3x3;
 
 pub fn app() -> impl Component<Output = app::Output, State = ()> {
@@ -14,10 +15,10 @@ pub fn app() -> impl Component<Output = app::Output, State = ()> {
     };
     let mut rng = Isaac64Rng::from_entropy();
     let game = Game::new(&config, &mut rng);
-    cf(Align::centre(StyledString {
-        string: "Hello, World!".to_string(),
-        style: Default::default(),
-    }))
+    let stars = stars::Stars::new(&mut rng);
+    render(move |ctx, fb| {
+        stars.render(ctx, fb);
+    })
     .press_any_key()
     .map(|()| app::Exit)
 }
