@@ -10,7 +10,7 @@ use entity_table::{ComponentTable, Entity};
 use grid_2d::{Coord, Size};
 use rand::{seq::SliceRandom, Rng};
 use rational::Rational;
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 use shadowcast::vision_distance::Circle;
 use std::collections::HashSet;

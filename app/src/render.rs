@@ -66,6 +66,8 @@ impl GameView {
                 for (coord, visibility_cell) in game_to_render.game.visibility_grid().enumerate() {
                     match visibility_cell.visibility(vis_count) {
                         CellVisibility::CurrentlyVisibleWithLightColour(Some(light_colour)) => {
+                            let light_colour =
+                                Rgb24::new(light_colour.r, light_colour.g, light_colour.b);
                             let light_colour = match game_to_render.game.warning_light(coord) {
                                 Some(WarningLight::NoAir) => {
                                     Rgb24::new(127, 127, 255).normalised_mul(light_colour)
@@ -136,6 +138,8 @@ impl GameView {
                         .cell_visibility(entity.coord)
                     {
                         CellVisibility::CurrentlyVisibleWithLightColour(Some(light_colour)) => {
+                            let light_colour =
+                                Rgb24::new(light_colour.r, light_colour.g, light_colour.b);
                             let context =
                                 context.compose_col_modify(ColModifyLightBlend { light_colour });
                             if let Some(tile) = entity.tile {

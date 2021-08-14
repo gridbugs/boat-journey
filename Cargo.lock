@@ -215,9 +215,9 @@ checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
 name = "bitflags"
-version = "1.2.1"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
+checksum = "2da1976d75adbe5fbc88130ecd119529cf1cc6a93ae1546d8696ee66f0d21af1"
 
 [[package]]
 name = "block"
@@ -397,7 +397,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "chargrid_core",
 ]
@@ -438,11 +438,11 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
- "rgba32",
+ "rgb_int",
 ]
 
 [[package]]
@@ -481,7 +481,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -506,7 +506,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "chargrid_graphical_common 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -536,7 +536,7 @@ checksum = "a228b0997467e00764ff0a3c3a954adce59f93034382903460b5a5a739f56b3f"
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 
 [[package]]
 name = "chargrid_input"
@@ -551,7 +551,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "coord_2d",
  "serde",
@@ -585,7 +585,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "chargrid_core",
 ]
@@ -639,7 +639,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#bc15b603f2cb73046dccc8282348b0da68530e3e"
+source = "git+https://github.com/gridbugs/chargrid#40e9d30294cfdf9bb41a51f47c1b32693976cd66"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -2025,7 +2025,7 @@ name = "image-to-text"
 version = "0.1.0"
 dependencies = [
  "image",
- "meap",
+ "meap 0.4.4",
 ]
 
 [[package]]
@@ -2292,9 +2292,9 @@ dependencies = [
 
 [[package]]
 name = "lyon_path"
-version = "0.17.5"
+version = "0.17.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d645766496fafd20a2c5d7a1f51322dc5a9065db82a982cf57e0b7723c641b23"
+checksum = "8ef7433accd4515fc98f59bb3cdf565a9615f0c666f50bfcb96134bbd91ccc04"
 dependencies = [
  "lyon_geom",
 ]
@@ -2355,6 +2355,12 @@ name = "meap"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa344a8d17a396791d85bd07f206b590e242967b155834bb3578f6c6e31ce201"
+
+[[package]]
+name = "meap"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35d8b89cd0fdfe8f5e949ce92d26a5d18bad373053c43f1f6d9fecdab66d8b45"
 
 [[package]]
 name = "memchr"
@@ -2890,7 +2896,6 @@ dependencies = [
  "rand",
  "rand_isaac",
  "rand_xorshift",
- "rgb24",
  "serde",
 ]
 
@@ -2909,7 +2914,7 @@ dependencies = [
  "rand_isaac",
  "rand_range",
  "rational",
- "rgb24",
+ "rgb_int",
  "serde",
  "shadowcast",
  "spatial_table",
@@ -2924,7 +2929,7 @@ dependencies = [
  "env_logger",
  "general_audio_static",
  "general_storage_static",
- "meap",
+ "meap 0.4.4",
  "orbital_decay_app_wip",
  "serde_json",
 ]
@@ -2946,7 +2951,7 @@ dependencies = [
  "general_audio_static",
  "general_storage_static",
  "log",
- "meap",
+ "meap 0.5.1",
  "orbital_decay_app",
  "serde_json",
 ]
@@ -2973,7 +2978,7 @@ dependencies = [
  "env_logger",
  "general_audio_static",
  "general_storage_static",
- "meap",
+ "meap 0.4.4",
  "orbital_decay_app_wip",
  "serde_json",
 ]
@@ -3146,7 +3151,7 @@ version = "0.1.0"
 dependencies = [
  "direction",
  "grid_2d",
- "meap",
+ "meap 0.4.4",
  "rand",
  "rand_isaac",
  "wfc",
@@ -3352,15 +3357,18 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5c053c8a6ea11b5ae150f4d518c8da12f04a8d1f2d0f3df618310fa37e0cf19"
 dependencies = [
- "rand",
  "serde",
 ]
 
 [[package]]
-name = "rgba32"
-version = "0.1.9"
+name = "rgb_int"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a393a2f04c225e24993569e4490876804a9ec40db0b9ee70ff9e047b730bf63"
+checksum = "407f2bcbfbd124887a973800df57d82e3cd1a17e97f90c3305d8af7ffdfc3035"
+dependencies = [
+ "rand",
+ "serde",
+]
 
 [[package]]
 name = "rodio"

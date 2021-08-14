@@ -1,5 +1,5 @@
 use crate::world::{MeleeWeapon, RangedWeapon};
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

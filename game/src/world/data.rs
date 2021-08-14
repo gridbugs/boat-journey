@@ -7,7 +7,7 @@ pub use crate::world::{
 use direction::CardinalDirection;
 use entity_table::declare_entity_module;
 use grid_2d::coord_2d::Axis;
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 
 declare_entity_module! {

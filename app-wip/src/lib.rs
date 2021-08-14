@@ -4,6 +4,7 @@ use rand::SeedableRng;
 use rand_isaac::Isaac64Rng;
 
 mod colours;
+mod game;
 mod stars;
 mod tile_3x3;
 
@@ -18,6 +19,7 @@ pub fn app() -> impl Component<Output = app::Output, State = ()> {
     let stars = stars::Stars::new(&mut rng);
     render(move |ctx, fb| {
         stars.render(ctx, fb);
+        game::render_game(&game, ctx, fb);
     })
     .press_any_key()
     .map(|()| app::Exit)

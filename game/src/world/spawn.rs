@@ -21,7 +21,7 @@ use entity_table::Entity;
 use grid_2d::coord_2d::Axis;
 use grid_2d::Coord;
 use rational::Rational;
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use shadowcast::vision_distance::Circle;
 use std::time::Duration;
 

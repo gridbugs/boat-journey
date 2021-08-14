@@ -13,7 +13,7 @@ use crate::{
 };
 use entity_table::Entity;
 use rand::Rng;
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use vector::Radial;
@@ -22,7 +22,7 @@ pub mod spec {
     pub use crate::{visibility::Light, world::Tile};
     pub use rand_range::{UniformInclusiveRange, UniformLeftInclusiveRange};
     pub use rational::Rational;
-    pub use rgb24::Rgb24;
+    pub use rgb_int::Rgb24;
     use serde::{Deserialize, Serialize};
     pub use std::time::Duration;
     pub use vector::Radians;

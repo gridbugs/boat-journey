@@ -13,7 +13,7 @@ use crate::{
 };
 use entity_table::Entity;
 use rand::Rng;
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

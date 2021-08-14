@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 pub mod spec {
     pub use crate::world::Tile;
     pub use rand_range::UniformInclusiveRange;
-    pub use rgb24::Rgb24;
+    pub use rgb_int::Rgb24;
     use serde::{Deserialize, Serialize};
     pub use std::time::Duration;
 
@@ -34,7 +34,7 @@ impl spec::Flicker {
     }
 }
 
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FlickerState(spec::Flicker);

@@ -12,7 +12,7 @@ serde = { version = "1.0", features = ["serde_derive"] }
 rand = "0.8"
 rand_isaac = { version = "0.3", features = ["serde1"] }
 line_2d = { version = "0.5", features = ["serialize"] }
-rgb24 = { version = "0.3", features = ["serialize", "rand"] }
+rgb_int = { version = "0.1", features = ["serialize", "rand"] }
 entity_table = { version = "0.2", features = ["serialize"] }
 spatial_table = { version = "0.3", features = ["serialize"] }
 vector = { path = "../vector" }

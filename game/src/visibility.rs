@@ -2,7 +2,7 @@ use crate::world::{Tile, World};
 use crate::Entity;
 use grid_2d::{Coord, CoordIter, Grid, GridEnumerate, Size};
 use rational::Rational;
-use rgb24::Rgb24;
+use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 use shadowcast::{vision_distance, Context as ShadowcastContext, DirectionBitmap, InputGrid};
 
