@@ -45,18 +45,20 @@ pub fn render_game(game: &Game, ctx: Ctx, fb: &mut FrameBuffer) {
                     }
                     None => light_colour,
                 };
-                let tint = |c| ctx.tint.tint(LightBlend { light_colour }.tint(c));
-                let ctx = Ctx { tint: &tint, ..ctx };
-                tile_3x3::render_3x3_from_visibility(coord, visibility_cell, game, ctx, fb);
+                tile_3x3::render_3x3_from_visibility(
+                    coord,
+                    visibility_cell,
+                    game,
+                    ctx_tint!(ctx, LightBlend { light_colour }),
+                    fb,
+                );
             }
             CellVisibility::PreviouslyVisible => {
-                let tint = |c| ctx.tint.tint(Remembered.tint(c));
-                let ctx = Ctx { tint: &tint, ..ctx };
                 tile_3x3::render_3x3_from_visibility_remembered(
                     coord,
                     visibility_cell,
                     game,
-                    ctx,
+                    ctx_tint!(ctx, Remembered),
                     fb,
                 );
             }
