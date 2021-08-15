@@ -1,7 +1,13 @@
 use crate::tile_3x3;
-use chargrid::core::rgb_int::{rgb24, Rgb24};
-use chargrid::prelude::*;
+use chargrid::{
+    core::rgb_int::{rgb24, Rgb24},
+    prelude::*,
+};
 use orbital_decay_game::{CellVisibility, Game, WarningLight};
+
+pub enum GameOutput {
+    Quit,
+}
 
 #[derive(Clone, Copy)]
 struct Remembered;

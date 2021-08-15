@@ -85,7 +85,7 @@ pub fn from_str(s: &str, player_data: EntityData) -> Terrain {
                 }
                 '%' => {
                     world.spawn_floor(coord);
-                    world.spawn_wall(coord);
+                    world.spawn_window(coord, direction::Axis::X);
                 }
                 '>' => {
                     world.spawn_stairs(coord);

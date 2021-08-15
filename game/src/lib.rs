@@ -84,6 +84,7 @@ pub enum ExternalEvent {
     SoundEffect(SoundEffect),
 }
 
+#[derive(Debug)]
 pub enum GameControlFlow {
     GameOver,
     Win,

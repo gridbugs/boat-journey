@@ -397,7 +397,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "chargrid_core",
 ]
@@ -438,7 +438,7 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
@@ -481,7 +481,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -506,7 +506,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "chargrid_graphical_common 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -536,7 +536,7 @@ checksum = "a228b0997467e00764ff0a3c3a954adce59f93034382903460b5a5a739f56b3f"
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 
 [[package]]
 name = "chargrid_input"
@@ -551,7 +551,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "coord_2d",
  "serde",
@@ -585,7 +585,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "chargrid_core",
 ]
@@ -639,7 +639,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#d5c44fc96ca272af8f2493404dc1eb230707217f"
+source = "git+https://github.com/gridbugs/chargrid#8604574b7a01b9aef65a17ff8950500366b9c97c"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -2892,6 +2892,7 @@ dependencies = [
  "grid_2d",
  "line_2d",
  "log",
+ "maplit",
  "orbital_decay_game",
  "rand",
  "rand_isaac",
@@ -3373,7 +3374,7 @@ dependencies = [
 [[package]]
 name = "rodio"
 version = "0.14.0"
-source = "git+https://github.com/stevebob/rodio.git?branch=fix-frame-drop-stack-overflow-2021-06-29#338b552d359b8955f02d1027ed4a5738827df44d"
+source = "git+https://github.com/gridbugs/rodio.git?branch=fix-frame-drop-stack-overflow-2021-06-29#338b552d359b8955f02d1027ed4a5738827df44d"
 dependencies = [
  "claxon",
  "cpal",

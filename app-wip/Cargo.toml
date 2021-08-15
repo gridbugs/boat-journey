@@ -20,5 +20,6 @@ rand_xorshift = { version = "0.3", features = ["serde1"] }
 line_2d = "0.5"
 grid_2d = { version = "0.15", features = ["serialize"] }
 direction = { version = "0.18", features = ["serialize", "rand"] }
+maplit = "1.0"
 getrandom = "0.2"
 chargrid = { git = "https://github.com/gridbugs/chargrid", features = ["serialize", "gamepad"] }
