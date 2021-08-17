@@ -9,6 +9,7 @@ use std::time::Duration;
 mod behaviour;
 mod terrain;
 mod visibility;
+pub mod witness;
 mod world;
 
 use behaviour::{Agent, BehaviourContext};
