@@ -4,7 +4,7 @@ use crate::{
     menu::*,
     stars::Stars,
 };
-use chargrid::{control_flow::*, input::*, prelude::*};
+use chargrid::{control_flow::*, input::*, menu, prelude::*};
 use orbital_decay_game::{
     player,
     witness::{self, Witness},
@@ -100,10 +100,55 @@ impl Component for GameInstanceComponent {
     }
 }
 
+fn upgrade_identifier(upgrade: player::Upgrade) -> String {
+    let name = match upgrade.typ {
+        player::UpgradeType::Toughness => "Toughness",
+        player::UpgradeType::Accuracy => "Accuracy",
+        player::UpgradeType::Endurance => "Endurance",
+    };
+    let level = match upgrade.level {
+        player::UpgradeLevel::Level1 => "1",
+        player::UpgradeLevel::Level2 => "2",
+    };
+    let price = upgrade.level.cost();
+    format!("{} {} (${})", name, level, price)
+}
+
+fn upgrade_menu(
+    upgrades: Vec<player::Upgrade>,
+) -> CF<impl Component<State = GameLoopState, Output = Option<player::Upgrade>>> {
+    use menu::builder::*;
+    let mut builder = menu_builder();
+    for upgrade in upgrades {
+        builder = builder.add_item(item(
+            upgrade,
+            identifier::simple(upgrade_identifier(upgrade).as_str()),
+        ));
+    }
+    builder.build_cf()
+}
+
 fn upgrade_component(
-    upgrade: witness::Upgrade,
+    upgrade_witness: witness::Upgrade,
 ) -> CF<impl Component<State = GameLoopState, Output = Option<Witness>>> {
-    val_once(Witness::debug_running())
+    on_state_then(|state: &mut GameLoopState| {
+        let upgrades = state.game.available_upgrades();
+        upgrade_menu(upgrades).catch_escape().and_then(|result| {
+            on_state(move |state: &mut GameLoopState| {
+                let (w, r) = match result {
+                    Err(Escape) => state
+                        .game
+                        .witness_upgrade_cancel(&state.config, upgrade_witness),
+                    Ok(upgrade) => {
+                        state
+                            .game
+                            .witness_upgrade(upgrade, &state.config, upgrade_witness)
+                    }
+                };
+                w
+            })
+        })
+    })
 }
 
 fn game_instance_component(

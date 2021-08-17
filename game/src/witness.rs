@@ -15,9 +15,6 @@ pub enum Witness {
 }
 
 impl Witness {
-    pub fn debug_running() -> Self {
-        Self::running(Private)
-    }
     fn running(private: Private) -> Self {
         Self::Running(Running(private))
     }
