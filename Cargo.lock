@@ -397,7 +397,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "chargrid_core",
 ]
@@ -438,7 +438,7 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
@@ -481,7 +481,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -506,7 +506,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "chargrid_graphical_common 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -536,7 +536,7 @@ checksum = "a228b0997467e00764ff0a3c3a954adce59f93034382903460b5a5a739f56b3f"
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 
 [[package]]
 name = "chargrid_input"
@@ -551,7 +551,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "coord_2d",
  "serde",
@@ -585,7 +585,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "chargrid_core",
 ]
@@ -639,7 +639,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#a422f82748aa65a55fe5870eebc97c3c32916666"
+source = "git+https://github.com/gridbugs/chargrid#8de695065f7560e96fd4eb191511c97be9b892e3"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -905,7 +905,7 @@ dependencies = [
  "alsa",
  "core-foundation-sys 0.8.2",
  "coreaudio-rs",
- "jni 0.19.0",
+ "jni",
  "js-sys",
  "lazy_static",
  "libc",
@@ -2080,20 +2080,6 @@ checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
 
 [[package]]
 name = "jni"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24967112a1e4301ca5342ea339763613a37592b8a6ce6cf2e4494537c7a42faf"
-dependencies = [
- "cesu8",
- "combine",
- "jni-sys",
- "log",
- "thiserror",
- "walkdir",
-]
-
-[[package]]
-name = "jni"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c6df18c2e3db7e453d3c6ac5b3e9d5182664d28788126d39b91f2d1e22b017ec"
@@ -2565,6 +2551,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ndk"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d64d6af06fde0e527b1ba5c7b79a6cc89cfc46325b0b2887dffe8f70197e0c3c"
+dependencies = [
+ "bitflags",
+ "jni-sys",
+ "ndk-sys",
+ "num_enum 0.5.4",
+ "thiserror",
+]
+
+[[package]]
 name = "ndk-glue"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2588,6 +2587,20 @@ dependencies = [
  "libc",
  "log",
  "ndk 0.3.0",
+ "ndk-macro",
+ "ndk-sys",
+]
+
+[[package]]
+name = "ndk-glue"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3e9e94628f24e7a3cb5b96a2dc5683acd9230bf11991c2a1677b87695138420"
+dependencies = [
+ "lazy_static",
+ "libc",
+ "log",
+ "ndk 0.4.0",
  "ndk-macro",
  "ndk-sys",
 ]
@@ -2803,13 +2816,13 @@ dependencies = [
 
 [[package]]
 name = "oboe"
-version = "0.4.2"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfa187b38ae20374617b7ad418034ed3dc90ac980181d211518bd03537ae8f8d"
+checksum = "e15e22bc67e047fe342a32ecba55f555e3be6166b04dd157cd0f803dfa9f48e1"
 dependencies = [
- "jni 0.18.0",
- "ndk 0.3.0",
- "ndk-glue 0.3.0",
+ "jni",
+ "ndk 0.4.0",
+ "ndk-glue 0.4.0",
  "num-derive",
  "num-traits",
  "oboe-sys",
@@ -2817,9 +2830,9 @@ dependencies = [
 
 [[package]]
 name = "oboe-sys"
-version = "0.4.2"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b88e64835aa3f579c08d182526dc34e3907343d5b97e87b71a40ba5bca7aca9e"
+checksum = "338142ae5ab0aaedc8275aa8f67f460e43ae0fca76a695a742d56da0a269eadc"
 dependencies = [
  "cc",
 ]

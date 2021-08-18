@@ -47,7 +47,7 @@ impl GameLoopState {
 struct GameInstanceComponent(Option<witness::Running>);
 
 impl Component for GameInstanceComponent {
-    type Output = Option<Witness>;
+    type Output = Witness;
     type State = GameLoopState;
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
         state.render(ctx, fb);
@@ -55,43 +55,33 @@ impl Component for GameInstanceComponent {
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
         let running = self.0.take().unwrap();
-        let witness = match event {
-            Event::Input(input) => match input {
-                Input::Keyboard(keyboard_input) => {
-                    if let Some(app_input) = state.controls.get(keyboard_input) {
-                        let (witness, action_result) = match app_input {
-                            AppInput::Move(direction) => {
-                                state.game.witness_walk(direction, &state.config, running)
-                            }
-                            AppInput::Wait => state.game.witness_wait(&state.config, running),
-                            AppInput::Examine | AppInput::Aim(_) | AppInput::Get => {
-                                println!("todo");
-                                (Witness::Running(running), Ok(()))
-                            }
-                        };
-                        if let Err(action_error) = action_result {
-                            println!("action error: {:?}", action_error);
+        match event {
+            Event::Input(Input::Keyboard(keyboard_input)) => {
+                if let Some(app_input) = state.controls.get(keyboard_input) {
+                    let (witness, action_result) = match app_input {
+                        AppInput::Move(direction) => {
+                            state.game.witness_walk(direction, &state.config, running)
                         }
-                        witness
-                    } else {
-                        Witness::Running(running)
+                        AppInput::Wait => state.game.witness_wait(&state.config, running),
+                        AppInput::Examine | AppInput::Aim(_) | AppInput::Get => {
+                            println!("todo");
+                            (Witness::Running(running), Ok(()))
+                        }
+                    };
+                    if let Err(action_error) = action_result {
+                        println!("action error: {:?}", action_error);
                     }
+                    witness
+                } else {
+                    Witness::Running(running)
                 }
-                _ => Witness::Running(running),
-            },
+            }
             Event::Tick(since_previous) => {
                 state
                     .game
                     .witness_tick(since_previous, &state.config, running)
             }
             _ => Witness::Running(running),
-        };
-        match witness {
-            Witness::Running(running) => {
-                self.0 = Some(running);
-                None
-            }
-            other => Some(other),
         }
     }
 
@@ -135,7 +125,7 @@ fn upgrade_component(
         let upgrades = state.game.available_upgrades();
         upgrade_menu(upgrades).catch_escape().and_then(|result| {
             on_state(move |state: &mut GameLoopState| {
-                let (w, r) = match result {
+                let (witness, result) = match result {
                     Err(Escape) => state
                         .game
                         .witness_upgrade_cancel(&state.config, upgrade_witness),
@@ -145,7 +135,10 @@ fn upgrade_component(
                             .witness_upgrade(upgrade, &state.config, upgrade_witness)
                     }
                 };
-                w
+                if let Err(upgrade_error) = result {
+                    println!("upgrade error: {:?}", upgrade_error);
+                }
+                witness
             })
         })
     })
@@ -154,7 +147,7 @@ fn upgrade_component(
 fn game_instance_component(
     running: witness::Running,
 ) -> CF<impl Component<State = GameLoopState, Output = Option<Witness>>> {
-    cf(GameInstanceComponent(Some(running)))
+    cf(GameInstanceComponent(Some(running))).some()
 }
 
 pub enum GameExitReason {
