@@ -7,7 +7,6 @@ mod colours;
 mod controls;
 mod game;
 mod game_loop;
-mod menu;
 mod stars;
 mod tile_3x3;
 

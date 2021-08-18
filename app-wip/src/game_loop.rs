@@ -1,7 +1,6 @@
 use crate::{
     controls::{AppInput, Controls},
     game,
-    menu::*,
     stars::Stars,
 };
 use chargrid::{control_flow::*, input::*, menu, prelude::*};
