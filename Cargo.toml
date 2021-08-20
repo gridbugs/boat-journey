@@ -1,5 +1,7 @@
 [workspace]
 
+resolver = "2" # this is required for the wgpu frontend
+
 members = [
     "image-to-text",
     "vector",
@@ -8,7 +10,6 @@ members = [
     "game",
     "app",
     "native",
-    "graphical",
     "ansi-terminal",
     "web",
     "app-wip",
