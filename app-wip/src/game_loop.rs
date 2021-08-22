@@ -6,8 +6,8 @@ use crate::{
 use chargrid::{control_flow::*, input::*, menu, prelude::*};
 use orbital_decay_game::{
     player,
-    witness::{self, Witness},
-    Config, Game,
+    witness::{self, Game, Witness},
+    Config,
 };
 use rand::Rng;
 
@@ -21,14 +21,14 @@ pub struct GameLoopState {
 impl GameLoopState {
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         self.stars
-            .render_with_visibility(self.game.visibility_grid(), ctx, fb);
-        game::render_game(&self.game, ctx, fb);
+            .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
+        game::render_game(self.game.inner_ref(), ctx, fb);
     }
 }
 
 impl GameLoopState {
     pub fn new<R: Rng>(config: Config, rng: &mut R) -> (Self, witness::Running) {
-        let (game, running) = Game::witness_new(&config, rng);
+        let (game, running) = witness::new_game(&config, rng);
         let stars = Stars::new(rng);
         let controls = Controls::default();
         (
@@ -59,9 +59,9 @@ impl Component for GameInstanceComponent {
                 if let Some(app_input) = state.controls.get(keyboard_input) {
                     let (witness, action_result) = match app_input {
                         AppInput::Move(direction) => {
-                            state.game.witness_walk(direction, &state.config, running)
+                            running.walk(&mut state.game, direction, &state.config)
                         }
-                        AppInput::Wait => state.game.witness_wait(&state.config, running),
+                        AppInput::Wait => running.wait(&mut state.game, &state.config),
                         AppInput::Examine | AppInput::Aim(_) | AppInput::Get => {
                             println!("todo");
                             (Witness::Running(running), Ok(()))
@@ -76,9 +76,7 @@ impl Component for GameInstanceComponent {
                 }
             }
             Event::Tick(since_previous) => {
-                state
-                    .game
-                    .witness_tick(since_previous, &state.config, running)
+                running.tick(&mut state.game, since_previous, &state.config)
             }
             _ => Witness::Running(running),
         }
@@ -121,18 +119,12 @@ fn upgrade_component(
     upgrade_witness: witness::Upgrade,
 ) -> CF<impl Component<State = GameLoopState, Output = Option<Witness>>> {
     on_state_then(|state: &mut GameLoopState| {
-        let upgrades = state.game.available_upgrades();
+        let upgrades = state.game.inner_ref().available_upgrades();
         upgrade_menu(upgrades).catch_escape().and_then(|result| {
             on_state(move |state: &mut GameLoopState| {
                 let (witness, result) = match result {
-                    Err(Escape) => state
-                        .game
-                        .witness_upgrade_cancel(&state.config, upgrade_witness),
-                    Ok(upgrade) => {
-                        state
-                            .game
-                            .witness_upgrade(upgrade, &state.config, upgrade_witness)
-                    }
+                    Err(Escape) => upgrade_witness.cancel(),
+                    Ok(upgrade) => upgrade_witness.upgrade(&mut state.game, upgrade, &state.config),
                 };
                 if let Err(upgrade_error) = result {
                     println!("upgrade error: {:?}", upgrade_error);

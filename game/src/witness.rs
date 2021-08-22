@@ -1,7 +1,9 @@
-use crate::{player, ActionError, Config, Game, GameControlFlow, Input};
+use crate::{player, ActionError, Config, GameControlFlow, Input};
 use direction::CardinalDirection;
 use rand::Rng;
 use std::time::Duration;
+
+pub struct Game(crate::Game);
 
 struct Private;
 
@@ -28,20 +30,16 @@ pub enum ControlInput {
     Wait,
 }
 
-impl Game {
-    pub fn witness_new<R: Rng>(config: &Config, base_rng: &mut R) -> (Self, Running) {
-        let s = Self::new(config, base_rng);
-        (s, Running(Private))
-    }
+pub fn new_game<R: Rng>(config: &Config, base_rng: &mut R) -> (Game, Running) {
+    let g = Game(crate::Game::new(config, base_rng));
+    (g, Running(Private))
+}
 
-    pub fn witness_tick(
-        &mut self,
-        since_last_tick: Duration,
-        config: &Config,
-        Running(private): Running,
-    ) -> Witness {
+impl Running {
+    pub fn tick(self, game: &mut Game, since_last_tick: Duration, config: &Config) -> Witness {
         use GameControlFlow::*;
-        match self.handle_tick(since_last_tick, config) {
+        let Self(private) = self;
+        match game.0.handle_tick(since_last_tick, config) {
             None => Witness::running(private),
             Some(Upgrade) => Witness::upgrade(private),
             Some(GameOver) => Witness::GameOver,
@@ -49,41 +47,41 @@ impl Game {
         }
     }
 
-    pub fn witness_walk(
-        &mut self,
+    pub fn walk(
+        self,
+        game: &mut Game,
         direction: CardinalDirection,
         config: &Config,
-        Running(private): Running,
     ) -> (Witness, Result<(), ActionError>) {
-        self.witness_handle_input(Input::Walk(direction), config, private)
+        let Self(private) = self;
+        game.witness_handle_input(Input::Walk(direction), config, private)
     }
 
-    pub fn witness_wait(
-        &mut self,
-        config: &Config,
-        Running(private): Running,
-    ) -> (Witness, Result<(), ActionError>) {
-        self.witness_handle_input(Input::Wait, config, private)
+    pub fn wait(self, game: &mut Game, config: &Config) -> (Witness, Result<(), ActionError>) {
+        let Self(private) = self;
+        game.witness_handle_input(Input::Wait, config, private)
     }
+}
 
-    pub fn witness_upgrade(
-        &mut self,
+impl Upgrade {
+    pub fn upgrade(
+        self,
+        game: &mut Game,
         upgrade: player::Upgrade,
         config: &Config,
-        Upgrade(private): Upgrade,
     ) -> (Witness, Result<(), ActionError>) {
+        let Self(private) = self;
         let input = Input::Upgrade(upgrade);
-        self.witness_handle_input(input, config, private)
+        game.witness_handle_input(input, config, private)
     }
 
-    pub fn witness_upgrade_cancel(
-        &mut self,
-        config: &Config,
-        Upgrade(private): Upgrade,
-    ) -> (Witness, Result<(), ActionError>) {
+    pub fn cancel(self) -> (Witness, Result<(), ActionError>) {
+        let Self(private) = self;
         (Witness::running(private), Ok(()))
     }
+}
 
+impl Game {
     fn witness_handle_input(
         &mut self,
         input: Input,
@@ -91,12 +89,16 @@ impl Game {
         private: Private,
     ) -> (Witness, Result<(), ActionError>) {
         use GameControlFlow::*;
-        match self.handle_input(input, config) {
+        match self.0.handle_input(input, config) {
             Err(e) => (Witness::running(private), Err(e)),
             Ok(None) => (Witness::running(private), Ok(())),
             Ok(Some(Upgrade)) => (Witness::upgrade(private), Ok(())),
             Ok(Some(GameOver)) => (Witness::GameOver, Ok(())),
             Ok(Some(_)) => todo!(),
         }
+    }
+
+    pub fn inner_ref(&self) -> &crate::Game {
+        &self.0
     }
 }
