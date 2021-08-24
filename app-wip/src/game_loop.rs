@@ -3,7 +3,7 @@ use crate::{
     game,
     stars::Stars,
 };
-use chargrid::{control_flow::*, input::*, menu, prelude::*};
+use chargrid::{border::BorderStyle, control_flow::*, input::*, menu, prelude::*};
 use orbital_decay_game::{
     player,
     witness::{self, Game, Witness},
@@ -112,7 +112,15 @@ fn upgrade_menu(
             identifier::simple(upgrade_identifier(upgrade).as_str()),
         ));
     }
-    builder.build_cf()
+    builder
+        .build_cf()
+        .border(BorderStyle::default())
+        .centre()
+        .overlay(
+            render_state(|state: &GameLoopState, ctx, fb| state.render(ctx, fb)),
+            chargrid::core::TintDim(63),
+            10,
+        )
 }
 
 fn upgrade_component(
