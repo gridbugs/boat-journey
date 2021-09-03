@@ -1797,7 +1797,7 @@ name = "image-to-text"
 version = "0.1.0"
 dependencies = [
  "image",
- "meap 0.4.4",
+ "meap",
 ]
 
 [[package]]
@@ -2107,12 +2107,6 @@ name = "maybe-uninit"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
-
-[[package]]
-name = "meap"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa344a8d17a396791d85bd07f206b590e242967b155834bb3578f6c6e31ce201"
 
 [[package]]
 name = "meap"
@@ -2723,7 +2717,7 @@ dependencies = [
  "env_logger",
  "general_audio_static",
  "general_storage_static",
- "meap 0.4.4",
+ "meap",
  "orbital_decay_app_wip",
  "serde_json",
 ]
@@ -2735,7 +2729,7 @@ dependencies = [
  "general_audio_static",
  "general_storage_static",
  "log",
- "meap 0.5.1",
+ "meap",
  "orbital_decay_app",
  "serde_json",
 ]
@@ -2762,7 +2756,7 @@ dependencies = [
  "env_logger",
  "general_audio_static",
  "general_storage_static",
- "meap 0.4.4",
+ "meap",
  "orbital_decay_app_wip",
  "serde_json",
 ]
@@ -2935,7 +2929,7 @@ version = "0.1.0"
 dependencies = [
  "direction",
  "grid_2d",
- "meap 0.4.4",
+ "meap",
  "rand",
  "rand_isaac",
  "wfc",
