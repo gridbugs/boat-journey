@@ -36,6 +36,10 @@ pub fn new_game<R: Rng>(config: &Config, base_rng: &mut R) -> (Game, Running) {
 }
 
 impl Running {
+    pub fn into_witness(self) -> Witness {
+        Witness::Running(self)
+    }
+
     pub fn tick(self, game: &mut Game, since_last_tick: Duration, config: &Config) -> Witness {
         use GameControlFlow::*;
         let Self(private) = self;

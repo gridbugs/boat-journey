@@ -11,7 +11,7 @@ mod stars;
 mod tile_3x3;
 
 struct AppState {
-    game_loop_state: game_loop::GameLoopState,
+    game_loop_state: game_loop::GameLoopData,
 }
 
 pub fn app() -> impl Component<Output = app::Output, State = ()> {
@@ -21,10 +21,10 @@ pub fn app() -> impl Component<Output = app::Output, State = ()> {
         debug: true,
     };
     let mut rng = Isaac64Rng::from_entropy();
-    let (game_loop_state, running) = game_loop::GameLoopState::new(config, &mut rng);
+    let (game_loop_state, running) = game_loop::GameLoopData::new(config, &mut rng);
     let state = AppState { game_loop_state };
     game_loop::game_loop_component(running)
-        .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopState))
+        .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))
         .map(|_| app::Exit)
         .with_state(state)
         .clear_each_frame()

@@ -11,14 +11,14 @@ use orbital_decay_game::{
 };
 use rand::Rng;
 
-pub struct GameLoopState {
+pub struct GameLoopData {
     game: Game,
     stars: Stars,
     controls: Controls,
     config: Config,
 }
 
-impl GameLoopState {
+impl GameLoopData {
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         self.stars
             .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
@@ -58,7 +58,7 @@ impl GameLoopState {
     }
 }
 
-impl GameLoopState {
+impl GameLoopData {
     pub fn new<R: Rng>(config: Config, rng: &mut R) -> (Self, witness::Running) {
         let (game, running) = witness::new_game(&config, rng);
         let stars = Stars::new(rng);
@@ -77,14 +77,20 @@ impl GameLoopState {
 
 struct GameInstanceComponent(Option<witness::Running>);
 
-enum AppState {
+impl GameInstanceComponent {
+    fn new(running: witness::Running) -> Self {
+        Self(Some(running))
+    }
+}
+
+enum GameLoopState {
     Paused(witness::Running),
     Playing(Witness),
 }
 
 impl Component for GameInstanceComponent {
-    type Output = Witness;
-    type State = GameLoopState;
+    type Output = GameLoopState;
+    type State = GameLoopData;
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
         state.render(ctx, fb);
     }
@@ -92,9 +98,9 @@ impl Component for GameInstanceComponent {
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
         let running = self.0.take().unwrap();
         if event.is_escape() {
-            Witness::Running(running)
+            GameLoopState::Paused(running)
         } else {
-            state.update(event, running)
+            GameLoopState::Playing(state.update(event, running))
         }
     }
 
@@ -119,7 +125,7 @@ fn upgrade_identifier(upgrade: player::Upgrade) -> String {
 
 fn upgrade_menu(
     upgrades: Vec<player::Upgrade>,
-) -> CF<impl Component<State = GameLoopState, Output = Option<player::Upgrade>>> {
+) -> CF<impl Component<State = GameLoopData, Output = Option<player::Upgrade>>> {
     use menu::builder::*;
     let mut builder = menu_builder();
     for upgrade in upgrades {
@@ -133,7 +139,7 @@ fn upgrade_menu(
         .border(BorderStyle::default())
         .centre()
         .overlay(
-            render_state(|state: &GameLoopState, ctx, fb| state.render(ctx, fb)),
+            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
             chargrid::core::TintDim(63),
             10,
         )
@@ -141,11 +147,11 @@ fn upgrade_menu(
 
 fn upgrade_component(
     upgrade_witness: witness::Upgrade,
-) -> CF<impl Component<State = GameLoopState, Output = Option<Witness>>> {
-    on_state_then(|state: &mut GameLoopState| {
+) -> CF<impl Component<State = GameLoopData, Output = Option<Witness>>> {
+    on_state_then(|state: &mut GameLoopData| {
         let upgrades = state.game.inner_ref().available_upgrades();
         upgrade_menu(upgrades).catch_escape().and_then(|result| {
-            on_state(move |state: &mut GameLoopState| {
+            on_state(move |state: &mut GameLoopData| {
                 let (witness, result) = match result {
                     Err(Escape) => upgrade_witness.cancel(),
                     Ok(upgrade) => upgrade_witness.upgrade(&mut state.game, upgrade, &state.config),
@@ -171,8 +177,8 @@ enum PauseMenuEntry {
     Clear,
 }
 
-fn pause_menu() -> CF<impl Component<State = GameLoopState, Output = Option<PauseMenuEntry>>> {
-    on_state_then(|state: &mut GameLoopState| {
+fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<PauseMenuEntry>>> {
+    on_state_then(|state: &mut GameLoopData| {
         use menu::builder::*;
         use PauseMenuEntry::*;
         let mut builder = menu_builder();
@@ -196,39 +202,55 @@ fn pause_menu() -> CF<impl Component<State = GameLoopState, Output = Option<Paus
             .border(BorderStyle::default())
             .centre()
             .overlay(
-                render_state(|state: &GameLoopState, ctx, fb| state.render(ctx, fb)),
+                render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
                 chargrid::core::TintDim(63),
                 10,
             )
     })
 }
 
+enum PauseOutput {
+    Continue,
+    Restart(witness::Running),
+    Quit,
+}
+
+fn pause() -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
+    pause_menu().and_then(|entry| val_once(PauseOutput::Quit))
+}
+
 fn game_instance_component(
     running: witness::Running,
-) -> CF<impl Component<State = GameLoopState, Output = Option<Witness>>> {
-    either!(Ei = A | B);
-    cf(GameInstanceComponent(Some(running)))
-        .some()
-        .catch_escape()
-        .and_then(|or_escape| match or_escape {
-            Ok(witness) => Ei::A(val_once(witness)),
-            Err(Escape) => Ei::B(never()),
-        })
+) -> CF<impl Component<State = GameLoopData, Output = Option<GameLoopState>>> {
+    cf(GameInstanceComponent::new(running)).some()
 }
 
 pub enum GameExitReason {
     GameOver,
+    Quit,
 }
 
 pub fn game_loop_component(
     running: witness::Running,
-) -> CF<impl Component<State = GameLoopState, Output = Option<GameExitReason>>> {
-    loop_(Witness::Running(running), |witness| {
-        either!(Ei = A | B | C);
-        match witness {
-            Witness::Running(running) => Ei::A(game_instance_component(running).continue_()),
-            Witness::Upgrade(upgrade) => Ei::B(upgrade_component(upgrade).continue_()),
-            Witness::GameOver => Ei::C(val_once(GameExitReason::GameOver).break_()),
+) -> CF<impl Component<State = GameLoopData, Output = Option<GameExitReason>>> {
+    use GameLoopState::*;
+    loop_(Playing(Witness::Running(running)), |state| {
+        either!(Ei = A | B | C | D);
+        match state {
+            Playing(witness) => match witness {
+                Witness::Running(running) => Ei::A(game_instance_component(running).continue_()),
+                Witness::Upgrade(upgrade) => {
+                    Ei::B(upgrade_component(upgrade).map(Playing).continue_())
+                }
+                Witness::GameOver => Ei::C(val_once(GameExitReason::GameOver).break_()),
+            },
+            Paused(running) => Ei::D(pause().map(|pause_output| match pause_output {
+                PauseOutput::Continue => LoopControl::Continue(Playing(running.into_witness())),
+                PauseOutput::Restart(new_running) => {
+                    LoopControl::Continue(Playing(new_running.into_witness()))
+                }
+                PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
+            })),
         }
     })
 }
