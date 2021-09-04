@@ -9,16 +9,33 @@ use orbital_decay_game::{
     witness::{self, Game, Witness},
     Config,
 };
-use rand::Rng;
+use rand_isaac::Isaac64Rng;
 
 pub struct GameLoopData {
     game: Game,
     stars: Stars,
     controls: Controls,
     config: Config,
+    rng: Isaac64Rng,
 }
 
 impl GameLoopData {
+    pub fn new(config: Config, mut rng: Isaac64Rng) -> (Self, witness::Running) {
+        let (game, running) = witness::new_game(&config, &mut rng);
+        let stars = Stars::new(&mut rng);
+        let controls = Controls::default();
+        (
+            Self {
+                game,
+                stars,
+                controls,
+                config,
+                rng,
+            },
+            running,
+        )
+    }
+
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         self.stars
             .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
@@ -55,23 +72,6 @@ impl GameLoopData {
             }
             _ => Witness::Running(running),
         }
-    }
-}
-
-impl GameLoopData {
-    pub fn new<R: Rng>(config: Config, rng: &mut R) -> (Self, witness::Running) {
-        let (game, running) = witness::new_game(&config, rng);
-        let stars = Stars::new(rng);
-        let controls = Controls::default();
-        (
-            Self {
-                game,
-                stars,
-                controls,
-                config,
-            },
-            running,
-        )
     }
 }
 
@@ -184,7 +184,7 @@ fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<Pause
         let mut builder = menu_builder();
         let mut add_item = |entry, name, ch: char| {
             builder.add_item_mut(
-                item(Resume, identifier::simple(&format!("({}) {}", ch, name))).add_hotkey_char(ch),
+                item(entry, identifier::simple(&format!("({}) {}", ch, name))).add_hotkey_char(ch),
             );
         };
         add_item(Resume, "Resume", 'r');
@@ -216,7 +216,30 @@ enum PauseOutput {
 }
 
 fn pause() -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
-    pause_menu().and_then(|entry| val_once(PauseOutput::Quit))
+    use PauseMenuEntry::*;
+    either!(Ei = A | B | C | D | E | F | G | H);
+    pause_menu()
+        .catch_escape()
+        .and_then(|entry_or_escape| match entry_or_escape {
+            Ok(entry) => match entry {
+                Resume => Ei::A(val_once(PauseOutput::Continue)),
+                SaveQuit => Ei::B(on_state(|_state: &mut GameLoopData| {
+                    println!("TODO: save");
+                    PauseOutput::Quit
+                })),
+                NewGame => Ei::C(on_state(|state: &mut GameLoopData| {
+                    let (game, running) = witness::new_game(&state.config, &mut state.rng);
+                    state.game = game;
+                    PauseOutput::Restart(running)
+                })),
+                Options => Ei::D(never()),
+                Help => Ei::E(never()),
+                Prologue => Ei::F(never()),
+                Epilogue => Ei::G(never()),
+                Clear => Ei::H(never()),
+            },
+            Err(Escape) => Ei::A(val_once(PauseOutput::Continue)),
+        })
 }
 
 fn game_instance_component(

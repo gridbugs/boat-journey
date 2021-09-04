@@ -20,8 +20,8 @@ pub fn app() -> impl Component<Output = app::Output, State = ()> {
         demo: false,
         debug: true,
     };
-    let mut rng = Isaac64Rng::from_entropy();
-    let (game_loop_state, running) = game_loop::GameLoopData::new(config, &mut rng);
+    let rng = Isaac64Rng::from_entropy();
+    let (game_loop_state, running) = game_loop::GameLoopData::new(config, rng);
     let state = AppState { game_loop_state };
     game_loop::game_loop_component(running)
         .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))
