@@ -17,6 +17,7 @@ members = [
     "ggez-wip",
     "wgpu-wip",
     "ansi-terminal-wip",
+    "web-wip",
 ]
 
 [profile.release]

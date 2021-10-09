@@ -615,6 +615,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "chargrid_web"
+version = "0.2.0"
+source = "git+https://github.com/gridbugs/chargrid#a6179bd260247f996d21069216c4207824ef180a"
+dependencies = [
+ "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_runtime",
+ "grid_2d",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
 source = "git+https://github.com/gridbugs/chargrid#a6179bd260247f996d21069216c4207824ef180a"
@@ -2664,12 +2677,25 @@ dependencies = [
 name = "orbital_decay_web"
 version = "0.1.0"
 dependencies = [
- "chargrid_web",
+ "chargrid_web 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "console_error_panic_hook",
  "general_audio_static",
  "general_storage_static 0.1.3",
  "log",
  "orbital_decay_app",
+ "wasm-bindgen",
+ "wasm-logger",
+]
+
+[[package]]
+name = "orbital_decay_web_wip"
+version = "0.1.0"
+dependencies = [
+ "chargrid_web 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "console_error_panic_hook",
+ "general_storage_static 0.2.0",
+ "log",
+ "orbital_decay_app_wip",
  "wasm-bindgen",
  "wasm-logger",
 ]
