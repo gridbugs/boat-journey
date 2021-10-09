@@ -15,6 +15,8 @@ use serde::{Deserialize, Serialize};
 use shadowcast::vision_distance::Circle;
 use std::collections::HashSet;
 
+const AREA_SIZE: Size = Size::new_u16(27, 20);
+
 pub struct Terrain {
     pub world: World,
     pub player: Entity,
@@ -61,7 +63,7 @@ impl TerrainState {
 pub fn from_str(s: &str, player_data: EntityData) -> Terrain {
     let rows = s.split('\n').filter(|s| !s.is_empty()).collect::<Vec<_>>();
     let size = Size::new_u16(rows[0].len() as u16, rows.len() as u16);
-    let mut world = World::new(size, 0);
+    let mut world = World::new(AREA_SIZE, 0);
     let mut agents = ComponentTable::default();
     let mut player_data = Some(player_data);
     let mut player = None;
@@ -184,7 +186,6 @@ pub fn space_station_first_floor<R: Rng>(
     spec: &SpaceStationSpec,
     rng: &mut R,
 ) -> Terrain {
-    const AREA_SIZE: Size = Size::new_u16(27, 20);
     const SHIP_SIZE: Size = Size::new_u16(10, 10);
     const SHIP_OFFSET: Coord = Coord { x: 5, y: 5 };
     let grid = procgen::generate(
@@ -310,7 +311,6 @@ pub fn space_station<R: Rng>(
             return space_station_last_level(FINAL_LEVEL, player_data, spec, terrain_state, rng);
         }
     }
-    const AREA_SIZE: Size = Size::new_u16(27, 20);
     const SHIP_SIZE: Size = Size::new_u16(20, 14);
     const SHIP_OFFSET: Coord = Coord { x: 1, y: 1 };
     let grid = procgen::generate(
@@ -396,7 +396,6 @@ fn space_station_last_level<R: Rng>(
     terrain_state: &mut TerrainState,
     rng: &mut R,
 ) -> Terrain {
-    const AREA_SIZE: Size = Size::new_u16(27, 20);
     const SHIP_SIZE: Size = Size::new_u16(20, 14);
     const SHIP_OFFSET: Coord = Coord { x: 1, y: 1 };
     let grid = procgen::generate(

@@ -44,10 +44,12 @@ impl Args {
 fn main() {
     use meap::Parser;
     let Args {
-        native_common: NativeCommon {
-            save_game_storage,
-            rng_seed,
-        },
+        native_common:
+            NativeCommon {
+                save_game_storage,
+                rng_seed,
+                omniscient,
+            },
         col_encode_choice,
     } = Args::parser().with_help_default().parse_env_or_exit();
     // We won't be able to print once the context is created. Choose the initial rng
@@ -64,6 +66,7 @@ fn main() {
     let app = app(AppArgs {
         save_game_storage,
         rng_seed,
+        omniscient,
     });
     use ColEncodeChoice as C;
     match col_encode_choice {

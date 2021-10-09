@@ -2669,6 +2669,7 @@ name = "orbital_decay_native_wip"
 version = "0.1.0"
 dependencies = [
  "general_storage_static 0.2.0",
+ "log",
  "meap",
  "orbital_decay_app_wip",
 ]

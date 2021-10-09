@@ -19,16 +19,18 @@ struct AppState {
 pub struct AppArgs {
     pub save_game_storage: SaveGameStorage,
     pub rng_seed: RngSeed,
+    pub omniscient: bool,
 }
 
 pub fn app(
     AppArgs {
         save_game_storage,
         rng_seed,
+        omniscient,
     }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {
-        omniscient: Config::OMNISCIENT,
+        omniscient: if omniscient { Config::OMNISCIENT } else { None },
         demo: false,
         debug: true,
     };

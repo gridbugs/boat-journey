@@ -10,6 +10,7 @@ fn main() {
     let NativeCommon {
         save_game_storage,
         rng_seed,
+        omniscient,
     } = NativeCommon::parser()
         .with_help_default()
         .parse_env_or_exit();
@@ -38,5 +39,6 @@ fn main() {
     context.run(app(AppArgs {
         save_game_storage,
         rng_seed,
+        omniscient,
     }));
 }
