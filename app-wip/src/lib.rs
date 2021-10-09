@@ -24,12 +24,12 @@ pub fn app(
     AppArgs { save_game_storage }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {
-        omniscient: None,
+        omniscient: Config::OMNISCIENT,
         demo: false,
         debug: true,
     };
     let rng = Isaac64Rng::from_entropy();
-    let (game_loop_state, running) = game_loop::GameLoopData::new(config, rng);
+    let (game_loop_state, running) = game_loop::GameLoopData::new(config, save_game_storage, rng);
     let state = AppState { game_loop_state };
     game_loop::game_loop_component(running)
         .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))

@@ -53,6 +53,9 @@ pub struct Config {
     pub demo: bool,
     pub debug: bool,
 }
+impl Config {
+    pub const OMNISCIENT: Option<Omniscient> = Some(Omniscient);
+}
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum Music {

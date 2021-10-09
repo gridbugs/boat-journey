@@ -1278,12 +1278,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "general_storage"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "784ef83fc88a64e5b8cd28d2f52b2e2fdbeb675979ceb3b463df449cdaa2f5d6"
+dependencies = [
+ "bincode",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "general_storage_file"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "651886cd7ded7aa0e3e7689944ad5508969dbc55168379b8e811410011efba49"
 dependencies = [
- "general_storage",
+ "general_storage 0.1.1",
+]
+
+[[package]]
+name = "general_storage_file"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbc504c0ef120850a754a9509b34325cdb0e1a046bb8c376d1137d17068270c4"
+dependencies = [
+ "general_storage 0.2.0",
 ]
 
 [[package]]
@@ -1292,9 +1312,20 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49e9a58783e57166e190aa6e61e339e3ca45d1b2eaa05c71b5f14b7d5812c5b0"
 dependencies = [
- "general_storage",
- "general_storage_file",
- "general_storage_web",
+ "general_storage 0.1.1",
+ "general_storage_file 0.1.1",
+ "general_storage_web 0.1.1",
+]
+
+[[package]]
+name = "general_storage_static"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b235becc291e0473aaf25bde1c16c76ce67eea039bcd84a216e4cff2546ef553"
+dependencies = [
+ "general_storage 0.2.0",
+ "general_storage_file 0.2.0",
+ "general_storage_web 0.2.0",
 ]
 
 [[package]]
@@ -1303,7 +1334,21 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b3319088c1723d41363c7deacea7bcc2c5734163bb4c5b4e31564d90aaa0a55"
 dependencies = [
- "general_storage",
+ "general_storage 0.1.1",
+ "js-sys",
+ "log",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "general_storage_web"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63341a2df38264189e0ae1de16b50f7e144095370a74df9a6fa25024918d3c59"
+dependencies = [
+ "general_storage 0.2.0",
  "js-sys",
  "log",
  "serde_json",
@@ -2504,7 +2549,7 @@ dependencies = [
  "chargrid 0.4.0",
  "direction",
  "general_audio_static",
- "general_storage_static",
+ "general_storage_static 0.1.3",
  "getrandom",
  "line_2d",
  "log",
@@ -2524,7 +2569,7 @@ dependencies = [
  "chargrid 0.5.0",
  "direction",
  "general_audio_static",
- "general_storage_static",
+ "general_storage_static 0.2.0",
  "getrandom",
  "grid_2d",
  "line_2d",
@@ -2574,7 +2619,7 @@ name = "orbital_decay_native"
 version = "0.1.0"
 dependencies = [
  "general_audio_static",
- "general_storage_static",
+ "general_storage_static 0.1.3",
  "log",
  "meap",
  "orbital_decay_app",
@@ -2585,7 +2630,7 @@ dependencies = [
 name = "orbital_decay_native_wip"
 version = "0.1.0"
 dependencies = [
- "general_storage_static",
+ "general_storage_static 0.2.0",
  "orbital_decay_app_wip",
 ]
 
@@ -2596,7 +2641,7 @@ dependencies = [
  "chargrid_web",
  "console_error_panic_hook",
  "general_audio_static",
- "general_storage_static",
+ "general_storage_static 0.1.3",
  "log",
  "orbital_decay_app",
  "wasm-bindgen",

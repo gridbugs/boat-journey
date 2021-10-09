@@ -1,9 +1,26 @@
 use crate::{player, ActionError, Config, GameControlFlow, Input};
 use direction::CardinalDirection;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 pub struct Game(crate::Game);
+
+#[derive(Serialize, Deserialize)]
+pub struct RunningGame {
+    game: crate::Game,
+}
+
+impl RunningGame {
+    pub fn new(game: Game, running: Running) -> Self {
+        let _ = running;
+        Self { game: game.0 }
+    }
+
+    pub fn into_game(self) -> (Game, Running) {
+        (Game(self.game), Running(Private))
+    }
+}
 
 struct Private;
 
@@ -36,6 +53,10 @@ pub fn new_game<R: Rng>(config: &Config, base_rng: &mut R) -> (Game, Running) {
 }
 
 impl Running {
+    pub fn new_panics() -> Self {
+        panic!("this constructor is meant for temporary use during debugging to get the code to compile")
+    }
+
     pub fn into_witness(self) -> Witness {
         Witness::Running(self)
     }
@@ -104,5 +125,9 @@ impl Game {
 
     pub fn inner_ref(&self) -> &crate::Game {
         &self.0
+    }
+
+    pub fn into_running_game(self, running: Running) -> RunningGame {
+        RunningGame::new(self, running)
     }
 }

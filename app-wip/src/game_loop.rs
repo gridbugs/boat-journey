@@ -7,59 +7,155 @@ use chargrid::{border::BorderStyle, control_flow::*, input::*, menu, prelude::*}
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
-    witness::{self, Game, Witness},
+    witness::{self, Game, RunningGame, Witness},
     Config,
 };
 use rand_isaac::Isaac64Rng;
+use serde::{Deserialize, Serialize};
+
+const STORAGE_FORMAT: format::Bincode = format::Bincode;
 
 pub struct SaveGameStorage {
     pub handle: StaticStorage,
     pub key: String,
 }
 
-pub struct GameLoopData {
+impl SaveGameStorage {
+    fn save(&mut self, instance: &GameInstanceStorable) {
+        let result = self.handle.store(&self.key, &instance, STORAGE_FORMAT);
+        if let Err(e) = result {
+            use general_storage_static::{StoreError, StoreRawError};
+            match e {
+                StoreError::FormatError(e) => log::error!("Failed to format save file: {}", e),
+                StoreError::Raw(e) => match e {
+                    StoreRawError::IoError(e) => {
+                        log::error!("Error while writing save data: {}", e)
+                    }
+                },
+            }
+        }
+    }
+
+    fn load(&self) -> Option<GameInstanceStorable> {
+        let result = self
+            .handle
+            .load::<_, GameInstanceStorable, _>(&self.key, STORAGE_FORMAT);
+        match result {
+            Err(e) => {
+                use general_storage_static::{LoadError, LoadRawError};
+                match e {
+                    LoadError::FormatError(e) => log::error!("Failed to parse save file: {}", e),
+                    LoadError::Raw(e) => match e {
+                        LoadRawError::IoError(e) => {
+                            log::error!("Error while reading save data: {}", e)
+                        }
+                        LoadRawError::NoSuchKey => (),
+                    },
+                }
+                None
+            }
+            Ok(instance) => Some(instance),
+        }
+    }
+}
+
+struct GameInstance {
     game: Game,
     stars: Stars,
+}
+
+impl GameInstance {
+    fn into_storable(self, running: witness::Running) -> GameInstanceStorable {
+        let Self { game, stars } = self;
+        let running_game = game.into_running_game(running);
+        GameInstanceStorable {
+            running_game,
+            stars,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct GameInstanceStorable {
+    running_game: RunningGame,
+    stars: Stars,
+}
+
+impl GameInstanceStorable {
+    fn into_game_instance(self) -> (GameInstance, witness::Running) {
+        let Self {
+            running_game,
+            stars,
+        } = self;
+        let (game, running) = running_game.into_game();
+        (GameInstance { game, stars }, running)
+    }
+}
+
+pub struct GameLoopData {
+    instance: Option<GameInstance>,
     controls: Controls,
     config: Config,
+    save_game_storage: SaveGameStorage,
     rng: Isaac64Rng,
 }
 
 impl GameLoopData {
-    pub fn new(config: Config, mut rng: Isaac64Rng) -> (Self, witness::Running) {
-        let (game, running) = witness::new_game(&config, &mut rng);
-        let stars = Stars::new(&mut rng);
+    pub fn new(
+        config: Config,
+        save_game_storage: SaveGameStorage,
+        mut rng: Isaac64Rng,
+    ) -> (Self, witness::Running) {
+        let (instance, running) = match save_game_storage.load() {
+            Some(instance) => instance.into_game_instance(),
+            None => {
+                let (game, running) = witness::new_game(&config, &mut rng);
+                let stars = Stars::new(&mut rng);
+                (GameInstance { game, stars }, running)
+            }
+        };
         let controls = Controls::default();
         (
             Self {
-                game,
-                stars,
+                instance: Some(instance),
                 controls,
                 config,
+                save_game_storage,
                 rng,
             },
             running,
         )
     }
 
+    fn save_instance(&mut self, running: witness::Running) -> witness::Running {
+        let instance = self.instance.take().unwrap().into_storable(running);
+        self.save_game_storage.save(&instance);
+        let (instance, running) = instance.into_game_instance();
+        self.instance = Some(instance);
+        running
+    }
+
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
-        self.stars
-            .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
-        game::render_game(self.game.inner_ref(), ctx, fb);
+        let instance = self.instance.as_ref().unwrap();
+        instance
+            .stars
+            .render_with_visibility(instance.game.inner_ref().visibility_grid(), ctx, fb);
+        game::render_game(instance.game.inner_ref(), ctx, fb);
     }
     fn has_game_ever_been_won(&self) -> bool {
         // TODO
         true
     }
     fn update(&mut self, event: Event, running: witness::Running) -> Witness {
+        let instance = self.instance.as_mut().unwrap();
         match event {
             Event::Input(Input::Keyboard(keyboard_input)) => {
                 if let Some(app_input) = self.controls.get(keyboard_input) {
                     let (witness, action_result) = match app_input {
                         AppInput::Move(direction) => {
-                            running.walk(&mut self.game, direction, &self.config)
+                            running.walk(&mut instance.game, direction, &self.config)
                         }
-                        AppInput::Wait => running.wait(&mut self.game, &self.config),
+                        AppInput::Wait => running.wait(&mut instance.game, &self.config),
                         AppInput::Examine | AppInput::Aim(_) | AppInput::Get => {
                             println!("todo");
                             (Witness::Running(running), Ok(()))
@@ -74,7 +170,7 @@ impl GameLoopData {
                 }
             }
             Event::Tick(since_previous) => {
-                running.tick(&mut self.game, since_previous, &self.config)
+                running.tick(&mut instance.game, since_previous, &self.config)
             }
             _ => Witness::Running(running),
         }
@@ -155,12 +251,16 @@ fn upgrade_component(
     upgrade_witness: witness::Upgrade,
 ) -> CF<impl Component<State = GameLoopData, Output = Option<Witness>>> {
     on_state_then(|state: &mut GameLoopData| {
-        let upgrades = state.game.inner_ref().available_upgrades();
+        let instance = state.instance.as_ref().unwrap();
+        let upgrades = instance.game.inner_ref().available_upgrades();
         upgrade_menu(upgrades).catch_escape().and_then(|result| {
             on_state(move |state: &mut GameLoopData| {
                 let (witness, result) = match result {
                     Err(Escape) => upgrade_witness.cancel(),
-                    Ok(upgrade) => upgrade_witness.upgrade(&mut state.game, upgrade, &state.config),
+                    Ok(upgrade) => {
+                        let instance = state.instance.as_mut().unwrap();
+                        upgrade_witness.upgrade(&mut instance.game, upgrade, &state.config)
+                    }
                 };
                 if let Err(upgrade_error) = result {
                     println!("upgrade error: {:?}", upgrade_error);
@@ -218,31 +318,34 @@ fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<Pause
 }
 
 enum PauseOutput {
-    Continue,
-    Restart(witness::Running),
+    Continue { running: witness::Running },
+    Restart { new_running: witness::Running },
     Quit,
 }
 
-fn pause() -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
+fn pause(
+    running: witness::Running,
+) -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
     use PauseMenuEntry::*;
     either!(Ei = A | B | C | D | E | F | G | H | I);
     pause_menu()
         .catch_escape()
         .and_then(|entry_or_escape| match entry_or_escape {
             Ok(entry) => match entry {
-                Resume => Ei::A(val_once(PauseOutput::Continue)),
-                SaveQuit => Ei::B(on_state(|_state: &mut GameLoopData| {
-                    println!("TODO: save");
+                Resume => Ei::A(val_once(PauseOutput::Continue { running })),
+                SaveQuit => Ei::B(on_state(|state: &mut GameLoopData| {
+                    state.save_instance(running);
                     PauseOutput::Quit
                 })),
-                Save => Ei::C(on_state(|_state: &mut GameLoopData| {
-                    println!("TODO: save");
-                    PauseOutput::Continue
+                Save => Ei::C(on_state(|state: &mut GameLoopData| {
+                    let running = state.save_instance(running);
+                    PauseOutput::Continue { running }
                 })),
                 NewGame => Ei::D(on_state(|state: &mut GameLoopData| {
-                    let (game, running) = witness::new_game(&state.config, &mut state.rng);
-                    state.game = game;
-                    PauseOutput::Restart(running)
+                    let (game, new_running) = witness::new_game(&state.config, &mut state.rng);
+                    let stars = Stars::new(&mut state.rng);
+                    state.instance = Some(GameInstance { game, stars });
+                    PauseOutput::Restart { new_running }
                 })),
                 Options => Ei::E(never()),
                 Help => Ei::F(never()),
@@ -250,7 +353,7 @@ fn pause() -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutpu
                 Epilogue => Ei::H(never()),
                 Clear => Ei::I(never()),
             },
-            Err(Escape) => Ei::A(val_once(PauseOutput::Continue)),
+            Err(Escape) => Ei::A(val_once(PauseOutput::Continue { running })),
         })
 }
 
@@ -279,9 +382,11 @@ pub fn game_loop_component(
                 }
                 Witness::GameOver => Ei::C(val_once(GameExitReason::GameOver).break_()),
             },
-            Paused(running) => Ei::D(pause().map(|pause_output| match pause_output {
-                PauseOutput::Continue => LoopControl::Continue(Playing(running.into_witness())),
-                PauseOutput::Restart(new_running) => {
+            Paused(running) => Ei::D(pause(running).map(|pause_output| match pause_output {
+                PauseOutput::Continue { running } => {
+                    LoopControl::Continue(Playing(running.into_witness()))
+                }
+                PauseOutput::Restart { new_running } => {
                     LoopControl::Continue(Playing(new_running.into_witness()))
                 }
                 PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
