@@ -98,6 +98,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "000444226fcff248f2bc4c7625be32c63caccfecc2723a2b9f78a7487a49c407"
 
 [[package]]
+name = "ansi-terminal-wip"
+version = "0.1.0"
+dependencies = [
+ "chargrid_ansi_terminal 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "env_logger",
+ "meap",
+ "orbital_decay_app_wip",
+ "orbital_decay_native_wip",
+ "rand",
+]
+
+[[package]]
 name = "approx"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -419,6 +431,19 @@ dependencies = [
  "chargrid_gamepad 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chargrid_render",
+ "libc",
+ "term",
+]
+
+[[package]]
+name = "chargrid_ansi_terminal"
+version = "0.2.0"
+source = "git+https://github.com/gridbugs/chargrid#a6179bd260247f996d21069216c4207824ef180a"
+dependencies = [
+ "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_runtime",
+ "grid_2d",
  "libc",
  "term",
 ]
@@ -2535,7 +2560,7 @@ checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 name = "orbital_decay_ansi_terminal"
 version = "0.1.0"
 dependencies = [
- "chargrid_ansi_terminal",
+ "chargrid_ansi_terminal 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger",
  "orbital_decay_app",
  "orbital_decay_native",
@@ -2631,6 +2656,7 @@ name = "orbital_decay_native_wip"
 version = "0.1.0"
 dependencies = [
  "general_storage_static 0.2.0",
+ "meap",
  "orbital_decay_app_wip",
 ]
 

@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 general_storage_static = { version = "0.2", features = ["file"] }
 orbital_decay_app_wip = { path = "../app-wip", features = ["native"] }
+meap = "0.5"

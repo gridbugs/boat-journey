@@ -10,7 +10,7 @@ mod game_loop;
 mod stars;
 mod tile_3x3;
 
-pub use game_loop::SaveGameStorage;
+pub use game_loop::{RngSeed, SaveGameStorage};
 
 struct AppState {
     game_loop_state: game_loop::GameLoopData,
@@ -18,10 +18,14 @@ struct AppState {
 
 pub struct AppArgs {
     pub save_game_storage: SaveGameStorage,
+    pub rng_seed: RngSeed,
 }
 
 pub fn app(
-    AppArgs { save_game_storage }: AppArgs,
+    AppArgs {
+        save_game_storage,
+        rng_seed,
+    }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {
         omniscient: Config::OMNISCIENT,

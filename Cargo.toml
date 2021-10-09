@@ -16,6 +16,7 @@ members = [
     "native-wip",
     "ggez-wip",
     "wgpu-wip",
+    "ansi-terminal-wip",
 ]
 
 [profile.release]

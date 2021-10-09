@@ -1,11 +1,18 @@
 use chargrid_wgpu::*;
 use orbital_decay_app_wip::{app, AppArgs};
-use orbital_decay_native_wip::NativeCommon;
+use orbital_decay_native_wip::{meap, NativeCommon};
 
 const CELL_SIZE: f64 = 12.;
 
 fn main() {
+    use meap::Parser;
     env_logger::init();
+    let NativeCommon {
+        save_game_storage,
+        rng_seed,
+    } = NativeCommon::parser()
+        .with_help_default()
+        .parse_env_or_exit();
     let context = Context::new(Config {
         font_bytes: FontBytes {
             normal: include_bytes!("./fonts/PxPlus_IBM_CGAthin-with-quadrant-blocks.ttf").to_vec(),
@@ -28,6 +35,8 @@ fn main() {
         underline_top_offset_cell_ratio: 0.8,
         resizable: false,
     });
-    let NativeCommon { save_game_storage } = NativeCommon::new();
-    context.run(app(AppArgs { save_game_storage }));
+    context.run(app(AppArgs {
+        save_game_storage,
+        rng_seed,
+    }));
 }

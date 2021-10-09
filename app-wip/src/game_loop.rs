@@ -13,6 +13,12 @@ use orbital_decay_game::{
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Copy, Debug)]
+pub enum RngSeed {
+    Random,
+    U64(u64),
+}
+
 const STORAGE_FORMAT: format::Bincode = format::Bincode;
 
 pub struct SaveGameStorage {
