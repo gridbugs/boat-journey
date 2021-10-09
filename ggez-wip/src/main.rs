@@ -1,5 +1,6 @@
 use chargrid_ggez::*;
-use orbital_decay_app_wip::app;
+use orbital_decay_app_wip::{app, AppArgs};
+use orbital_decay_native_wip::NativeCommon;
 
 const CELL_SIZE: f64 = 12.;
 
@@ -27,6 +28,6 @@ fn main() {
         underline_top_offset_cell_ratio: 0.8,
         resizable: false,
     });
-
-    context.run(app());
+    let NativeCommon { save_game_storage } = NativeCommon::new();
+    context.run(app(AppArgs { save_game_storage }));
 }

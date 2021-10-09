@@ -4,12 +4,18 @@ use crate::{
     stars::Stars,
 };
 use chargrid::{border::BorderStyle, control_flow::*, input::*, menu, prelude::*};
+use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
     witness::{self, Game, Witness},
     Config,
 };
 use rand_isaac::Isaac64Rng;
+
+pub struct SaveGameStorage {
+    pub handle: StaticStorage,
+    pub key: String,
+}
 
 pub struct GameLoopData {
     game: Game,
@@ -169,6 +175,7 @@ fn upgrade_component(
 enum PauseMenuEntry {
     Resume,
     SaveQuit,
+    Save,
     NewGame,
     Options,
     Help,
@@ -189,6 +196,7 @@ fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<Pause
         };
         add_item(Resume, "Resume", 'r');
         add_item(SaveQuit, "Save and Quit", 'q');
+        add_item(Save, "Save", 's');
         add_item(NewGame, "New Game", 'n');
         add_item(Options, "Options", 'o');
         add_item(Help, "Help", 'h');
@@ -217,7 +225,7 @@ enum PauseOutput {
 
 fn pause() -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
     use PauseMenuEntry::*;
-    either!(Ei = A | B | C | D | E | F | G | H);
+    either!(Ei = A | B | C | D | E | F | G | H | I);
     pause_menu()
         .catch_escape()
         .and_then(|entry_or_escape| match entry_or_escape {
@@ -227,16 +235,20 @@ fn pause() -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutpu
                     println!("TODO: save");
                     PauseOutput::Quit
                 })),
-                NewGame => Ei::C(on_state(|state: &mut GameLoopData| {
+                Save => Ei::C(on_state(|_state: &mut GameLoopData| {
+                    println!("TODO: save");
+                    PauseOutput::Continue
+                })),
+                NewGame => Ei::D(on_state(|state: &mut GameLoopData| {
                     let (game, running) = witness::new_game(&state.config, &mut state.rng);
                     state.game = game;
                     PauseOutput::Restart(running)
                 })),
-                Options => Ei::D(never()),
-                Help => Ei::E(never()),
-                Prologue => Ei::F(never()),
-                Epilogue => Ei::G(never()),
-                Clear => Ei::H(never()),
+                Options => Ei::E(never()),
+                Help => Ei::F(never()),
+                Prologue => Ei::G(never()),
+                Epilogue => Ei::H(never()),
+                Clear => Ei::I(never()),
             },
             Err(Escape) => Ei::A(val_once(PauseOutput::Continue)),
         })

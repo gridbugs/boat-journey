@@ -2565,11 +2565,8 @@ version = "0.1.0"
 dependencies = [
  "chargrid_ggez",
  "env_logger",
- "general_audio_static",
- "general_storage_static",
- "meap",
  "orbital_decay_app_wip",
- "serde_json",
+ "orbital_decay_native_wip",
 ]
 
 [[package]]
@@ -2582,6 +2579,14 @@ dependencies = [
  "meap",
  "orbital_decay_app",
  "serde_json",
+]
+
+[[package]]
+name = "orbital_decay_native_wip"
+version = "0.1.0"
+dependencies = [
+ "general_storage_static",
+ "orbital_decay_app_wip",
 ]
 
 [[package]]
@@ -2604,11 +2609,8 @@ version = "0.1.0"
 dependencies = [
  "chargrid_wgpu",
  "env_logger",
- "general_audio_static",
- "general_storage_static",
- "meap",
  "orbital_decay_app_wip",
- "serde_json",
+ "orbital_decay_native_wip",
 ]
 
 [[package]]

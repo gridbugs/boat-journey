@@ -10,11 +10,19 @@ mod game_loop;
 mod stars;
 mod tile_3x3;
 
+pub use game_loop::SaveGameStorage;
+
 struct AppState {
     game_loop_state: game_loop::GameLoopData,
 }
 
-pub fn app() -> impl Component<Output = app::Output, State = ()> {
+pub struct AppArgs {
+    pub save_game_storage: SaveGameStorage,
+}
+
+pub fn app(
+    AppArgs { save_game_storage }: AppArgs,
+) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {
         omniscient: None,
         demo: false,
