@@ -10,5 +10,24 @@ The `WINIT_X11_SCALE_FACTOR` environment variable overrides the HIDPI scaling fa
 
 For example:
 ```
-WINIT_X11_SCALE_FACTOR=3 cargo run --manifest-path graphical/Cargo.toml
+WINIT_X11_SCALE_FACTOR=3 cargo run --manifest-path wgpu/Cargo.toml
+```
+
+## Nix
+
+To set up a shell with stable rust:
+```
+nix-shell
+```
+
+For nightly rust:
+```
+nix-shell nightly.nix
+```
+
+## Debug Environment
+
+Source the script `debug_env_linux.sh` to set cargo environment variables for faster builds:
+```
+. debug_env_linux.sh
 ```
