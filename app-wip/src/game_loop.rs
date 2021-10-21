@@ -63,6 +63,20 @@ impl SaveGameStorage {
             Ok(instance) => Some(instance),
         }
     }
+
+    fn clear(&mut self) {
+        if self.handle.exists(&self.key) {
+            if let Err(e) = self.handle.remove(&self.key) {
+                use general_storage_static::RemoveError;
+                match e {
+                    RemoveError::IoError(e) => {
+                        log::error!("Error while removing data: {}", e)
+                    }
+                    RemoveError::NoSuchKey => (),
+                }
+            }
+        }
+    }
 }
 
 struct GameInstance {
@@ -110,26 +124,28 @@ impl GameLoopData {
     pub fn new(
         config: Config,
         save_game_storage: SaveGameStorage,
-        mut rng: Isaac64Rng,
-    ) -> (Self, witness::Running) {
-        let (instance, running) = match save_game_storage.load() {
-            Some(instance) => instance.into_game_instance(),
-            None => {
-                let (game, running) = witness::new_game(&config, &mut rng);
-                let stars = Stars::new(&mut rng);
-                (GameInstance { game, stars }, running)
+        rng: Isaac64Rng,
+    ) -> (Self, GameLoopState) {
+        let (instance, state) = match save_game_storage.load() {
+            Some(instance) => {
+                let (instance, running) = instance.into_game_instance();
+                (
+                    Some(instance),
+                    GameLoopState::Playing(running.into_witness()),
+                )
             }
+            None => (None, GameLoopState::MainMenu),
         };
         let controls = Controls::default();
         (
             Self {
-                instance: Some(instance),
+                instance,
                 controls,
                 config,
                 save_game_storage,
                 rng,
             },
-            running,
+            state,
         )
     }
 
@@ -141,6 +157,17 @@ impl GameLoopData {
         running
     }
 
+    fn clear_saved_game(&mut self) {
+        self.save_game_storage.clear();
+    }
+
+    fn new_game(&mut self) -> witness::Running {
+        let (game, running) = witness::new_game(&self.config, &mut self.rng);
+        let stars = Stars::new(&mut self.rng);
+        self.instance = Some(GameInstance { game, stars });
+        running
+    }
+
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
         instance
@@ -148,6 +175,7 @@ impl GameLoopData {
             .render_with_visibility(instance.game.inner_ref().visibility_grid(), ctx, fb);
         game::render_game(instance.game.inner_ref(), ctx, fb);
     }
+
     fn has_game_ever_been_won(&self) -> bool {
         // TODO
         true
@@ -191,9 +219,10 @@ impl GameInstanceComponent {
     }
 }
 
-enum GameLoopState {
+pub enum GameLoopState {
     Paused(witness::Running),
     Playing(Witness),
+    MainMenu,
 }
 
 impl Component for GameInstanceComponent {
@@ -278,6 +307,60 @@ fn upgrade_component(
 }
 
 #[derive(Clone)]
+enum MainMenuEntry {
+    NewGame,
+    Options,
+    Help,
+    Prologue,
+    Epilogue,
+    Quit,
+}
+
+fn main_menu() -> CF<impl Component<State = GameLoopData, Output = Option<MainMenuEntry>>> {
+    on_state_then(|state: &mut GameLoopData| {
+        use menu::builder::*;
+        use MainMenuEntry::*;
+        let mut builder = menu_builder();
+        let mut add_item = |entry, name, ch: char| {
+            builder.add_item_mut(
+                item(entry, identifier::simple(&format!("({}) {}", ch, name))).add_hotkey_char(ch),
+            );
+        };
+        add_item(NewGame, "New Game", 'n');
+        add_item(Options, "Options", 'o');
+        add_item(Help, "Help", 'h');
+        add_item(Prologue, "Prologue", 'p');
+        if state.has_game_ever_been_won() {
+            add_item(Epilogue, "Epilogue", 'e');
+        }
+        add_item(Quit, "Quit", 'q');
+        builder.build_cf().border(BorderStyle::default()).centre()
+    })
+}
+
+enum MainMenuOutput {
+    NewGame { new_running: witness::Running },
+    Quit,
+}
+
+fn main_menu_loop() -> CF<impl Component<State = GameLoopData, Output = Option<MainMenuOutput>>> {
+    use MainMenuEntry::*;
+    either!(Ei = A | B | C | D | E | F);
+    main_menu().and_then(|entry| match entry {
+        NewGame => Ei::A(on_state(|state: &mut GameLoopData| {
+            MainMenuOutput::NewGame {
+                new_running: state.new_game(),
+            }
+        })),
+        Options => Ei::B(never()),
+        Help => Ei::C(never()),
+        Prologue => Ei::D(never()),
+        Epilogue => Ei::E(never()),
+        Quit => Ei::F(val_once(MainMenuOutput::Quit)),
+    })
+}
+
+#[derive(Clone)]
 enum PauseMenuEntry {
     Resume,
     SaveQuit,
@@ -326,6 +409,7 @@ fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<Pause
 enum PauseOutput {
     Continue { running: witness::Running },
     Restart { new_running: witness::Running },
+    Clear,
     Quit,
 }
 
@@ -343,21 +427,20 @@ fn pause(
                     state.save_instance(running);
                     PauseOutput::Quit
                 })),
-                Save => Ei::C(on_state(|state: &mut GameLoopData| {
-                    let running = state.save_instance(running);
-                    PauseOutput::Continue { running }
+                Save => Ei::C(on_state(|state: &mut GameLoopData| PauseOutput::Continue {
+                    running: state.save_instance(running),
                 })),
-                NewGame => Ei::D(on_state(|state: &mut GameLoopData| {
-                    let (game, new_running) = witness::new_game(&state.config, &mut state.rng);
-                    let stars = Stars::new(&mut state.rng);
-                    state.instance = Some(GameInstance { game, stars });
-                    PauseOutput::Restart { new_running }
+                NewGame => Ei::D(on_state(|state: &mut GameLoopData| PauseOutput::Restart {
+                    new_running: state.new_game(),
                 })),
                 Options => Ei::E(never()),
                 Help => Ei::F(never()),
                 Prologue => Ei::G(never()),
                 Epilogue => Ei::H(never()),
-                Clear => Ei::I(never()),
+                Clear => Ei::I(on_state(|state: &mut GameLoopData| {
+                    state.clear_saved_game();
+                    PauseOutput::Clear
+                })),
             },
             Err(Escape) => Ei::A(val_once(PauseOutput::Continue { running })),
         })
@@ -375,11 +458,11 @@ pub enum GameExitReason {
 }
 
 pub fn game_loop_component(
-    running: witness::Running,
+    initial_state: GameLoopState,
 ) -> CF<impl Component<State = GameLoopData, Output = Option<GameExitReason>>> {
     use GameLoopState::*;
-    loop_(Playing(Witness::Running(running)), |state| {
-        either!(Ei = A | B | C | D);
+    loop_(initial_state, |state| {
+        either!(Ei = A | B | C | D | E);
         match state {
             Playing(witness) => match witness {
                 Witness::Running(running) => Ei::A(game_instance_component(running).continue_()),
@@ -395,8 +478,17 @@ pub fn game_loop_component(
                 PauseOutput::Restart { new_running } => {
                     LoopControl::Continue(Playing(new_running.into_witness()))
                 }
+                PauseOutput::Clear => LoopControl::Continue(MainMenu),
                 PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
             })),
+            MainMenu => Ei::E(
+                main_menu_loop().map(|main_menu_output| match main_menu_output {
+                    MainMenuOutput::NewGame { new_running } => {
+                        LoopControl::Continue(Playing(new_running.into_witness()))
+                    }
+                    MainMenuOutput::Quit => LoopControl::Break(GameExitReason::Quit),
+                }),
+            ),
         }
     })
 }

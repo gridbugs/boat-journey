@@ -35,9 +35,10 @@ pub fn app(
         debug: true,
     };
     let rng = Isaac64Rng::from_entropy();
-    let (game_loop_state, running) = game_loop::GameLoopData::new(config, save_game_storage, rng);
+    let (game_loop_state, initial_state) =
+        game_loop::GameLoopData::new(config, save_game_storage, rng);
     let state = AppState { game_loop_state };
-    game_loop::game_loop_component(running)
+    game_loop::game_loop_component(initial_state)
         .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))
         .map(|_| app::Exit)
         .with_state(state)
