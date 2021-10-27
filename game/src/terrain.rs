@@ -161,6 +161,7 @@ pub fn from_str(s: &str, player_data: EntityData) -> Terrain {
                     };
                     player = Some(world.insert_entity_data(location, player_data.take().unwrap()));
                 }
+                ' ' => (),
                 _ => log::warn!(
                     "unexpected char in terrain: {} ({})",
                     ch.escape_unicode(),

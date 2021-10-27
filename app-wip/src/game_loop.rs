@@ -10,16 +10,39 @@ use orbital_decay_game::{
     witness::{self, Game, RunningGame, Witness},
     Config,
 };
+use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug)]
-pub enum RngSeed {
-    Random,
-    U64(u64),
+const STORAGE_FORMAT: format::Bincode = format::Bincode;
+
+/// A generator of RNG seeds which is itself implemented with an RNG. The initial seed is used to
+/// seed the internal RNG, and also is the first seed produced. This is because it's important that
+/// the user can specify a value that will seed the initial game's RNG (for debugging reasons).
+struct RngSeedSource {
+    next_seed: u64,
+    seed_rng: Isaac64Rng,
 }
 
-const STORAGE_FORMAT: format::Bincode = format::Bincode;
+impl RngSeedSource {
+    fn new(first_seed: u64) -> Self {
+        let seed_rng = Isaac64Rng::seed_from_u64(first_seed);
+        Self {
+            next_seed: first_seed,
+            seed_rng,
+        }
+    }
+
+    fn next_seed(&mut self) -> u64 {
+        let seed = self.next_seed;
+        self.next_seed = self.seed_rng.gen();
+        #[cfg(feature = "print_stdout")]
+        println!("RNG Seed: {}", seed);
+        #[cfg(feature = "print_log")]
+        log::info!("RNG Seed: {}", seed);
+        seed
+    }
+}
 
 pub struct SaveGameStorage {
     pub handle: StaticStorage,
@@ -117,14 +140,14 @@ pub struct GameLoopData {
     controls: Controls,
     config: Config,
     save_game_storage: SaveGameStorage,
-    rng: Isaac64Rng,
+    rng_seed_source: RngSeedSource,
 }
 
 impl GameLoopData {
     pub fn new(
         config: Config,
         save_game_storage: SaveGameStorage,
-        rng: Isaac64Rng,
+        first_rng_seed: u64,
     ) -> (Self, GameLoopState) {
         let (instance, state) = match save_game_storage.load() {
             Some(instance) => {
@@ -143,7 +166,7 @@ impl GameLoopData {
                 controls,
                 config,
                 save_game_storage,
-                rng,
+                rng_seed_source: RngSeedSource::new(first_rng_seed),
             },
             state,
         )
@@ -162,8 +185,9 @@ impl GameLoopData {
     }
 
     fn new_game(&mut self) -> witness::Running {
-        let (game, running) = witness::new_game(&self.config, &mut self.rng);
-        let stars = Stars::new(&mut self.rng);
+        let mut rng = Isaac64Rng::seed_from_u64(self.rng_seed_source.next_seed());
+        let (game, running) = witness::new_game(&self.config, &mut rng);
+        let stars = Stars::new(&mut rng);
         self.instance = Some(GameInstance { game, stars });
         running
     }

@@ -8,10 +8,13 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-orbital_decay_app_wip = { path = "../app-wip", features = ["web"]}
+orbital_decay_app_wip = { path = "../app-wip", features = ["web", "print_log"]}
 chargrid_web = { git = "https://github.com/gridbugs/chargrid" }
 general_storage_static = { version = "0.2", features = ["web"] }
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
 wasm-logger = "0.2"
 log = "0.4"
+getrandom = { version = "0.2", features = ["js"] }
+rand = "0.8"
+rand_isaac = "0.3"

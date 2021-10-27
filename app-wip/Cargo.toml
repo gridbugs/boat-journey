@@ -5,8 +5,10 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2018"
 
 [features]
+print_stdout = []
+print_log = []
 native = ["general_audio_static/native", "general_storage_static/file"]
-web = ["general_audio_static/web", "general_storage_static/web", "getrandom/js"]
+web = ["general_audio_static/web", "general_storage_static/web"]
 
 [dependencies]
 orbital_decay_game = { path = "../game" }
@@ -21,5 +23,4 @@ line_2d = "0.5"
 grid_2d = { version = "0.15", features = ["serialize"] }
 direction = { version = "0.18", features = ["serialize", "rand"] }
 maplit = "1.0"
-getrandom = "0.2"
 chargrid = { git = "https://github.com/gridbugs/chargrid", features = ["serialize", "gamepad"] }

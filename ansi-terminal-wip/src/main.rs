@@ -1,7 +1,6 @@
 use chargrid_ansi_terminal::{col_encode, Context};
-use orbital_decay_app_wip::{app, AppArgs, RngSeed};
+use orbital_decay_app_wip::{app, AppArgs};
 use orbital_decay_native_wip::NativeCommon;
-use rand::Rng;
 
 enum ColEncodeChoice {
     TrueColour,
@@ -52,16 +51,10 @@ fn main() {
             },
         col_encode_choice,
     } = Args::parser().with_help_default().parse_env_or_exit();
-    // We won't be able to print once the context is created. Choose the initial rng
-    // seed before starting the game so it can be logged in case of error.
-    let rng_seed_u64 = match rng_seed {
-        RngSeed::U64(seed) => seed,
-        RngSeed::Random => rand::thread_rng().gen(),
-    };
     if let ColEncodeChoice::TrueColour = col_encode_choice {
         println!("Running in true-colour mode.\nIf colours look wrong, run with `--rgb` or try a different terminal emulator.");
     }
-    println!("Initial RNG Seed: {}", rng_seed_u64);
+    println!("Initial RNG Seed: {}", rng_seed);
     let context = Context::new().unwrap();
     let app = app(AppArgs {
         save_game_storage,

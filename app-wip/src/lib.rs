@@ -1,7 +1,5 @@
 use chargrid::{control_flow::*, core::*};
 use orbital_decay_game::Config;
-use rand::SeedableRng;
-use rand_isaac::Isaac64Rng;
 
 mod colours;
 mod controls;
@@ -10,7 +8,7 @@ mod game_loop;
 mod stars;
 mod tile_3x3;
 
-pub use game_loop::{RngSeed, SaveGameStorage};
+pub use game_loop::SaveGameStorage;
 
 struct AppState {
     game_loop_state: game_loop::GameLoopData,
@@ -18,7 +16,7 @@ struct AppState {
 
 pub struct AppArgs {
     pub save_game_storage: SaveGameStorage,
-    pub rng_seed: RngSeed,
+    pub rng_seed: u64,
     pub omniscient: bool,
 }
 
@@ -34,9 +32,8 @@ pub fn app(
         demo: false,
         debug: true,
     };
-    let rng = Isaac64Rng::from_entropy();
     let (game_loop_state, initial_state) =
-        game_loop::GameLoopData::new(config, save_game_storage, rng);
+        game_loop::GameLoopData::new(config, save_game_storage, rng_seed);
     let state = AppState { game_loop_state };
     game_loop::game_loop_component(initial_state)
         .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))

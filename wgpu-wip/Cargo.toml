@@ -7,5 +7,5 @@ edition = "2018"
 [dependencies]
 chargrid_wgpu = { git = "https://github.com/gridbugs/chargrid", features = ["gamepad"] }
 env_logger = "0.9"
-orbital_decay_app_wip = { path = "../app-wip" }
+orbital_decay_app_wip = { path = "../app-wip", features = ["print_stdout"] }
 orbital_decay_native_wip = { path = "../native-wip" }
