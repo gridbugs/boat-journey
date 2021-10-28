@@ -8,7 +8,7 @@ mod game_loop;
 mod stars;
 mod tile_3x3;
 
-pub use game_loop::SaveGameStorage;
+pub use game_loop::{InitialRngSeed, SaveGameStorage};
 
 struct AppState {
     game_loop_state: game_loop::GameLoopData,
@@ -16,14 +16,14 @@ struct AppState {
 
 pub struct AppArgs {
     pub save_game_storage: SaveGameStorage,
-    pub rng_seed: u64,
+    pub initial_rng_seed: InitialRngSeed,
     pub omniscient: bool,
 }
 
 pub fn app(
     AppArgs {
         save_game_storage,
-        rng_seed,
+        initial_rng_seed,
         omniscient,
     }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
@@ -33,7 +33,7 @@ pub fn app(
         debug: true,
     };
     let (game_loop_state, initial_state) =
-        game_loop::GameLoopData::new(config, save_game_storage, rng_seed);
+        game_loop::GameLoopData::new(config, save_game_storage, initial_rng_seed);
     let state = AppState { game_loop_state };
     game_loop::game_loop_component(initial_state)
         .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))

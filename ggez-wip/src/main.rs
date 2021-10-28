@@ -9,7 +9,7 @@ fn main() {
     env_logger::init();
     let NativeCommon {
         save_game_storage,
-        rng_seed,
+        initial_rng_seed,
         omniscient,
     } = NativeCommon::parser()
         .with_help_default()
@@ -38,7 +38,7 @@ fn main() {
     });
     context.run(app(AppArgs {
         save_game_storage,
-        rng_seed,
+        initial_rng_seed,
         omniscient,
     }));
 }

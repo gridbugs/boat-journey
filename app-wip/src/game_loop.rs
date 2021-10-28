@@ -16,19 +16,25 @@ use serde::{Deserialize, Serialize};
 
 const STORAGE_FORMAT: format::Bincode = format::Bincode;
 
-/// A generator of RNG seeds which is itself implemented with an RNG. The initial seed is used to
-/// seed the internal RNG, and also is the first seed produced. This is because it's important that
-/// the user can specify a value that will seed the initial game's RNG (for debugging reasons).
+pub enum InitialRngSeed {
+    U64(u64),
+    Random,
+}
+
 struct RngSeedSource {
     next_seed: u64,
     seed_rng: Isaac64Rng,
 }
 
 impl RngSeedSource {
-    fn new(first_seed: u64) -> Self {
-        let seed_rng = Isaac64Rng::seed_from_u64(first_seed);
+    fn new(initial_rng_seed: InitialRngSeed) -> Self {
+        let mut seed_rng = Isaac64Rng::from_entropy();
+        let next_seed = match initial_rng_seed {
+            InitialRngSeed::U64(seed) => seed,
+            InitialRngSeed::Random => seed_rng.gen(),
+        };
         Self {
-            next_seed: first_seed,
+            next_seed,
             seed_rng,
         }
     }
@@ -147,7 +153,7 @@ impl GameLoopData {
     pub fn new(
         config: Config,
         save_game_storage: SaveGameStorage,
-        first_rng_seed: u64,
+        initial_rng_seed: InitialRngSeed,
     ) -> (Self, GameLoopState) {
         let (instance, state) = match save_game_storage.load() {
             Some(instance) => {
@@ -166,7 +172,7 @@ impl GameLoopData {
                 controls,
                 config,
                 save_game_storage,
-                rng_seed_source: RngSeedSource::new(first_rng_seed),
+                rng_seed_source: RngSeedSource::new(initial_rng_seed),
             },
             state,
         )

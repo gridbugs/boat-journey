@@ -3,15 +3,14 @@ use general_storage_static::{
     StaticStorage,
 };
 pub use meap;
-use orbital_decay_app_wip::SaveGameStorage;
-use rand::Rng;
+use orbital_decay_app_wip::{InitialRngSeed, SaveGameStorage};
 
 const DEFAULT_SAVE_FILE: &str = "save";
 const DEFAULT_NEXT_TO_EXE_SAVE_DIR: &str = "save";
 
 pub struct NativeCommon {
     pub save_game_storage: SaveGameStorage,
-    pub rng_seed: u64,
+    pub initial_rng_seed: InitialRngSeed,
     pub omniscient: bool,
 }
 impl NativeCommon {
@@ -26,7 +25,7 @@ impl NativeCommon {
                 delete_save = flag("delete-save").desc("delete save game file");
                 omniscient = flag("omniscient").desc("enable omniscience");
             } in {{
-                let rng_seed = rng_seed.unwrap_or_else(|| rand::thread_rng().gen());
+                let initial_rng_seed = rng_seed.map(InitialRngSeed::U64).unwrap_or(InitialRngSeed::Random);
                 let mut file_storage = StaticStorage::new(
                     FileStorage::next_to_exe(save_dir, IfDirectoryMissing::Create)
                     .expect("failed to open directory"),
@@ -42,7 +41,7 @@ impl NativeCommon {
                     key: save_file,
                 };
                 Self {
-                    rng_seed,
+                    initial_rng_seed,
                     save_game_storage,
                     omniscient,
                 }

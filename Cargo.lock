@@ -2615,6 +2615,7 @@ dependencies = [
  "direction",
  "general_audio_static",
  "general_storage_static 0.2.0",
+ "getrandom",
  "grid_2d",
  "line_2d",
  "log",
@@ -2678,7 +2679,6 @@ dependencies = [
  "log",
  "meap",
  "orbital_decay_app_wip",
- "rand",
 ]
 
 [[package]]
@@ -2702,11 +2702,8 @@ dependencies = [
  "chargrid_web 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "console_error_panic_hook",
  "general_storage_static 0.2.0",
- "getrandom",
  "log",
  "orbital_decay_app_wip",
- "rand",
- "rand_isaac",
  "wasm-bindgen",
  "wasm-logger",
 ]
