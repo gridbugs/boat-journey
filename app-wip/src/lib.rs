@@ -6,6 +6,7 @@ mod controls;
 mod game;
 mod game_loop;
 mod stars;
+mod text;
 mod tile_3x3;
 
 pub use game_loop::{InitialRngSeed, SaveGameStorage};

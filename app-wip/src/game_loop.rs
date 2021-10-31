@@ -2,6 +2,7 @@ use crate::{
     controls::{AppInput, Controls},
     game,
     stars::Stars,
+    text,
 };
 use chargrid::{border::BorderStyle, control_flow::*, input::*, menu, prelude::*};
 use general_storage_static::{format, StaticStorage};
@@ -370,7 +371,16 @@ fn main_menu() -> CF<impl Component<State = GameLoopData, Output = Option<MainMe
 
 enum MainMenuOutput {
     NewGame { new_running: witness::Running },
+    MainMenu,
     Quit,
+}
+
+fn prologue() -> CF<impl Component<State = GameLoopData, Output = Option<()>>> {
+    text::prologue().ignore_state().press_any_key()
+}
+
+fn epilogue() -> CF<impl Component<State = GameLoopData, Output = Option<()>>> {
+    unit().press_any_key()
 }
 
 fn main_menu_loop() -> CF<impl Component<State = GameLoopData, Output = Option<MainMenuOutput>>> {
@@ -384,8 +394,8 @@ fn main_menu_loop() -> CF<impl Component<State = GameLoopData, Output = Option<M
         })),
         Options => Ei::B(never()),
         Help => Ei::C(never()),
-        Prologue => Ei::D(never()),
-        Epilogue => Ei::E(never()),
+        Prologue => Ei::D(prologue().map(|()| MainMenuOutput::MainMenu)),
+        Epilogue => Ei::E(epilogue().map(|()| MainMenuOutput::MainMenu)),
         Quit => Ei::F(val_once(MainMenuOutput::Quit)),
     })
 }
@@ -439,7 +449,8 @@ fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<Pause
 enum PauseOutput {
     Continue { running: witness::Running },
     Restart { new_running: witness::Running },
-    Clear,
+    MainMenu,
+    PauseMenu { running: witness::Running },
     Quit,
 }
 
@@ -465,11 +476,11 @@ fn pause(
                 })),
                 Options => Ei::E(never()),
                 Help => Ei::F(never()),
-                Prologue => Ei::G(never()),
-                Epilogue => Ei::H(never()),
+                Prologue => Ei::G(prologue().map(|()| PauseOutput::PauseMenu { running })),
+                Epilogue => Ei::H(epilogue().map(|()| PauseOutput::PauseMenu { running })),
                 Clear => Ei::I(on_state(|state: &mut GameLoopData| {
                     state.clear_saved_game();
-                    PauseOutput::Clear
+                    PauseOutput::MainMenu
                 })),
             },
             Err(Escape) => Ei::A(val_once(PauseOutput::Continue { running })),
@@ -508,7 +519,8 @@ pub fn game_loop_component(
                 PauseOutput::Restart { new_running } => {
                     LoopControl::Continue(Playing(new_running.into_witness()))
                 }
-                PauseOutput::Clear => LoopControl::Continue(MainMenu),
+                PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
+                PauseOutput::PauseMenu { running } => LoopControl::Continue(Paused(running)),
                 PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
             })),
             MainMenu => Ei::E(
@@ -516,6 +528,7 @@ pub fn game_loop_component(
                     MainMenuOutput::NewGame { new_running } => {
                         LoopControl::Continue(Playing(new_running.into_witness()))
                     }
+                    MainMenuOutput::MainMenu => LoopControl::Continue(MainMenu),
                     MainMenuOutput::Quit => LoopControl::Break(GameExitReason::Quit),
                 }),
             ),
