@@ -375,12 +375,10 @@ enum MainMenuOutput {
     Quit,
 }
 
-fn prologue() -> CF<impl Component<State = GameLoopData, Output = Option<()>>> {
-    text::prologue().ignore_state().press_any_key()
-}
-
 fn epilogue() -> CF<impl Component<State = GameLoopData, Output = Option<()>>> {
-    unit().press_any_key()
+    text::epilogue1()
+        .into_component()
+        .and_then(|()| text::epilogue2().into_component())
 }
 
 fn main_menu_loop() -> CF<impl Component<State = GameLoopData, Output = Option<MainMenuOutput>>> {
@@ -393,8 +391,16 @@ fn main_menu_loop() -> CF<impl Component<State = GameLoopData, Output = Option<M
             }
         })),
         Options => Ei::B(never()),
-        Help => Ei::C(never()),
-        Prologue => Ei::D(prologue().map(|()| MainMenuOutput::MainMenu)),
+        Help => Ei::C(
+            text::help()
+                .into_component()
+                .map(|()| MainMenuOutput::MainMenu),
+        ),
+        Prologue => Ei::D(
+            text::prologue()
+                .into_component()
+                .map(|()| MainMenuOutput::MainMenu),
+        ),
         Epilogue => Ei::E(epilogue().map(|()| MainMenuOutput::MainMenu)),
         Quit => Ei::F(val_once(MainMenuOutput::Quit)),
     })
@@ -475,8 +481,16 @@ fn pause(
                     new_running: state.new_game(),
                 })),
                 Options => Ei::E(never()),
-                Help => Ei::F(never()),
-                Prologue => Ei::G(prologue().map(|()| PauseOutput::PauseMenu { running })),
+                Help => Ei::F(
+                    text::help()
+                        .into_component()
+                        .map(|()| PauseOutput::PauseMenu { running }),
+                ),
+                Prologue => Ei::G(
+                    text::prologue()
+                        .into_component()
+                        .map(|()| PauseOutput::PauseMenu { running }),
+                ),
                 Epilogue => Ei::H(epilogue().map(|()| PauseOutput::PauseMenu { running })),
                 Clear => Ei::I(on_state(|state: &mut GameLoopData| {
                     state.clear_saved_game();

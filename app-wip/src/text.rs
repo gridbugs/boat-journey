@@ -7,10 +7,26 @@ use chargrid::{
 
 pub struct TextOverlay {
     height: u32,
+    text: Text,
+}
+
+impl TextOverlay {
+    pub fn into_component<S>(self) -> CF<impl Component<State = S, Output = Option<()>>> {
+        cf(TextOverlayWordWrapped {
+            height: self.height,
+            text: self.text.wrap_word(),
+        })
+        .ignore_state()
+        .press_any_key()
+    }
+}
+
+struct TextOverlayWordWrapped {
+    height: u32,
     text: TextWordWrapped,
 }
 
-impl Component for TextOverlay {
+impl Component for TextOverlayWordWrapped {
     type Output = ();
     type State = ();
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
@@ -26,7 +42,7 @@ impl Component for TextOverlay {
     }
 }
 
-pub fn prologue() -> CF<TextOverlay> {
+pub fn prologue() -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -57,11 +73,11 @@ pub fn prologue() -> CF<TextOverlay> {
         t("\n\n\
             Better make those odds 6 to 1...", normal),
             t("\n\n\n\n\n\nPress any key...", faint),
-    ]).wrap_word();
-    cf(TextOverlay { height: 40, text })
+    ]);
+    TextOverlay { height: 40, text }
 }
 
-pub fn help() -> CF<TextOverlay> {
+pub fn help() -> TextOverlay {
     let normal = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(false);
@@ -109,11 +125,11 @@ pub fn help() -> CF<TextOverlay> {
         t("Fire Ranged Weapon Slot 2: A/Cross\n"),
         t("Fire Ranged Weapon Slot 2: B/Circle\n"),
         f("\n\n\n\n\nPress any key..."),
-        ]).wrap_word();
-    cf(TextOverlay { height: 52, text })
+        ]);
+    TextOverlay { height: 52, text }
 }
 
-pub fn epilogue1() -> CF<TextOverlay> {
+pub fn epilogue1() -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -152,12 +168,11 @@ pub fn epilogue1() -> CF<TextOverlay> {
         ),
         t(" you just put down. Now sign here.", normal),
         t("\n\n\n\n\n\nPress any key...", faint),
-    ])
-    .wrap_word();
-    cf(TextOverlay { height: 30, text })
+    ]);
+    TextOverlay { height: 30, text }
 }
 
-pub fn epilogue2() -> CF<TextOverlay> {
+pub fn epilogue2() -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -200,6 +215,6 @@ pub fn epilogue2() -> CF<TextOverlay> {
         ),
         t("\n\n\n\n\n\nPress any key...", faint),
 
-        ]).wrap_word();
-    cf(TextOverlay { height: 35, text })
+        ]);
+    TextOverlay { height: 35, text }
 }
