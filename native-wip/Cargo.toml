@@ -2,7 +2,7 @@
 name = "orbital_decay_native_wip"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 general_storage_static = { version = "0.2", features = ["file"] }

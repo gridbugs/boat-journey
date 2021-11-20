@@ -2,7 +2,7 @@
 name = "orbital_decay_app"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
-edition = "2018"
+edition = "2021"
 
 [features]
 native = ["general_audio_static/native", "general_storage_static/file"]
@@ -12,7 +12,7 @@ web = ["general_audio_static/web", "general_storage_static/web", "getrandom/js"]
 orbital_decay_game = { path = "../game" }
 log = "0.4"
 chargrid = { version = "0.4", features = ["serialize", "gamepad"] }
-general_storage_static = { version = "0.1", features = ["bincode", "json"] }
+general_storage_static = { version = "0.2", features = ["bincode", "json"] }
 general_audio_static = "0.3"
 serde = { version = "1.0", features = ["serde_derive"] }
 rand = "0.8"

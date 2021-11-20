@@ -2,7 +2,7 @@
 name = "orbital_decay_ggez_wip"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 chargrid_ggez = { git = "https://github.com/gridbugs/chargrid", features = ["gamepad"] }
