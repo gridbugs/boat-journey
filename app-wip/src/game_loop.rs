@@ -460,6 +460,19 @@ enum PauseOutput {
     Quit,
 }
 
+fn pause2(
+    running: witness::Running,
+) -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
+    loop_((), |()| {
+        pause_menu()
+            .catch_escape()
+            .and_then(|entry_or_escape| match entry_or_escape {
+                Ok(entry) => val_once(PauseOutput::Quit).break_(),
+                Err(Escape) => val_once(PauseOutput::Quit).break_(),
+            })
+    })
+}
+
 fn pause(
     running: witness::Running,
 ) -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
