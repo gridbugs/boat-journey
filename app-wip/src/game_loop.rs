@@ -453,24 +453,10 @@ fn pause_menu() -> CF<impl Component<State = GameLoopData, Output = Option<Pause
 }
 
 enum PauseOutput {
-    Continue { running: witness::Running },
-    Restart { new_running: witness::Running },
+    ContinueGame { running: witness::Running },
+    RestartGame { new_running: witness::Running },
     MainMenu,
-    PauseMenu { running: witness::Running },
     Quit,
-}
-
-fn pause2(
-    running: witness::Running,
-) -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
-    loop_((), |()| {
-        pause_menu()
-            .catch_escape()
-            .and_then(|entry_or_escape| match entry_or_escape {
-                Ok(entry) => val_once(PauseOutput::Quit).break_(),
-                Err(Escape) => val_once(PauseOutput::Quit).break_(),
-            })
-    })
 }
 
 fn pause(
@@ -478,40 +464,54 @@ fn pause(
 ) -> CF<impl Component<State = GameLoopData, Output = Option<PauseOutput>>> {
     use PauseMenuEntry::*;
     either!(Ei = A | B | C | D | E | F | G | H | I);
-    pause_menu()
-        .catch_escape()
-        .and_then(|entry_or_escape| match entry_or_escape {
-            Ok(entry) => match entry {
-                Resume => Ei::A(val_once(PauseOutput::Continue { running })),
-                SaveQuit => Ei::B(on_state(|state: &mut GameLoopData| {
-                    state.save_instance(running);
-                    PauseOutput::Quit
-                })),
-                Save => Ei::C(on_state(|state: &mut GameLoopData| PauseOutput::Continue {
-                    running: state.save_instance(running),
-                })),
-                NewGame => Ei::D(on_state(|state: &mut GameLoopData| PauseOutput::Restart {
-                    new_running: state.new_game(),
-                })),
-                Options => Ei::E(never()),
-                Help => Ei::F(
-                    text::help()
-                        .into_component()
-                        .map(|()| PauseOutput::PauseMenu { running }),
-                ),
-                Prologue => Ei::G(
-                    text::prologue()
-                        .into_component()
-                        .map(|()| PauseOutput::PauseMenu { running }),
-                ),
-                Epilogue => Ei::H(epilogue().map(|()| PauseOutput::PauseMenu { running })),
-                Clear => Ei::I(on_state(|state: &mut GameLoopData| {
-                    state.clear_saved_game();
-                    PauseOutput::MainMenu
-                })),
-            },
-            Err(Escape) => Ei::A(val_once(PauseOutput::Continue { running })),
-        })
+    loop_(running, |running| {
+        pause_menu()
+            .catch_escape()
+            .and_then(|entry_or_escape| match entry_or_escape {
+                Ok(entry) => match entry {
+                    Resume => Ei::A(val_once(PauseOutput::ContinueGame { running }).break_()),
+                    SaveQuit => Ei::B(
+                        on_state(|state: &mut GameLoopData| {
+                            state.save_instance(running);
+                            PauseOutput::Quit
+                        })
+                        .break_(),
+                    ),
+                    Save => Ei::C(
+                        on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                            running: state.save_instance(running),
+                        })
+                        .break_(),
+                    ),
+                    NewGame => Ei::D(
+                        on_state(|state: &mut GameLoopData| PauseOutput::RestartGame {
+                            new_running: state.new_game(),
+                        })
+                        .break_(),
+                    ),
+                    Options => Ei::E(never()),
+                    Help => Ei::F(
+                        text::help()
+                            .into_component()
+                            .map(|()| LoopControl::Continue(running)),
+                    ),
+                    Prologue => Ei::G(
+                        text::prologue()
+                            .into_component()
+                            .map(|()| LoopControl::Continue(running)),
+                    ),
+                    Epilogue => Ei::H(epilogue().map(|()| LoopControl::Continue(running))),
+                    Clear => Ei::I(
+                        on_state(|state: &mut GameLoopData| {
+                            state.clear_saved_game();
+                            PauseOutput::MainMenu
+                        })
+                        .break_(),
+                    ),
+                },
+                Err(Escape) => Ei::A(val_once(PauseOutput::ContinueGame { running }).break_()),
+            })
+    })
 }
 
 fn game_instance_component(
@@ -540,14 +540,13 @@ pub fn game_loop_component(
                 Witness::GameOver => Ei::C(val_once(GameExitReason::GameOver).break_()),
             },
             Paused(running) => Ei::D(pause(running).map(|pause_output| match pause_output {
-                PauseOutput::Continue { running } => {
+                PauseOutput::ContinueGame { running } => {
                     LoopControl::Continue(Playing(running.into_witness()))
                 }
-                PauseOutput::Restart { new_running } => {
+                PauseOutput::RestartGame { new_running } => {
                     LoopControl::Continue(Playing(new_running.into_witness()))
                 }
                 PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
-                PauseOutput::PauseMenu { running } => LoopControl::Continue(Paused(running)),
                 PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
             })),
             MainMenu => Ei::E(
