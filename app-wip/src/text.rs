@@ -1,6 +1,6 @@
 use crate::colours;
 use chargrid::{
-    control_flow::{cf, CF},
+    control_flow::{boxed_cf, BoxedCF},
     prelude::*,
     text::{StyledString, Text, TextWordWrapped},
 };
@@ -11,8 +11,8 @@ pub struct TextOverlay {
 }
 
 impl TextOverlay {
-    pub fn into_component<S>(self) -> CF<impl Component<State = S, Output = Option<()>>> {
-        cf(TextOverlayWordWrapped {
+    pub fn into_component<S: 'static>(self) -> BoxedCF<Option<()>, S> {
+        boxed_cf(TextOverlayWordWrapped {
             height: self.height,
             text: self.text.wrap_word(),
         })
