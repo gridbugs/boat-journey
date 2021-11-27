@@ -1,10 +1,11 @@
 use crate::{
+    colours,
     controls::{AppInput, Controls},
     game,
     stars::Stars,
     text,
 };
-use chargrid::{border::BorderStyle, control_flow::boxed::*, input::*, menu, prelude::*};
+use chargrid::{border::BorderStyle, control_flow::boxed::*, fade, input::*, menu, prelude::*};
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
@@ -419,9 +420,49 @@ fn pause_menu() -> CF<PauseMenuEntry> {
         use PauseMenuEntry::*;
         let mut builder = menu_builder();
         let mut add_item = |entry, name, ch: char| {
-            builder.add_item_mut(
-                item(entry, identifier::simple(&format!("({}) {}", ch, name))).add_hotkey_char(ch),
-            );
+            let identifier = identifier::dynamic_fn(1, move |ctx| {
+                write!(&mut ctx.component.parts[0].string, "({}) {}", ch, name).unwrap();
+                if ctx.is_selected {
+                    let fade_fg = fade::linear(
+                        ctx.styles_prev[0].foreground.unwrap_or(colours::STRIPE),
+                        colours::WALL_TOP,
+                        Duration::from_millis(128),
+                    );
+                    let fade_bg = fade::linear(
+                        ctx.styles_prev[0]
+                            .background
+                            .unwrap_or(Rgba32::new(0, 0, 0, 0)),
+                        colours::STRIPE,
+                        Duration::from_millis(128),
+                    );
+                    ctx.component.parts[0].style = Style {
+                        bold: Some(true),
+                        foreground: Some(fade_fg.eval(ctx.since_change)),
+                        background: Some(fade_bg.eval(ctx.since_change)),
+                        ..Style::default()
+                    };
+                } else {
+                    let fade_fg = fade::linear(
+                        ctx.styles_prev[0].foreground.unwrap_or(colours::STRIPE),
+                        colours::STRIPE,
+                        Duration::from_millis(128),
+                    );
+                    let fade_bg = fade::linear(
+                        ctx.styles_prev[0]
+                            .background
+                            .unwrap_or(Rgba32::new(0, 0, 0, 0)),
+                        colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
+                        Duration::from_millis(128),
+                    );
+                    ctx.component.parts[0].style = Style {
+                        bold: Some(false),
+                        foreground: Some(fade_fg.eval(ctx.since_change)),
+                        background: Some(fade_bg.eval(ctx.since_change)),
+                        ..Style::default()
+                    };
+                }
+            });
+            builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
         };
         add_item(Resume, "Resume", 'r');
         add_item(SaveQuit, "Save and Quit", 'q');
@@ -437,6 +478,7 @@ fn pause_menu() -> CF<PauseMenuEntry> {
         builder
             .build_cf()
             .border(BorderStyle::default())
+            .fill(colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3))
             .centre()
             .overlay(
                 render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
@@ -448,7 +490,6 @@ fn pause_menu() -> CF<PauseMenuEntry> {
 
 enum PauseOutput {
     ContinueGame { running: witness::Running },
-    RestartGame { new_running: witness::Running },
     MainMenu,
     Quit,
 }
@@ -470,8 +511,8 @@ fn pause(running: witness::Running) -> CF<PauseOutput> {
                         running: state.save_instance(running),
                     })
                     .break_(),
-                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::RestartGame {
-                        new_running: state.new_game(),
+                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                        running: state.new_game(),
                     })
                     .break_(),
                     Options => never(),
@@ -513,9 +554,6 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
         Paused(running) => pause(running).map(|pause_output| match pause_output {
             PauseOutput::ContinueGame { running } => {
                 LoopControl::Continue(Playing(running.into_witness()))
-            }
-            PauseOutput::RestartGame { new_running } => {
-                LoopControl::Continue(Playing(new_running.into_witness()))
             }
             PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
             PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
