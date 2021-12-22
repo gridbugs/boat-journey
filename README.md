@@ -15,14 +15,14 @@ WINIT_X11_SCALE_FACTOR=3 cargo run --manifest-path wgpu/Cargo.toml
 
 ## Nix
 
-To set up a shell with stable rust:
+To set up a shell with an installation of rust and external dependencies:
 ```
 nix-shell
 ```
 
 For nightly rust:
 ```
-nix-shell nightly.nix
+nix-shell nix/nightly.nix
 ```
 
 ## Debug Environment
