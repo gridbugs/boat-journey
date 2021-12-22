@@ -2,4 +2,6 @@
 **/*.rs.bk
 **/*.sw?
 **/*.wasm
-*.zip
+Cargo.lock
+.direnv
+.envrc
