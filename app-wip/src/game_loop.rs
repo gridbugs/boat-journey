@@ -5,7 +5,7 @@ use crate::{
     stars::Stars,
     text,
 };
-use chargrid::{border::BorderStyle, control_flow::boxed::*, fade, input::*, menu, prelude::*};
+use chargrid::{border::BorderStyle, control_flow::boxed::*, input::*, menu, prelude::*};
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
@@ -18,6 +18,43 @@ use serde::{Deserialize, Serialize};
 
 /// An interactive, renderable process yielding a value of type `T`
 pub type CF<T> = BoxedCF<Option<T>, GameLoopData>;
+
+const MENU_BACKGROUND: Rgba32 = colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3);
+const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
+    use menu::identifier::fade_spec::*;
+    FadeSpec {
+        on_select: Fade {
+            to: To {
+                rgba32: Layers {
+                    foreground: colours::WALL_TOP,
+                    background: colours::STRIPE,
+                },
+                bold: true,
+                underline: false,
+            },
+            from: From::current(),
+            durations: Layers {
+                foreground: Duration::from_millis(128),
+                background: Duration::from_millis(128),
+            },
+        },
+        on_deselect: Fade {
+            to: To {
+                rgba32: Layers {
+                    foreground: colours::STRIPE,
+                    background: MENU_BACKGROUND,
+                },
+                bold: false,
+                underline: false,
+            },
+            from: From::current(),
+            durations: Layers {
+                foreground: Duration::from_millis(128),
+                background: Duration::from_millis(128),
+            },
+        },
+    }
+};
 
 const STORAGE_FORMAT: format::Bincode = format::Bincode;
 
@@ -353,9 +390,9 @@ fn main_menu() -> CF<MainMenuEntry> {
         use MainMenuEntry::*;
         let mut builder = menu_builder();
         let mut add_item = |entry, name, ch: char| {
-            builder.add_item_mut(
-                item(entry, identifier::simple(&format!("({}) {}", ch, name))).add_hotkey_char(ch),
-            );
+            let identifier =
+                MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
+            builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
         };
         add_item(NewGame, "New Game", 'n');
         add_item(Options, "Options", 'o');
@@ -420,48 +457,8 @@ fn pause_menu() -> CF<PauseMenuEntry> {
         use PauseMenuEntry::*;
         let mut builder = menu_builder();
         let mut add_item = |entry, name, ch: char| {
-            let identifier = identifier::dynamic_fn(1, move |ctx| {
-                write!(&mut ctx.component.parts[0].string, "({}) {}", ch, name).unwrap();
-                if ctx.is_selected {
-                    let fade_fg = fade::linear(
-                        ctx.styles_prev[0].foreground.unwrap_or(colours::STRIPE),
-                        colours::WALL_TOP,
-                        Duration::from_millis(128),
-                    );
-                    let fade_bg = fade::linear(
-                        ctx.styles_prev[0]
-                            .background
-                            .unwrap_or(Rgba32::new(0, 0, 0, 0)),
-                        colours::STRIPE,
-                        Duration::from_millis(128),
-                    );
-                    ctx.component.parts[0].style = Style {
-                        bold: Some(true),
-                        foreground: Some(fade_fg.eval(ctx.since_change)),
-                        background: Some(fade_bg.eval(ctx.since_change)),
-                        ..Style::default()
-                    };
-                } else {
-                    let fade_fg = fade::linear(
-                        ctx.styles_prev[0].foreground.unwrap_or(colours::STRIPE),
-                        colours::STRIPE,
-                        Duration::from_millis(128),
-                    );
-                    let fade_bg = fade::linear(
-                        ctx.styles_prev[0]
-                            .background
-                            .unwrap_or(Rgba32::new(0, 0, 0, 0)),
-                        colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3),
-                        Duration::from_millis(128),
-                    );
-                    ctx.component.parts[0].style = Style {
-                        bold: Some(false),
-                        foreground: Some(fade_fg.eval(ctx.since_change)),
-                        background: Some(fade_bg.eval(ctx.since_change)),
-                        ..Style::default()
-                    };
-                }
-            });
+            let identifier =
+                MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
             builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
         };
         add_item(Resume, "Resume", 'r');
@@ -478,7 +475,7 @@ fn pause_menu() -> CF<PauseMenuEntry> {
         builder
             .build_cf()
             .border(BorderStyle::default())
-            .fill(colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3))
+            .fill(MENU_BACKGROUND)
             .centre()
             .overlay(
                 render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
