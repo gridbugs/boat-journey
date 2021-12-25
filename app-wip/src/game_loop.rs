@@ -408,7 +408,6 @@ fn main_menu() -> CF<MainMenuEntry> {
 
 enum MainMenuOutput {
     NewGame { new_running: witness::Running },
-    MainMenu,
     Quit,
 }
 
@@ -420,21 +419,18 @@ fn epilogue() -> CF<()> {
 
 fn main_menu_loop() -> CF<MainMenuOutput> {
     use MainMenuEntry::*;
-    main_menu().and_then(|entry| match entry {
-        NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
-            new_running: state.new_game(),
-        }),
-        Options => never(),
-        Help => text::help()
-            .into_component()
-            .map(|()| MainMenuOutput::MainMenu),
-
-        Prologue => text::prologue()
-            .into_component()
-            .map(|()| MainMenuOutput::MainMenu),
-
-        Epilogue => epilogue().map(|()| MainMenuOutput::MainMenu),
-        Quit => val_once(MainMenuOutput::Quit),
+    loop_((), |()| {
+        main_menu().and_then(|entry| match entry {
+            NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
+                new_running: state.new_game(),
+            })
+            .break_(),
+            Options => never().continue_(),
+            Help => text::help().into_component().continue_(),
+            Prologue => text::prologue().into_component().continue_(),
+            Epilogue => epilogue().continue_(),
+            Quit => val_once(MainMenuOutput::Quit).break_(),
+        })
     })
 }
 
@@ -559,7 +555,6 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
             MainMenuOutput::NewGame { new_running } => {
                 LoopControl::Continue(Playing(new_running.into_witness()))
             }
-            MainMenuOutput::MainMenu => LoopControl::Continue(MainMenu),
             MainMenuOutput::Quit => LoopControl::Break(GameExitReason::Quit),
         }),
     })
