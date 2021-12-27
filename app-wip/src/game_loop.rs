@@ -487,7 +487,61 @@ enum PauseOutput {
     Quit,
 }
 
+fn helper<F: 'static>(
+    menu: CF<OrEscape<PauseMenuEntry>>,
+    init: witness::Running,
+    mut f: F,
+) -> CF<PauseOutput>
+where
+    F: Fn(
+        witness::Running,
+        OrEscape<PauseMenuEntry>,
+    ) -> CF<LoopControl<witness::Running, PauseOutput>>,
+{
+    loop_((f, menu, init), |(f, menu, acc)| {
+        menu.and_then_persistent(|menu, entry| {
+            f(acc, entry).map(|loop_control| loop_control.map_continue(|c| (f, menu, c)))
+        })
+    })
+}
+
 fn pause(running: witness::Running) -> CF<PauseOutput> {
+    use PauseMenuEntry::*;
+    helper(
+        pause_menu().catch_escape(),
+        running,
+        |running, entry_or_escape| match entry_or_escape {
+            Ok(entry) => match entry {
+                Resume => break_(PauseOutput::ContinueGame { running }),
+                SaveQuit => on_state(|state: &mut GameLoopData| {
+                    state.save_instance(running);
+                    PauseOutput::Quit
+                })
+                .break_(),
+                Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                    running: state.save_instance(running),
+                })
+                .break_(),
+                NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                    running: state.new_game(),
+                })
+                .break_(),
+                Options => never(),
+                Help => text::help().into_component().continue_with(running),
+                Prologue => text::prologue().into_component().continue_with(running),
+                Epilogue => epilogue().continue_with(running),
+                Clear => on_state(|state: &mut GameLoopData| {
+                    state.clear_saved_game();
+                    PauseOutput::MainMenu
+                })
+                .break_(),
+            },
+            Err(Escape) => break_(PauseOutput::ContinueGame { running }),
+        },
+    )
+}
+
+fn pause2(running: witness::Running) -> CF<PauseOutput> {
     use PauseMenuEntry::*;
     loop_((running, pause_menu().catch_escape()), |(running, menu)| {
         menu.and_then_persistent(|menu, entry_or_escape| match entry_or_escape {
