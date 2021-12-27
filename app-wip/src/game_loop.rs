@@ -419,16 +419,16 @@ fn epilogue() -> CF<()> {
 
 fn main_menu_loop() -> CF<MainMenuOutput> {
     use MainMenuEntry::*;
-    loop_((), |()| {
-        main_menu().and_then(|entry| match entry {
+    loop_(main_menu(), |menu| {
+        menu.and_then_persistent(|menu, entry| match entry {
             NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
                 new_running: state.new_game(),
             })
             .break_(),
-            Options => never().continue_(),
-            Help => text::help().into_component().continue_(),
-            Prologue => text::prologue().into_component().continue_(),
-            Epilogue => epilogue().continue_(),
+            Options => val_once(LoopControl::Continue(menu)),
+            Help => text::help().into_component().continue_with(menu),
+            Prologue => text::prologue().into_component().continue_with(menu),
+            Epilogue => epilogue().continue_with(menu),
             Quit => val_once(MainMenuOutput::Quit).break_(),
         })
     })
@@ -489,41 +489,37 @@ enum PauseOutput {
 
 fn pause(running: witness::Running) -> CF<PauseOutput> {
     use PauseMenuEntry::*;
-    loop_(running, |running| {
-        pause_menu()
-            .catch_escape()
-            .and_then(|entry_or_escape| match entry_or_escape {
-                Ok(entry) => match entry {
-                    Resume => break_(PauseOutput::ContinueGame { running }),
-                    SaveQuit => on_state(|state: &mut GameLoopData| {
-                        state.save_instance(running);
-                        PauseOutput::Quit
-                    })
-                    .break_(),
-                    Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                        running: state.save_instance(running),
-                    })
-                    .break_(),
-                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                        running: state.new_game(),
-                    })
-                    .break_(),
-                    Options => never(),
-                    Help => text::help()
-                        .into_component()
-                        .map(|()| LoopControl::Continue(running)),
-                    Prologue => text::prologue()
-                        .into_component()
-                        .map(|()| LoopControl::Continue(running)),
-                    Epilogue => epilogue().map(|()| LoopControl::Continue(running)),
-                    Clear => on_state(|state: &mut GameLoopData| {
-                        state.clear_saved_game();
-                        PauseOutput::MainMenu
-                    })
-                    .break_(),
-                },
-                Err(Escape) => break_(PauseOutput::ContinueGame { running }),
-            })
+    loop_((running, pause_menu().catch_escape()), |(running, menu)| {
+        menu.and_then_persistent(|menu, entry_or_escape| match entry_or_escape {
+            Ok(entry) => match entry {
+                Resume => break_(PauseOutput::ContinueGame { running }),
+                SaveQuit => on_state(|state: &mut GameLoopData| {
+                    state.save_instance(running);
+                    PauseOutput::Quit
+                })
+                .break_(),
+                Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                    running: state.save_instance(running),
+                })
+                .break_(),
+                NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                    running: state.new_game(),
+                })
+                .break_(),
+                Options => never(),
+                Help => text::help().into_component().continue_with((running, menu)),
+                Prologue => text::prologue()
+                    .into_component()
+                    .continue_with((running, menu)),
+                Epilogue => epilogue().continue_with((running, menu)),
+                Clear => on_state(|state: &mut GameLoopData| {
+                    state.clear_saved_game();
+                    PauseOutput::MainMenu
+                })
+                .break_(),
+            },
+            Err(Escape) => break_(PauseOutput::ContinueGame { running }),
+        })
     })
 }
 

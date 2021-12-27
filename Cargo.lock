@@ -419,7 +419,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -442,7 +442,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ansi_terminal"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_core",
 ]
@@ -473,7 +473,7 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
@@ -516,7 +516,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -526,7 +526,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_graphical_common",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -539,7 +539,7 @@ dependencies = [
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 
 [[package]]
 name = "chargrid_input"
@@ -554,7 +554,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "coord_2d",
  "serde",
@@ -588,7 +588,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_core",
 ]
@@ -621,7 +621,7 @@ dependencies = [
 [[package]]
 name = "chargrid_web"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_runtime",
@@ -634,7 +634,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#e0466e468a35e272242686d583d372bbc542a7ce"
+source = "git+https://github.com/gridbugs/chargrid#1a9db5f70bf80dea0ba254b0f123fe0ee250d2b2"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -2922,9 +2922,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.34"
+version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f84e92c0f7c9d58328b85a78557813e4bd845130db68d7184635344399423b1"
+checksum = "392a54546fda6b7cc663379d0e6ce8b324cf88aecc5a499838e1be9781bdce2e"
 dependencies = [
  "unicode-xid",
 ]
@@ -3553,9 +3553,9 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "syn"
-version = "1.0.82"
+version = "1.0.84"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8daf5dd0bb60cbd4137b1b587d2fc0ae729bc07cf01cd70b36a1ed5ade3b9d59"
+checksum = "ecb2e6da8ee5eb9a61068762a32fa9619cc591ceb055b3687f4cd4051ec2e06b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3677,9 +3677,9 @@ checksum = "76dacc724328b3d5e2ed67f9e30cdb56893a34ab239032502cc8f19f8dae4bbc"
 
 [[package]]
 name = "twox-hash"
-version = "1.6.1"
+version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
+checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
  "cfg-if 1.0.0",
  "rand",
