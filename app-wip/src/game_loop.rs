@@ -1,20 +1,19 @@
 use crate::{
     colours,
     controls::{AppInput, Controls},
-    game,
-    stars::Stars,
+    game_instance::{GameInstance, GameInstanceStorable},
+    menu_background::MenuBackground,
     text,
 };
 use chargrid::{border::BorderStyle, control_flow::boxed::*, input::*, menu, prelude::*};
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
-    witness::{self, Game, RunningGame, Witness},
+    witness::{self, Witness},
     Config,
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
-use serde::{Deserialize, Serialize};
 
 /// An interactive, renderable process yielding a value of type `T`
 pub type CF<T> = BoxedCF<Option<T>, GameLoopData>;
@@ -150,45 +149,13 @@ impl SaveGameStorage {
     }
 }
 
-struct GameInstance {
-    game: Game,
-    stars: Stars,
-}
-
-impl GameInstance {
-    fn into_storable(self, running: witness::Running) -> GameInstanceStorable {
-        let Self { game, stars } = self;
-        let running_game = game.into_running_game(running);
-        GameInstanceStorable {
-            running_game,
-            stars,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-struct GameInstanceStorable {
-    running_game: RunningGame,
-    stars: Stars,
-}
-
-impl GameInstanceStorable {
-    fn into_game_instance(self) -> (GameInstance, witness::Running) {
-        let Self {
-            running_game,
-            stars,
-        } = self;
-        let (game, running) = running_game.into_game();
-        (GameInstance { game, stars }, running)
-    }
-}
-
 pub struct GameLoopData {
     instance: Option<GameInstance>,
     controls: Controls,
     config: Config,
     save_game_storage: SaveGameStorage,
     rng_seed_source: RngSeedSource,
+    menu_background: MenuBackground,
 }
 
 impl GameLoopData {
@@ -208,6 +175,7 @@ impl GameLoopData {
             None => (None, GameLoopState::MainMenu),
         };
         let controls = Controls::default();
+        let menu_background = MenuBackground::new(&mut Isaac64Rng::from_entropy());
         (
             Self {
                 instance,
@@ -215,6 +183,7 @@ impl GameLoopData {
                 config,
                 save_game_storage,
                 rng_seed_source: RngSeedSource::new(initial_rng_seed),
+                menu_background,
             },
             state,
         )
@@ -234,18 +203,14 @@ impl GameLoopData {
 
     fn new_game(&mut self) -> witness::Running {
         let mut rng = Isaac64Rng::seed_from_u64(self.rng_seed_source.next_seed());
-        let (game, running) = witness::new_game(&self.config, &mut rng);
-        let stars = Stars::new(&mut rng);
-        self.instance = Some(GameInstance { game, stars });
+        let (instance, running) = GameInstance::new(&self.config, &mut rng);
+        self.instance = Some(instance);
         running
     }
 
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
-        instance
-            .stars
-            .render_with_visibility(instance.game.inner_ref().visibility_grid(), ctx, fb);
-        game::render_game(instance.game.inner_ref(), ctx, fb);
+        instance.render(ctx, fb);
     }
 
     fn has_game_ever_been_won(&self) -> bool {
@@ -300,6 +265,7 @@ pub enum GameLoopState {
 impl Component for GameInstanceComponent {
     type Output = GameLoopState;
     type State = GameLoopData;
+
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
         state.render(ctx, fb);
     }
@@ -310,6 +276,27 @@ impl Component for GameInstanceComponent {
             GameLoopState::Paused(running)
         } else {
             GameLoopState::Playing(state.update(event, running))
+        }
+    }
+
+    fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
+        ctx.bounding_box.size()
+    }
+}
+
+struct MenuBackgroundComponent;
+
+impl Component for MenuBackgroundComponent {
+    type Output = ();
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        state.menu_background.render(ctx, fb);
+    }
+
+    fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
+        if let Some(duration) = event.tick() {
+            state.menu_background.tick(duration);
         }
     }
 
@@ -402,7 +389,9 @@ fn main_menu() -> CF<MainMenuEntry> {
             add_item(Epilogue, "Epilogue", 'e');
         }
         add_item(Quit, "Quit", 'q');
-        builder.build_cf().border(BorderStyle::default()).centre()
+        builder
+            .build_cf()
+            .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
     })
 }
 

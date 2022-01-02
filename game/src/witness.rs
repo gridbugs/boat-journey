@@ -130,4 +130,8 @@ impl Game {
     pub fn into_running_game(self, running: Running) -> RunningGame {
         RunningGame::new(self, running)
     }
+
+    pub fn npc_turn(&mut self) {
+        self.0.handle_npc_turn()
+    }
 }
