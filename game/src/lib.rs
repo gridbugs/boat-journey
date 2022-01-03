@@ -596,15 +596,13 @@ impl Game {
             );
             match input {
                 NpcAction::Walk(direction) => {
-                    let res = self.world.character_walk_in_direction(
+                    let _ = self.world.character_walk_in_direction(
                         entity,
                         direction,
                         &mut self.rng,
                         &mut self.events,
                         &mut self.message_log,
                     );
-                    let coord = self.world.entity_coord(entity);
-                    println!("processing walk: {:?} {:?} {:?}", coord, direction, res);
                 }
                 NpcAction::Wait => (),
             }

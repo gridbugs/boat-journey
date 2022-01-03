@@ -31,7 +31,7 @@ impl GameInstance {
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         self.stars
             .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
-        game::render_game(self.game.inner_ref(), ctx, fb);
+        game::render_game_with_visibility(self.game.inner_ref(), ctx, fb);
     }
 }
 

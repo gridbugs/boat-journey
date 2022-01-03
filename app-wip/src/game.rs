@@ -3,7 +3,9 @@ use chargrid::{
     core::rgb_int::{rgb24, Rgb24},
     prelude::*,
 };
-use orbital_decay_game::{CellVisibility, Game, WarningLight};
+use orbital_decay_game::{CellVisibility, Game, Layer, WarningLight};
+
+const GAME_MAX_DEPTH: i8 = 63;
 
 pub enum GameOutput {
     Quit,
@@ -37,7 +39,7 @@ impl Tint for LightBlend {
     }
 }
 
-pub fn render_game(game: &Game, ctx: Ctx, fb: &mut FrameBuffer) {
+pub fn render_game_with_visibility(game: &Game, ctx: Ctx, fb: &mut FrameBuffer) {
     let vis_count = game.visibility_grid().count();
     for (coord, visibility_cell) in game.visibility_grid().enumerate() {
         match visibility_cell.visibility(vis_count) {
@@ -71,5 +73,25 @@ pub fn render_game(game: &Game, ctx: Ctx, fb: &mut FrameBuffer) {
             CellVisibility::NeverVisible
             | CellVisibility::CurrentlyVisibleWithLightColour(None) => (),
         }
+    }
+}
+
+fn layer_depth(layer: Option<Layer>) -> i8 {
+    if let Some(layer) = layer {
+        match layer {
+            Layer::Floor => 0,
+            Layer::Feature => 1,
+            Layer::Item => 2,
+            Layer::Character => 3,
+        }
+    } else {
+        GAME_MAX_DEPTH - 1
+    }
+}
+
+pub fn render_game(game: &Game, ctx: Ctx, fb: &mut FrameBuffer) {
+    for to_render_entity in game.to_render_entities() {
+        let depth = layer_depth(to_render_entity.layer);
+        tile_3x3::render_3x3(&to_render_entity, game, ctx.add_depth(depth), fb);
     }
 }

@@ -34,10 +34,9 @@ impl MenuBackground {
     }
 
     pub fn tick(&mut self, since_prev: Duration) {
-        const NPC_TURN_PERIOD: Duration = Duration::from_millis(20);
+        const NPC_TURN_PERIOD: Duration = Duration::from_millis(2000);
         self.duration += since_prev;
         if self.duration > NPC_TURN_PERIOD {
-            println!("hi {:?}", self.duration);
             self.duration -= NPC_TURN_PERIOD;
             self.game.handle_npc_turn();
         }
