@@ -391,6 +391,7 @@ fn main_menu() -> CF<MainMenuEntry> {
         add_item(Quit, "Quit", 'q');
         builder
             .build_cf()
+            .add_offset(Coord { x: 14, y: 24 })
             .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
     })
 }
