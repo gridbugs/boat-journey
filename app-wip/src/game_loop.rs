@@ -395,10 +395,16 @@ fn main_menu() -> CF<MainMenuEntry> {
                 MenuBackgroundComponent,
                 styled_string("Orbital Decay".to_string(), style.with_bold(true))
                     .add_offset(Coord { x: 14, y: 24 }),
-                styled_string("Programming and art by Stephen Sherratt".to_string(), style)
-                    .add_offset(Coord { x: 1, y: 57 }),
-                styled_string("Music and sound effects by Lily Chen".to_string(), style)
-                    .add_offset(Coord { x: 1, y: 58 }),
+                styled_string(
+                    "Programming and art by Stephen Sherratt".to_string(),
+                    style.with_bold(false)
+                )
+                .add_offset(Coord { x: 1, y: 57 }),
+                styled_string(
+                    "Music and sound effects by Lily Chen".to_string(),
+                    style.with_bold(false)
+                )
+                .add_offset(Coord { x: 1, y: 58 }),
             ]
         };
         builder
