@@ -389,36 +389,22 @@ fn main_menu() -> CF<MainMenuEntry> {
             add_item(Epilogue, "Epilogue", 'e');
         }
         add_item(Quit, "Quit", 'q');
+        let decoration = {
+            let style = Style::default().with_foreground(colours::WALL_FRONT);
+            chargrid::boxed_many![
+                MenuBackgroundComponent,
+                styled_string("Orbital Decay".to_string(), style.with_bold(true))
+                    .add_offset(Coord { x: 14, y: 24 }),
+                styled_string("Programming and art by Stephen Sherratt".to_string(), style)
+                    .add_offset(Coord { x: 1, y: 57 }),
+                styled_string("Music and sound effects by Lily Chen".to_string(), style)
+                    .add_offset(Coord { x: 1, y: 58 }),
+            ]
+        };
         builder
             .build_cf()
             .add_offset(Coord { x: 14, y: 28 })
-            .overlay(
-                many([
-                    boxed_cf(MenuBackgroundComponent),
-                    boxed_cf(StyledString {
-                        style: Style::default()
-                            .with_foreground(colours::WALL_FRONT)
-                            .with_bold(true),
-                        string: "Orbital Decay".to_string(),
-                    })
-                    .ignore_state()
-                    .add_offset(Coord { x: 14, y: 24 }),
-                    boxed_cf(StyledString {
-                        style: Style::default().with_foreground(colours::WALL_FRONT),
-                        string: "Programming and art by Stephen Sherratt".to_string(),
-                    })
-                    .ignore_state()
-                    .add_offset(Coord { x: 1, y: 57 }),
-                    boxed_cf(StyledString {
-                        style: Style::default().with_foreground(colours::WALL_FRONT),
-                        string: "Music and sound effects by Lily Chen".to_string(),
-                    })
-                    .ignore_state()
-                    .add_offset(Coord { x: 1, y: 58 }),
-                ]),
-                chargrid::core::TintIdentity,
-                10,
-            )
+            .overlay(decoration, chargrid::core::TintIdentity, 10)
     })
 }
 
