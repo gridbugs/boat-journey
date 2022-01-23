@@ -1,3 +1,4 @@
+use crate::audio::{AppAudioPlayer, AppHandle, Audio, AudioTable};
 use crate::{
     colours,
     controls::{AppInput, Controls},
@@ -163,6 +164,7 @@ impl GameLoopData {
         config: Config,
         save_game_storage: SaveGameStorage,
         initial_rng_seed: InitialRngSeed,
+        audio_player: AppAudioPlayer,
     ) -> (Self, GameLoopState) {
         let (instance, state) = match save_game_storage.load() {
             Some(instance) => {

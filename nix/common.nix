@@ -46,6 +46,7 @@ in
       bzip2
       nodejs-16_x
       wasm-pack
+      openssl
     ];
 
     mkDerivation = { rust }:

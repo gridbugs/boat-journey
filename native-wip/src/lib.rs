@@ -1,9 +1,13 @@
+use general_audio_static::{
+    backend::{Error as NativeAudioError, NativeAudioPlayer},
+    StaticAudioPlayer,
+};
 use general_storage_static::{
     backend::{FileStorage, IfDirectoryMissing},
     StaticStorage,
 };
 pub use meap;
-use orbital_decay_app_wip::{InitialRngSeed, SaveGameStorage};
+use orbital_decay_app_wip::{AppAudioPlayer, InitialRngSeed, SaveGameStorage};
 
 const DEFAULT_SAVE_FILE: &str = "save";
 const DEFAULT_NEXT_TO_EXE_SAVE_DIR: &str = "save";
@@ -11,6 +15,7 @@ const DEFAULT_NEXT_TO_EXE_SAVE_DIR: &str = "save";
 pub struct NativeCommon {
     pub save_game_storage: SaveGameStorage,
     pub initial_rng_seed: InitialRngSeed,
+    pub audio_player: AppAudioPlayer,
     pub omniscient: bool,
 }
 impl NativeCommon {
@@ -24,6 +29,7 @@ impl NativeCommon {
                     .with_default(DEFAULT_NEXT_TO_EXE_SAVE_DIR.to_string());
                 delete_save = flag("delete-save").desc("delete save game file");
                 omniscient = flag("omniscient").desc("enable omniscience");
+                mute = flag('m').name("mute").desc("mute audio");
             } in {{
                 let initial_rng_seed = rng_seed.map(InitialRngSeed::U64).unwrap_or(InitialRngSeed::Random);
                 let mut file_storage = StaticStorage::new(
@@ -40,9 +46,21 @@ impl NativeCommon {
                     handle: file_storage,
                     key: save_file,
                 };
+                let audio_player = if mute {
+                    None
+                } else {
+                    match NativeAudioPlayer::try_new_default_device() {
+                        Ok(audio_player) => Some(StaticAudioPlayer::new(audio_player)),
+                        Err(NativeAudioError::FailedToCreateOutputStream) => {
+                            log::warn!("no output audio device - continuing without audio");
+                            None
+                        }
+                    }
+                };
                 Self {
                     initial_rng_seed,
                     save_game_storage,
+                    audio_player,
                     omniscient,
                 }
             }}

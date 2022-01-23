@@ -48,6 +48,7 @@ fn main() {
             NativeCommon {
                 save_game_storage,
                 initial_rng_seed,
+                audio_player,
                 omniscient,
             },
         col_encode_choice,
@@ -64,6 +65,7 @@ fn main() {
     let app = app(AppArgs {
         save_game_storage,
         initial_rng_seed: InitialRngSeed::U64(initial_rng_seed),
+        audio_player,
         omniscient,
     });
     use ColEncodeChoice as C;
