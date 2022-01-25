@@ -3205,7 +3205,8 @@ dependencies = [
 [[package]]
 name = "rodio"
 version = "0.14.0"
-source = "git+https://github.com/RustAudio/rodio.git?branch=master#b4f4dacb82e6bdfac3394e2e51a54884ce5353e7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d98f5e557b61525057e2bc142c8cd7f0e70d75dc32852309bec440e6e046bf9"
 dependencies = [
  "claxon",
  "cpal",
