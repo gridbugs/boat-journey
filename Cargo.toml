@@ -22,7 +22,3 @@ members = [
 
 [profile.release]
 lto = true
-
-[patch.crates-io]
-# Track the master branch of rodio until the next release after 14.0 to include my fix of the stack overflow bug.
-rodio = { git = "https://github.com/RustAudio/rodio.git", branch = "master" }
