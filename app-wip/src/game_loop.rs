@@ -603,36 +603,48 @@ enum PauseOutput {
 
 fn pause(running: witness::Running) -> CF<PauseOutput> {
     use PauseMenuEntry::*;
-    pause_menu()
-        .catch_escape()
-        .repeat(running, |running, entry_or_escape| match entry_or_escape {
-            Ok(entry) => match entry {
-                Resume => break_(PauseOutput::ContinueGame { running }),
-                SaveQuit => on_state(|state: &mut GameLoopData| {
-                    state.save_instance(running);
-                    PauseOutput::Quit
-                })
-                .break_(),
-                Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                    running: state.save_instance(running),
-                })
-                .break_(),
-                NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                    running: state.new_game(),
-                })
-                .break_(),
-                Options => options_menu().continue_with(running),
-                Help => text::help().into_component().continue_with(running),
-                Prologue => text::prologue().into_component().continue_with(running),
-                Epilogue => epilogue().continue_with(running),
-                Clear => on_state(|state: &mut GameLoopData| {
-                    state.clear_saved_game();
-                    PauseOutput::MainMenu
-                })
-                .break_(),
+    const PAUSE_MUSIC_VOLUME_MULTIPLIER: f32 = 0.25;
+    on_state_then(|state: &mut GameLoopData| {
+        // turn down the music in the pause menu
+        state
+            .audio_state
+            .set_music_volume_multiplier(PAUSE_MUSIC_VOLUME_MULTIPLIER);
+        pause_menu().catch_escape().repeat(
+            running,
+            |running, entry_or_escape| match entry_or_escape {
+                Ok(entry) => match entry {
+                    Resume => break_(PauseOutput::ContinueGame { running }),
+                    SaveQuit => on_state(|state: &mut GameLoopData| {
+                        state.save_instance(running);
+                        PauseOutput::Quit
+                    })
+                    .break_(),
+                    Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                        running: state.save_instance(running),
+                    })
+                    .break_(),
+                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                        running: state.new_game(),
+                    })
+                    .break_(),
+                    Options => options_menu().continue_with(running),
+                    Help => text::help().into_component().continue_with(running),
+                    Prologue => text::prologue().into_component().continue_with(running),
+                    Epilogue => epilogue().continue_with(running),
+                    Clear => on_state(|state: &mut GameLoopData| {
+                        state.clear_saved_game();
+                        PauseOutput::MainMenu
+                    })
+                    .break_(),
+                },
+                Err(Escape) => break_(PauseOutput::ContinueGame { running }),
             },
-            Err(Escape) => break_(PauseOutput::ContinueGame { running }),
-        })
+        )
+    })
+    .then_side_effect(|state: &mut GameLoopData| {
+        // turn the music back up
+        state.audio_state.set_music_volume_multiplier(1.);
+    })
 }
 
 #[derive(Clone, Copy)]
