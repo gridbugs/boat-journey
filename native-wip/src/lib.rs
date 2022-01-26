@@ -7,13 +7,13 @@ use general_storage_static::{
     StaticStorage,
 };
 pub use meap;
-use orbital_decay_app_wip::{AppAudioPlayer, InitialRngSeed, SaveGameStorage};
+use orbital_decay_app_wip::{AppAudioPlayer, AppStorage, InitialRngSeed};
 
 const DEFAULT_SAVE_FILE: &str = "save";
 const DEFAULT_NEXT_TO_EXE_SAVE_DIR: &str = "save";
 
 pub struct NativeCommon {
-    pub save_game_storage: SaveGameStorage,
+    pub storage: AppStorage,
     pub initial_rng_seed: InitialRngSeed,
     pub audio_player: AppAudioPlayer,
     pub omniscient: bool,
@@ -42,9 +42,9 @@ impl NativeCommon {
                         log::warn!("couldn't find save file to delete");
                     }
                 }
-                let save_game_storage = SaveGameStorage {
+                let storage = AppStorage {
                     handle: file_storage,
-                    key: save_file,
+                    save_game_key: save_file,
                 };
                 let audio_player = if mute {
                     None
@@ -59,7 +59,7 @@ impl NativeCommon {
                 };
                 Self {
                     initial_rng_seed,
-                    save_game_storage,
+                    storage,
                     audio_player,
                     omniscient,
                 }

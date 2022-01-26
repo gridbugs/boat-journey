@@ -1,4 +1,4 @@
-use crate::audio::{AppAudioPlayer, AppHandle, Audio, AudioTable};
+use crate::audio::{AppAudioPlayer, Audio, AudioState};
 use crate::{
     colours,
     controls::{AppInput, Controls},
@@ -6,15 +6,44 @@ use crate::{
     menu_background::MenuBackground,
     text,
 };
-use chargrid::{border::BorderStyle, control_flow::boxed::*, input::*, menu, prelude::*};
+use chargrid::{
+    border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, prelude::*,
+    text::StyledString,
+};
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
     witness::{self, Witness},
-    Config,
+    Config as GameConfig, ExternalEvent, Music,
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
+use serde::{Deserialize, Serialize};
+
+fn game_music_to_audio(music: Music) -> Audio {
+    match music {
+        Music::Gameplay0 => Audio::Gameplay0,
+        Music::Gameplay1 => Audio::Gameplay1,
+        Music::Gameplay2 => Audio::Gameplay2,
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+struct Config {
+    music_volume: f32,
+    sfx_volume: f32,
+    won: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            music_volume: 0.2,
+            sfx_volume: 0.5,
+            won: true,
+        }
+    }
+}
 
 /// An interactive, renderable process yielding a value of type `T`
 pub type CF<T> = BoxedCF<Option<T>, GameLoopData>;
@@ -56,8 +85,6 @@ const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
     }
 };
 
-const STORAGE_FORMAT: format::Bincode = format::Bincode;
-
 pub enum InitialRngSeed {
     U64(u64),
     Random,
@@ -92,14 +119,22 @@ impl RngSeedSource {
     }
 }
 
-pub struct SaveGameStorage {
+pub struct AppStorage {
     pub handle: StaticStorage,
-    pub key: String,
+    pub save_game_key: String,
 }
 
-impl SaveGameStorage {
-    fn save(&mut self, instance: &GameInstanceStorable) {
-        let result = self.handle.store(&self.key, &instance, STORAGE_FORMAT);
+impl AppStorage {
+    const SAVE_GAME_STORAGE_FORMAT: format::Bincode = format::Bincode;
+    const CONFIG_STORAGE_FORMAT: format::Json = format::Json;
+    const CONFIG_KEY: &'static str = "config.json";
+
+    fn save_game(&mut self, instance: &GameInstanceStorable) {
+        let result = self.handle.store(
+            &self.save_game_key,
+            &instance,
+            Self::SAVE_GAME_STORAGE_FORMAT,
+        );
         if let Err(e) = result {
             use general_storage_static::{StoreError, StoreRawError};
             match e {
@@ -113,10 +148,11 @@ impl SaveGameStorage {
         }
     }
 
-    fn load(&self) -> Option<GameInstanceStorable> {
-        let result = self
-            .handle
-            .load::<_, GameInstanceStorable, _>(&self.key, STORAGE_FORMAT);
+    fn load_game(&self) -> Option<GameInstanceStorable> {
+        let result = self.handle.load::<_, GameInstanceStorable, _>(
+            &self.save_game_key,
+            Self::SAVE_GAME_STORAGE_FORMAT,
+        );
         match result {
             Err(e) => {
                 use general_storage_static::{LoadError, LoadRawError};
@@ -135,9 +171,9 @@ impl SaveGameStorage {
         }
     }
 
-    fn clear(&mut self) {
-        if self.handle.exists(&self.key) {
-            if let Err(e) = self.handle.remove(&self.key) {
+    fn clear_game(&mut self) {
+        if self.handle.exists(&self.save_game_key) {
+            if let Err(e) = self.handle.remove(&self.save_game_key) {
                 use general_storage_static::RemoveError;
                 match e {
                     RemoveError::IoError(e) => {
@@ -148,25 +184,66 @@ impl SaveGameStorage {
             }
         }
     }
+
+    fn save_config(&mut self, config: &Config) {
+        let result = self
+            .handle
+            .store(Self::CONFIG_KEY, &config, Self::CONFIG_STORAGE_FORMAT);
+        if let Err(e) = result {
+            use general_storage_static::{StoreError, StoreRawError};
+            match e {
+                StoreError::FormatError(e) => log::error!("Failed to format config: {}", e),
+                StoreError::Raw(e) => match e {
+                    StoreRawError::IoError(e) => {
+                        log::error!("Error while writing config: {}", e)
+                    }
+                },
+            }
+        }
+    }
+
+    fn load_config(&self) -> Option<Config> {
+        let result = self
+            .handle
+            .load::<_, Config, _>(Self::CONFIG_KEY, Self::CONFIG_STORAGE_FORMAT);
+        match result {
+            Err(e) => {
+                use general_storage_static::{LoadError, LoadRawError};
+                match e {
+                    LoadError::FormatError(e) => log::error!("Failed to parse config file: {}", e),
+                    LoadError::Raw(e) => match e {
+                        LoadRawError::IoError(e) => {
+                            log::error!("Error while reading config: {}", e)
+                        }
+                        LoadRawError::NoSuchKey => (),
+                    },
+                }
+                None
+            }
+            Ok(instance) => Some(instance),
+        }
+    }
 }
 
 pub struct GameLoopData {
     instance: Option<GameInstance>,
     controls: Controls,
-    config: Config,
-    save_game_storage: SaveGameStorage,
+    game_config: GameConfig,
+    storage: AppStorage,
     rng_seed_source: RngSeedSource,
     menu_background: MenuBackground,
+    audio_state: AudioState,
+    config: Config,
 }
 
 impl GameLoopData {
     pub fn new(
-        config: Config,
-        save_game_storage: SaveGameStorage,
+        game_config: GameConfig,
+        storage: AppStorage,
         initial_rng_seed: InitialRngSeed,
         audio_player: AppAudioPlayer,
     ) -> (Self, GameLoopState) {
-        let (instance, state) = match save_game_storage.load() {
+        let (instance, state) = match storage.load_game() {
             Some(instance) => {
                 let (instance, running) = instance.into_game_instance();
                 (
@@ -178,14 +255,25 @@ impl GameLoopData {
         };
         let controls = Controls::default();
         let menu_background = MenuBackground::new(&mut Isaac64Rng::from_entropy());
+        let mut audio_state = AudioState::new(audio_player);
+        let config = storage.load_config().unwrap_or_default();
+        if let Some(instance) = instance.as_ref() {
+            if let Some(music) = instance.current_music {
+                audio_state.loop_music(game_music_to_audio(music), config.music_volume);
+            }
+        } else {
+            audio_state.loop_music(Audio::Menu, config.music_volume);
+        }
         (
             Self {
                 instance,
                 controls,
-                config,
-                save_game_storage,
+                game_config,
+                storage,
                 rng_seed_source: RngSeedSource::new(initial_rng_seed),
                 menu_background,
+                audio_state,
+                config,
             },
             state,
         )
@@ -193,21 +281,27 @@ impl GameLoopData {
 
     fn save_instance(&mut self, running: witness::Running) -> witness::Running {
         let instance = self.instance.take().unwrap().into_storable(running);
-        self.save_game_storage.save(&instance);
+        self.storage.save_game(&instance);
         let (instance, running) = instance.into_game_instance();
         self.instance = Some(instance);
         running
     }
 
     fn clear_saved_game(&mut self) {
-        self.save_game_storage.clear();
+        self.storage.clear_game();
+        self.audio_state
+            .loop_music(Audio::Menu, self.config.music_volume);
     }
 
     fn new_game(&mut self) -> witness::Running {
         let mut rng = Isaac64Rng::seed_from_u64(self.rng_seed_source.next_seed());
-        let (instance, running) = GameInstance::new(&self.config, &mut rng);
+        let (instance, running) = GameInstance::new(&self.game_config, &mut rng);
         self.instance = Some(instance);
         running
+    }
+
+    fn save_config(&mut self) {
+        self.storage.save_config(&self.config);
     }
 
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
@@ -215,20 +309,16 @@ impl GameLoopData {
         instance.render(ctx, fb);
     }
 
-    fn has_game_ever_been_won(&self) -> bool {
-        // TODO
-        true
-    }
     fn update(&mut self, event: Event, running: witness::Running) -> Witness {
         let instance = self.instance.as_mut().unwrap();
-        match event {
+        let witness = match event {
             Event::Input(Input::Keyboard(keyboard_input)) => {
                 if let Some(app_input) = self.controls.get(keyboard_input) {
                     let (witness, action_result) = match app_input {
                         AppInput::Move(direction) => {
-                            running.walk(&mut instance.game, direction, &self.config)
+                            running.walk(&mut instance.game, direction, &self.game_config)
                         }
-                        AppInput::Wait => running.wait(&mut instance.game, &self.config),
+                        AppInput::Wait => running.wait(&mut instance.game, &self.game_config),
                         AppInput::Examine | AppInput::Aim(_) | AppInput::Get => {
                             println!("todo");
                             (Witness::Running(running), Ok(()))
@@ -243,9 +333,25 @@ impl GameLoopData {
                 }
             }
             Event::Tick(since_previous) => {
-                running.tick(&mut instance.game, since_previous, &self.config)
+                running.tick(&mut instance.game, since_previous, &self.game_config)
             }
             _ => Witness::Running(running),
+        };
+        self.handle_game_events();
+        witness
+    }
+
+    fn handle_game_events(&mut self) {
+        let instance = self.instance.as_mut().unwrap();
+        for event in instance.game.events() {
+            match event {
+                ExternalEvent::LoopMusic(music) => {
+                    instance.current_music = Some(music);
+                    self.audio_state
+                        .loop_music(game_music_to_audio(music), self.config.music_volume);
+                }
+                _ => (),
+            }
         }
     }
 }
@@ -351,7 +457,7 @@ fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
                     Err(Escape) => upgrade_witness.cancel(),
                     Ok(upgrade) => {
                         let instance = state.instance.as_mut().unwrap();
-                        upgrade_witness.upgrade(&mut instance.game, upgrade, &state.config)
+                        upgrade_witness.upgrade(&mut instance.game, upgrade, &state.game_config)
                     }
                 };
                 if let Err(upgrade_error) = result {
@@ -387,7 +493,7 @@ fn main_menu() -> CF<MainMenuEntry> {
         add_item(Options, "Options", 'o');
         add_item(Help, "Help", 'h');
         add_item(Prologue, "Prologue", 'p');
-        if state.has_game_ever_been_won() {
+        if state.config.won {
             add_item(Epilogue, "Epilogue", 'e');
         }
         add_item(Quit, "Quit", 'q');
@@ -434,7 +540,7 @@ fn main_menu_loop() -> CF<MainMenuOutput> {
             new_running: state.new_game(),
         })
         .break_(),
-        Options => val_once(LoopControl::Continue(())),
+        Options => options_menu().continue_(),
         Help => text::help().into_component().continue_(),
         Prologue => text::prologue().into_component().continue_(),
         Epilogue => epilogue().continue_(),
@@ -472,7 +578,7 @@ fn pause_menu() -> CF<PauseMenuEntry> {
         add_item(Options, "Options", 'o');
         add_item(Help, "Help", 'h');
         add_item(Prologue, "Prologue", 'p');
-        if state.has_game_ever_been_won() {
+        if state.config.won {
             add_item(Epilogue, "Epilogue", 'e');
         }
         add_item(Clear, "Clear", 'c');
@@ -515,7 +621,7 @@ fn pause(running: witness::Running) -> CF<PauseOutput> {
                     running: state.new_game(),
                 })
                 .break_(),
-                Options => never(),
+                Options => options_menu().continue_with(running),
                 Help => text::help().into_component().continue_with(running),
                 Prologue => text::prologue().into_component().continue_with(running),
                 Epilogue => epilogue().continue_with(running),
@@ -527,6 +633,87 @@ fn pause(running: witness::Running) -> CF<PauseOutput> {
             },
             Err(Escape) => break_(PauseOutput::ContinueGame { running }),
         })
+}
+
+#[derive(Clone, Copy)]
+enum OptionsMenuEntry {
+    MusicVolume,
+    SfxVolume,
+    Back,
+}
+struct OptionsMenuComponent {
+    menu: Menu<OptionsMenuEntry>,
+}
+impl Component for OptionsMenuComponent {
+    type Output = Option<()>;
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        self.menu.render(&(), ctx, fb);
+        let x_offset = 14;
+        StyledString {
+            string: format!("< {:.0}% >", state.config.music_volume * 100.),
+            style: Style::default(),
+        }
+        .render(&(), ctx.add_offset(Coord { x: x_offset, y: 0 }), fb);
+        StyledString {
+            string: format!("< {:.0}% >", state.config.sfx_volume * 100.),
+            style: Style::default(),
+        }
+        .render(&(), ctx.add_offset(Coord { x: x_offset, y: 1 }), fb);
+    }
+
+    fn update(&mut self, state: &mut Self::State, ctx: Ctx, event: Event) -> Self::Output {
+        let mut update_volume = |volume_delta: f32| {
+            let volume = match self.menu.selected() {
+                OptionsMenuEntry::MusicVolume => &mut state.config.music_volume,
+                OptionsMenuEntry::SfxVolume => &mut state.config.sfx_volume,
+                OptionsMenuEntry::Back => return,
+            };
+            *volume = (*volume + volume_delta).clamp(0., 1.);
+            state
+                .audio_state
+                .set_music_volume(state.config.music_volume);
+            state.save_config();
+        };
+        if let Some(keyboard_input) = event.keyboard_input() {
+            match keyboard_input {
+                KeyboardInput::Left => update_volume(-0.05),
+                KeyboardInput::Right => update_volume(0.05),
+                input::keys::RETURN => {
+                    // prevent hitting enter on a menu option from closing the menu
+                    if let OptionsMenuEntry::Back = self.menu.selected() {
+                        return Some(());
+                    } else {
+                        return None;
+                    }
+                }
+                _ => (),
+            }
+        }
+        self.menu.update(&mut (), ctx, event).map(|_| ())
+    }
+
+    fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
+        self.menu.size(&(), ctx)
+    }
+}
+fn options_menu() -> CF<()> {
+    use menu::builder::*;
+    use OptionsMenuEntry::*;
+    let mut builder = menu_builder();
+    let add_item = |builder: &mut MenuBuilder<_>, entry, name| {
+        let identifier = MENU_FADE_SPEC.identifier(move |b| write!(b, "{}", name).unwrap());
+        builder.add_item_mut(item(entry, identifier));
+    };
+    add_item(&mut builder, MusicVolume, "Music Volume:");
+    add_item(&mut builder, SfxVolume, "SFX Volume:");
+    builder.add_space_mut();
+    add_item(&mut builder, Back, "Back");
+    let menu = builder.build();
+    boxed_cf(OptionsMenuComponent { menu })
+        .catch_escape()
+        .map(|_| ())
 }
 
 fn game_instance_component(running: witness::Running) -> CF<GameLoopState> {

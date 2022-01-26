@@ -46,7 +46,7 @@ fn main() {
     let Args {
         native_common:
             NativeCommon {
-                save_game_storage,
+                storage,
                 initial_rng_seed,
                 audio_player,
                 omniscient,
@@ -63,7 +63,7 @@ fn main() {
     println!("Initial RNG Seed: {}", initial_rng_seed);
     let context = Context::new().unwrap();
     let app = app(AppArgs {
-        save_game_storage,
+        storage,
         initial_rng_seed: InitialRngSeed::U64(initial_rng_seed),
         audio_player,
         omniscient,

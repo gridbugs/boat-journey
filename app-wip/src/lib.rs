@@ -13,14 +13,14 @@ mod text;
 mod tile_3x3;
 
 pub use audio::AppAudioPlayer;
-pub use game_loop::{InitialRngSeed, SaveGameStorage};
+pub use game_loop::{AppStorage, InitialRngSeed};
 
 struct AppState {
-    game_loop_state: game_loop::GameLoopData,
+    game_loop_data: game_loop::GameLoopData,
 }
 
 pub struct AppArgs {
-    pub save_game_storage: SaveGameStorage,
+    pub storage: AppStorage,
     pub initial_rng_seed: InitialRngSeed,
     pub audio_player: AppAudioPlayer,
     pub omniscient: bool,
@@ -28,7 +28,7 @@ pub struct AppArgs {
 
 pub fn app(
     AppArgs {
-        save_game_storage,
+        storage,
         initial_rng_seed,
         audio_player,
         omniscient,
@@ -39,11 +39,11 @@ pub fn app(
         demo: false,
         debug: true,
     };
-    let (game_loop_state, initial_state) =
-        game_loop::GameLoopData::new(config, save_game_storage, initial_rng_seed, audio_player);
-    let state = AppState { game_loop_state };
+    let (game_loop_data, initial_state) =
+        game_loop::GameLoopData::new(config, storage, initial_rng_seed, audio_player);
+    let state = AppState { game_loop_data };
     game_loop::game_loop_component(initial_state)
-        .lens_state(lens!(AppState[game_loop_state]: game_loop::GameLoopData))
+        .lens_state(lens!(AppState[game_loop_data]: game_loop::GameLoopData))
         .map(|_| app::Exit)
         .with_state(state)
         .clear_each_frame()

@@ -105,9 +105,9 @@ dependencies = [
 
 [[package]]
 name = "approx"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "072df7202e63b127ab55acfe16ce97013d5b97bf160489336d3f1840fd78e99e"
+checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
 dependencies = [
  "num-traits",
 ]
@@ -149,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "async-task"
-version = "4.0.3"
+version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e91831deabf0d6d7ec49552e489aed63b7456a7a3c46cff62adad428110b0af0"
+checksum = "677d306121baf53310a3fd342d88dc0824f6bbeace68347593658525565abee8"
 
 [[package]]
 name = "atty"
@@ -325,7 +325,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf2eec61efe56aa1e813f5126959296933cf0700030e4314786c48779a66ab82"
 dependencies = [
  "log",
- "nix 0.22.0",
+ "nix 0.22.3",
 ]
 
 [[package]]
@@ -419,7 +419,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -442,7 +442,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ansi_terminal"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_core",
 ]
@@ -473,7 +473,7 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
@@ -516,7 +516,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -526,7 +526,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_graphical_common",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -539,7 +539,7 @@ dependencies = [
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 
 [[package]]
 name = "chargrid_input"
@@ -554,7 +554,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "coord_2d",
  "serde",
@@ -588,7 +588,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_core",
 ]
@@ -621,7 +621,7 @@ dependencies = [
 [[package]]
 name = "chargrid_web"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_runtime",
@@ -634,7 +634,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#16cd32a820dc056888c3117cfdac06c944a3fc25"
+source = "git+https://github.com/gridbugs/chargrid#bcb7f9bafc2604c43629e229a74e0d3efbc1bd00"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -1315,13 +1315,13 @@ checksum = "de3f21897782645949f12eef57b365e90db09c43c61009f4929a20933106150f"
 
 [[package]]
 name = "general_audio_native"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb1751397fd5486a9e6c6ab1353711aa069853c835d7fbe833b5a9a1324188f6"
+checksum = "3e0eaa743ea7d2565817d04dae76010ce8de464c7962e05905b409b4e8b30308"
 dependencies = [
  "general_audio",
  "log",
- "rodio",
+ "rodio 0.15.0",
 ]
 
 [[package]]
@@ -1469,7 +1469,7 @@ dependencies = [
  "lyon",
  "mint",
  "old_school_gfx_glutin_ext",
- "rodio",
+ "rodio 0.14.0",
  "serde",
  "serde_derive",
  "skeptic",
@@ -1987,9 +1987,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.113"
+version = "0.2.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eef78b64d87775463c549fbd80e19249ef436ea3bf1de2a1eb7e717ec7fab1e9"
+checksum = "b0005d08a8f7b65fb8073cb697aa0b12b631ed251ce73d862ce50eeb52ce3b50"
 
 [[package]]
 name = "libloading"
@@ -2292,9 +2292,9 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22c5cfe6dbc4ae14962316265a931fbb89b892c5ed6a4a61d7fe4e9f58c0bf94"
+checksum = "3012f2dbcc79e8e0b5825a4836a7106a75dd9b2fe42c528163be0f572538c705"
 dependencies = [
  "bit-set",
  "bitflags",
@@ -2456,9 +2456,9 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.22.0"
+version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf1e25ee6b412c2a1e3fcb6a4499a5c1bfe7f43e014bdce9a6b6666e5aa2d187"
+checksum = "e4916f159ed8e5de0082076562152a76b7a1f64a01fd9d1e0fea002c37624faf"
 dependencies = [
  "bitflags",
  "cc",
@@ -3216,6 +3216,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rodio"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec0939e9f626e6c6f1989adb6226a039c855ca483053f0ee7c98b90e41cf731e"
+dependencies = [
+ "cpal",
+ "minimp3",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3326,18 +3336,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.135"
+version = "1.0.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cf9235533494ea2ddcdb794665461814781c53f19d87b76e571a1c35acbad2b"
+checksum = "ce31e24b01e1e524df96f1c2fdd054405f8d7376249a5110886fb4b658484789"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.135"
+version = "1.0.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8dcde03d87d4c973c04be249e7d8f0b35db1c848c487bd43032808e59dd8328d"
+checksum = "08597e7152fcd306f41838ed3e37be9eaeed2b61c42e2117266a554fab4662f9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3496,7 +3506,7 @@ dependencies = [
  "lazy_static",
  "log",
  "memmap2 0.3.1",
- "nix 0.22.0",
+ "nix 0.22.3",
  "pkg-config",
  "wayland-client 0.29.4",
  "wayland-cursor 0.29.4",
@@ -3914,7 +3924,7 @@ dependencies = [
  "bitflags",
  "downcast-rs",
  "libc",
- "nix 0.22.0",
+ "nix 0.22.3",
  "scoped-tls",
  "wayland-commons 0.29.4",
  "wayland-scanner 0.29.4",
@@ -3939,7 +3949,7 @@ version = "0.29.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94f6e5e340d7c13490eca867898c4cec5af56c27a5ffe5c80c6fc4708e22d33e"
 dependencies = [
- "nix 0.22.0",
+ "nix 0.22.3",
  "once_cell",
  "smallvec",
  "wayland-sys 0.29.4",
@@ -3962,7 +3972,7 @@ version = "0.29.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c52758f13d5e7861fc83d942d3d99bf270c83269575e52ac29e5b73cb956a6bd"
 dependencies = [
- "nix 0.22.0",
+ "nix 0.22.3",
  "wayland-client 0.29.4",
  "xcursor",
 ]
@@ -4121,9 +4131,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu-hal"
-version = "0.12.3"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62fa524903bf336b51a399f0d586f3c30af94101149588678ef147c30be89e53"
+checksum = "93b1a9400e8d7f32dd4dd909bb9a391015d70633d639775ddd3f14d1104bc970"
 dependencies = [
  "arrayvec 0.7.2",
  "ash",

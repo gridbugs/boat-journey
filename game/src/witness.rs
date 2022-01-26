@@ -1,4 +1,4 @@
-use crate::{player, ActionError, Config, GameControlFlow, Input};
+use crate::{player, ActionError, Config, ExternalEvent, GameControlFlow, Input};
 use direction::CardinalDirection;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -133,5 +133,9 @@ impl Game {
 
     pub fn npc_turn(&mut self) {
         self.0.handle_npc_turn()
+    }
+
+    pub fn events(&mut self) -> impl '_ + Iterator<Item = ExternalEvent> {
+        self.0.events()
     }
 }

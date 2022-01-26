@@ -2,7 +2,7 @@ use crate::{game, stars::Stars};
 use chargrid::prelude::*;
 use orbital_decay_game::{
     witness::{self, Game, RunningGame},
-    Config,
+    Config, Music,
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -10,21 +10,34 @@ use serde::{Deserialize, Serialize};
 pub struct GameInstance {
     pub game: Game,
     stars: Stars,
+    pub current_music: Option<Music>,
 }
 
 impl GameInstance {
     pub fn new<R: Rng>(config: &Config, rng: &mut R) -> (Self, witness::Running) {
         let (game, running) = witness::new_game(config, rng);
         let stars = Stars::new(rng);
-        (GameInstance { game, stars }, running)
+        (
+            GameInstance {
+                game,
+                stars,
+                current_music: None,
+            },
+            running,
+        )
     }
 
     pub fn into_storable(self, running: witness::Running) -> GameInstanceStorable {
-        let Self { game, stars } = self;
+        let Self {
+            game,
+            stars,
+            current_music,
+        } = self;
         let running_game = game.into_running_game(running);
         GameInstanceStorable {
             running_game,
             stars,
+            current_music,
         }
     }
 
@@ -39,6 +52,7 @@ impl GameInstance {
 pub struct GameInstanceStorable {
     running_game: RunningGame,
     stars: Stars,
+    current_music: Option<Music>,
 }
 
 impl GameInstanceStorable {
@@ -46,8 +60,16 @@ impl GameInstanceStorable {
         let Self {
             running_game,
             stars,
+            current_music,
         } = self;
         let (game, running) = running_game.into_game();
-        (GameInstance { game, stars }, running)
+        (
+            GameInstance {
+                game,
+                stars,
+                current_music,
+            },
+            running,
+        )
     }
 }

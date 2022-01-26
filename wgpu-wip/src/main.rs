@@ -8,7 +8,7 @@ fn main() {
     use meap::Parser;
     env_logger::init();
     let NativeCommon {
-        save_game_storage,
+        storage,
         initial_rng_seed,
         audio_player,
         omniscient,
@@ -38,7 +38,7 @@ fn main() {
         resizable: false,
     });
     context.run(app(AppArgs {
-        save_game_storage,
+        storage,
         initial_rng_seed,
         audio_player,
         omniscient,
