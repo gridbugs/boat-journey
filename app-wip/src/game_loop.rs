@@ -479,6 +479,28 @@ enum MainMenuEntry {
     Quit,
 }
 
+fn title_decorate<T: 'static>(cf: CF<T>) -> CF<T> {
+    let decoration = {
+        let style = Style::default().with_foreground(colours::WALL_FRONT);
+        chargrid::boxed_many![
+            styled_string("Orbital Decay".to_string(), style.with_bold(true))
+                .add_offset(Coord { x: 14, y: 24 }),
+            styled_string(
+                "Programming and art by Stephen Sherratt".to_string(),
+                style.with_bold(false)
+            )
+            .add_offset(Coord { x: 1, y: 57 }),
+            styled_string(
+                "Music and sound effects by Lily Chen".to_string(),
+                style.with_bold(false)
+            )
+            .add_offset(Coord { x: 1, y: 58 }),
+        ]
+    };
+    cf.add_offset(Coord { x: 14, y: 28 })
+        .overlay(decoration, chargrid::core::TintIdentity, 10)
+}
+
 fn main_menu() -> CF<MainMenuEntry> {
     on_state_then(|state: &mut GameLoopData| {
         use menu::builder::*;
@@ -497,28 +519,7 @@ fn main_menu() -> CF<MainMenuEntry> {
             add_item(Epilogue, "Epilogue", 'e');
         }
         add_item(Quit, "Quit", 'q');
-        let decoration = {
-            let style = Style::default().with_foreground(colours::WALL_FRONT);
-            chargrid::boxed_many![
-                MenuBackgroundComponent,
-                styled_string("Orbital Decay".to_string(), style.with_bold(true))
-                    .add_offset(Coord { x: 14, y: 24 }),
-                styled_string(
-                    "Programming and art by Stephen Sherratt".to_string(),
-                    style.with_bold(false)
-                )
-                .add_offset(Coord { x: 1, y: 57 }),
-                styled_string(
-                    "Music and sound effects by Lily Chen".to_string(),
-                    style.with_bold(false)
-                )
-                .add_offset(Coord { x: 1, y: 58 }),
-            ]
-        };
-        builder
-            .build_cf()
-            .add_offset(Coord { x: 14, y: 28 })
-            .overlay(decoration, chargrid::core::TintIdentity, 10)
+        builder.build_cf()
     })
 }
 
@@ -527,25 +528,28 @@ enum MainMenuOutput {
     Quit,
 }
 
-fn epilogue() -> CF<()> {
-    text::epilogue1()
+fn epilogue(width: u32) -> CF<()> {
+    text::epilogue1(width)
         .into_component()
-        .and_then(|()| text::epilogue2().into_component())
+        .and_then(move |()| text::epilogue2(width).into_component())
 }
 
 fn main_menu_loop() -> CF<MainMenuOutput> {
     use MainMenuEntry::*;
-    main_menu().repeat_unit(|entry| match entry {
-        NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
-            new_running: state.new_game(),
+    let text_width = 40;
+    title_decorate(main_menu())
+        .repeat_unit(move |entry| match entry {
+            NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
+                new_running: state.new_game(),
+            })
+            .break_(),
+            Options => title_decorate(options_menu()).continue_(),
+            Help => text::help(text_width).into_component().continue_(),
+            Prologue => text::prologue(text_width).into_component().continue_(),
+            Epilogue => epilogue(text_width).continue_(),
+            Quit => val_once(MainMenuOutput::Quit).break_(),
         })
-        .break_(),
-        Options => options_menu().continue_(),
-        Help => text::help().into_component().continue_(),
-        Prologue => text::prologue().into_component().continue_(),
-        Epilogue => epilogue().continue_(),
-        Quit => val_once(MainMenuOutput::Quit).break_(),
-    })
+        .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
 }
 
 #[derive(Clone)]
@@ -582,16 +586,7 @@ fn pause_menu() -> CF<PauseMenuEntry> {
             add_item(Epilogue, "Epilogue", 'e');
         }
         add_item(Clear, "Clear", 'c');
-        builder
-            .build_cf()
-            .border(BorderStyle::default())
-            .fill(MENU_BACKGROUND)
-            .centre()
-            .overlay(
-                render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
-                chargrid::core::TintDim(63),
-                10,
-            )
+        builder.build_cf()
     })
 }
 
@@ -603,44 +598,59 @@ enum PauseOutput {
 
 fn pause(running: witness::Running) -> CF<PauseOutput> {
     use PauseMenuEntry::*;
+    let text_width = 60;
     const PAUSE_MUSIC_VOLUME_MULTIPLIER: f32 = 0.25;
-    on_state_then(|state: &mut GameLoopData| {
+    on_state_then(move |state: &mut GameLoopData| {
         // turn down the music in the pause menu
         state
             .audio_state
             .set_music_volume_multiplier(PAUSE_MUSIC_VOLUME_MULTIPLIER);
-        pause_menu().catch_escape().repeat(
-            running,
-            |running, entry_or_escape| match entry_or_escape {
-                Ok(entry) => match entry {
-                    Resume => break_(PauseOutput::ContinueGame { running }),
-                    SaveQuit => on_state(|state: &mut GameLoopData| {
-                        state.save_instance(running);
-                        PauseOutput::Quit
-                    })
-                    .break_(),
-                    Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                        running: state.save_instance(running),
-                    })
-                    .break_(),
-                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                        running: state.new_game(),
-                    })
-                    .break_(),
-                    Options => options_menu().continue_with(running),
-                    Help => text::help().into_component().continue_with(running),
-                    Prologue => text::prologue().into_component().continue_with(running),
-                    Epilogue => epilogue().continue_with(running),
-                    Clear => on_state(|state: &mut GameLoopData| {
-                        state.clear_saved_game();
-                        PauseOutput::MainMenu
-                    })
-                    .break_(),
+        pause_menu()
+            .catch_escape()
+            .repeat(
+                running,
+                move |running, entry_or_escape| match entry_or_escape {
+                    Ok(entry) => match entry {
+                        Resume => break_(PauseOutput::ContinueGame { running }),
+                        SaveQuit => on_state(|state: &mut GameLoopData| {
+                            state.save_instance(running);
+                            PauseOutput::Quit
+                        })
+                        .break_(),
+                        Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                            running: state.save_instance(running),
+                        })
+                        .break_(),
+                        NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                            running: state.new_game(),
+                        })
+                        .break_(),
+                        Options => options_menu().continue_with(running),
+                        Help => text::help(text_width)
+                            .into_component()
+                            .continue_with(running),
+                        Prologue => text::prologue(text_width)
+                            .into_component()
+                            .continue_with(running),
+                        Epilogue => epilogue(text_width).continue_with(running),
+                        Clear => on_state(|state: &mut GameLoopData| {
+                            state.clear_saved_game();
+                            PauseOutput::MainMenu
+                        })
+                        .break_(),
+                    },
+                    Err(Escape) => break_(PauseOutput::ContinueGame { running }),
                 },
-                Err(Escape) => break_(PauseOutput::ContinueGame { running }),
-            },
-        )
+            )
     })
+    .border(BorderStyle::default())
+    .fill(MENU_BACKGROUND)
+    .centre()
+    .overlay(
+        render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
+        chargrid::core::TintDim(63),
+        10,
+    )
     .then_side_effect(|state: &mut GameLoopData| {
         // turn the music back up
         state.audio_state.set_music_volume_multiplier(1.);
@@ -663,14 +673,15 @@ impl Component for OptionsMenuComponent {
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
         self.menu.render(&(), ctx, fb);
         let x_offset = 14;
+        let style = Style::default().with_foreground(Rgba32::new_grey(255));
         StyledString {
             string: format!("< {:.0}% >", state.config.music_volume * 100.),
-            style: Style::default(),
+            style,
         }
         .render(&(), ctx.add_offset(Coord { x: x_offset, y: 0 }), fb);
         StyledString {
             string: format!("< {:.0}% >", state.config.sfx_volume * 100.),
-            style: Style::default(),
+            style,
         }
         .render(&(), ctx.add_offset(Coord { x: x_offset, y: 1 }), fb);
     }
@@ -707,7 +718,7 @@ impl Component for OptionsMenuComponent {
     }
 
     fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
-        self.menu.size(&(), ctx)
+        self.menu.size(&(), ctx) + Size::new(9, 0)
     }
 }
 fn options_menu() -> CF<()> {

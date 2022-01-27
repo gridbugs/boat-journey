@@ -6,14 +6,14 @@ use chargrid::{
 };
 
 pub struct TextOverlay {
-    height: u32,
+    width: u32,
     text: Text,
 }
 
 impl TextOverlay {
     pub fn into_component<S: 'static>(self) -> BoxedCF<Option<()>, S> {
         boxed_cf(TextOverlayWordWrapped {
-            height: self.height,
+            width: self.width,
             text: self.text.wrap_word(),
         })
         .ignore_state()
@@ -22,7 +22,7 @@ impl TextOverlay {
 }
 
 struct TextOverlayWordWrapped {
-    height: u32,
+    width: u32,
     text: TextWordWrapped,
 }
 
@@ -38,11 +38,11 @@ impl Component for TextOverlayWordWrapped {
     }
 
     fn size(&self, state: &Self::State, ctx: Ctx) -> Size {
-        self.text.size(state, ctx)
+        self.text.size(state, ctx).set_width(self.width)
     }
 }
 
-pub fn prologue() -> TextOverlay {
+pub fn prologue(width: u32) -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -74,10 +74,10 @@ pub fn prologue() -> TextOverlay {
             Better make those odds 6 to 1...", normal),
             t("\n\n\n\n\n\nPress any key...", faint),
     ]);
-    TextOverlay { height: 40, text }
+    TextOverlay { width, text }
 }
 
-pub fn help() -> TextOverlay {
+pub fn help(width: u32) -> TextOverlay {
     let normal = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(false);
@@ -126,10 +126,10 @@ pub fn help() -> TextOverlay {
         t("Fire Ranged Weapon Slot 2: B/Circle\n"),
         f("\n\n\n\n\nPress any key..."),
         ]);
-    TextOverlay { height: 52, text }
+    TextOverlay { width, text }
 }
 
-pub fn epilogue1() -> TextOverlay {
+pub fn epilogue1(width: u32) -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -169,10 +169,10 @@ pub fn epilogue1() -> TextOverlay {
         t(" you just put down. Now sign here.", normal),
         t("\n\n\n\n\n\nPress any key...", faint),
     ]);
-    TextOverlay { height: 30, text }
+    TextOverlay { width, text }
 }
 
-pub fn epilogue2() -> TextOverlay {
+pub fn epilogue2(width: u32) -> TextOverlay {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -216,5 +216,5 @@ pub fn epilogue2() -> TextOverlay {
         t("\n\n\n\n\n\nPress any key...", faint),
 
         ]);
-    TextOverlay { height: 35, text }
+    TextOverlay { width, text }
 }

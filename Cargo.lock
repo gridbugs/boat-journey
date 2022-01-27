@@ -419,7 +419,7 @@ dependencies = [
 [[package]]
 name = "chargrid"
 version = "0.5.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_common",
  "chargrid_core",
@@ -442,7 +442,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ansi_terminal"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -465,7 +465,7 @@ dependencies = [
 [[package]]
 name = "chargrid_common"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_core",
 ]
@@ -473,7 +473,7 @@ dependencies = [
 [[package]]
 name = "chargrid_core"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "grid_2d",
@@ -516,7 +516,7 @@ dependencies = [
 [[package]]
 name = "chargrid_gamepad"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "gilrs",
@@ -526,7 +526,7 @@ dependencies = [
 [[package]]
 name = "chargrid_ggez"
 version = "0.1.1"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_graphical_common",
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -539,7 +539,7 @@ dependencies = [
 [[package]]
 name = "chargrid_graphical_common"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 
 [[package]]
 name = "chargrid_input"
@@ -554,7 +554,7 @@ dependencies = [
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "coord_2d",
  "serde",
@@ -588,7 +588,7 @@ dependencies = [
 [[package]]
 name = "chargrid_runtime"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_core",
 ]
@@ -621,7 +621,7 @@ dependencies = [
 [[package]]
 name = "chargrid_web"
 version = "0.2.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
  "chargrid_runtime",
@@ -634,7 +634,7 @@ dependencies = [
 [[package]]
 name = "chargrid_wgpu"
 version = "0.1.0"
-source = "git+https://github.com/gridbugs/chargrid#df1596cef562cf5ca897b89feeccb7469668efef"
+source = "git+https://github.com/gridbugs/chargrid#a3d1a46b1151666a0a91d361a889d8f0fe8f1aea"
 dependencies = [
  "async-executor",
  "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
@@ -868,9 +868,9 @@ dependencies = [
 
 [[package]]
 name = "coreaudio-sys"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b7e3347be6a09b46aba228d6608386739fb70beff4f61e07422da87b0bb31fa"
+checksum = "ca4679a59dbd8c15f064c012dfe8c1163b9453224238b59bb9328c142b8b248b"
 dependencies = [
  "bindgen",
 ]
@@ -1987,9 +1987,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.114"
+version = "0.2.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0005d08a8f7b65fb8073cb697aa0b12b631ed251ce73d862ce50eeb52ce3b50"
+checksum = "0a8d982fa7a96a000f6ec4cfe966de9703eccde29750df2bb8949da91b0e818d"
 
 [[package]]
 name = "libloading"
