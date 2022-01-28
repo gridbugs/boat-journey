@@ -33,6 +33,7 @@ struct Config {
     music_volume: f32,
     sfx_volume: f32,
     won: bool,
+    first_run: bool,
 }
 
 impl Default for Config {
@@ -41,6 +42,7 @@ impl Default for Config {
             music_volume: 0.2,
             sfx_volume: 0.5,
             won: true,
+            first_run: true,
         }
     }
 }
@@ -528,9 +530,10 @@ enum MainMenuOutput {
     Quit,
 }
 
+const MAIN_MENU_TEXT_WIDTH: u32 = 40;
+
 fn main_menu_loop() -> CF<MainMenuOutput> {
     use MainMenuEntry::*;
-    let text_width = 40;
     title_decorate(main_menu())
         .repeat_unit(move |entry| match entry {
             NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
@@ -538,9 +541,9 @@ fn main_menu_loop() -> CF<MainMenuOutput> {
             })
             .break_(),
             Options => title_decorate(options_menu()).continue_(),
-            Help => text::help(text_width).centre().continue_(),
-            Prologue => text::prologue(text_width).centre().continue_(),
-            Epilogue => text::epilogue(text_width).centre().continue_(),
+            Help => text::help(MAIN_MENU_TEXT_WIDTH).centre().continue_(),
+            Prologue => text::prologue(MAIN_MENU_TEXT_WIDTH).centre().continue_(),
+            Epilogue => text::epilogue(MAIN_MENU_TEXT_WIDTH).centre().continue_(),
             Quit => val_once(MainMenuOutput::Quit).break_(),
         })
         .bound_width(42)
@@ -749,27 +752,44 @@ pub enum GameExitReason {
     Quit,
 }
 
+fn first_run_prologue() -> CF<()> {
+    on_state_then(|state: &mut GameLoopData| {
+        if state.config.first_run {
+            state.config.first_run = false;
+            state.save_config();
+            text::prologue(MAIN_MENU_TEXT_WIDTH)
+                .centre()
+                .bound_width(42)
+                .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
+        } else {
+            unit().some()
+        }
+    })
+}
+
 pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
     use GameLoopState::*;
-    loop_(initial_state, |state| match state {
-        Playing(witness) => match witness {
-            Witness::Running(running) => game_instance_component(running).continue_(),
-            Witness::Upgrade(upgrade) => upgrade_component(upgrade).map(Playing).continue_(),
-            Witness::GameOver => break_(GameExitReason::GameOver),
-        },
-        Paused(running) => pause(running).map(|pause_output| match pause_output {
-            PauseOutput::ContinueGame { running } => {
-                LoopControl::Continue(Playing(running.into_witness()))
-            }
-            PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
-            PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
-        }),
-        MainMenu => main_menu_loop().map(|main_menu_output| match main_menu_output {
-            MainMenuOutput::NewGame { new_running } => {
-                LoopControl::Continue(Playing(new_running.into_witness()))
-            }
-            MainMenuOutput::Quit => LoopControl::Break(GameExitReason::Quit),
-        }),
+    first_run_prologue().and_then(|()| {
+        loop_(initial_state, |state| match state {
+            Playing(witness) => match witness {
+                Witness::Running(running) => game_instance_component(running).continue_(),
+                Witness::Upgrade(upgrade) => upgrade_component(upgrade).map(Playing).continue_(),
+                Witness::GameOver => break_(GameExitReason::GameOver),
+            },
+            Paused(running) => pause(running).map(|pause_output| match pause_output {
+                PauseOutput::ContinueGame { running } => {
+                    LoopControl::Continue(Playing(running.into_witness()))
+                }
+                PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
+                PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
+            }),
+            MainMenu => main_menu_loop().map(|main_menu_output| match main_menu_output {
+                MainMenuOutput::NewGame { new_running } => {
+                    LoopControl::Continue(Playing(new_running.into_witness()))
+                }
+                MainMenuOutput::Quit => LoopControl::Break(GameExitReason::Quit),
+            }),
+        })
+        .bound_size(Size::new_u16(80, 60))
     })
-    .bound_size(Size::new_u16(80, 60))
 }
