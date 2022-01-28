@@ -7,10 +7,6 @@ use orbital_decay_game::{CellVisibility, Game, Layer, WarningLight};
 
 const GAME_MAX_DEPTH: i8 = 63;
 
-pub enum GameOutput {
-    Quit,
-}
-
 #[derive(Clone, Copy)]
 struct Remembered;
 impl Tint for Remembered {

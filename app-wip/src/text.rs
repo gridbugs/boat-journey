@@ -1,48 +1,18 @@
-use crate::colours;
+use crate::{colours, game_loop::CF};
 use chargrid::{
-    control_flow::{boxed_cf, BoxedCF},
     prelude::*,
-    text::{StyledString, Text, TextWordWrapped},
+    text::{StyledString, Text},
 };
 
-pub struct TextOverlay {
-    width: u32,
-    text: Text,
-}
-
-impl TextOverlay {
-    pub fn into_component<S: 'static>(self) -> BoxedCF<Option<()>, S> {
-        boxed_cf(TextOverlayWordWrapped {
-            width: self.width,
-            text: self.text.wrap_word(),
-        })
-        .ignore_state()
+fn text_component(width: u32, text: Vec<StyledString>) -> CF<()> {
+    Text::new(text)
+        .wrap_word()
+        .boxed_cf()
+        .set_width(width)
         .press_any_key()
-    }
 }
 
-struct TextOverlayWordWrapped {
-    width: u32,
-    text: TextWordWrapped,
-}
-
-impl Component for TextOverlayWordWrapped {
-    type Output = ();
-    type State = ();
-    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
-        self.text.render(state, ctx, fb);
-    }
-
-    fn update(&mut self, _state: &mut Self::State, _ctx: Ctx, _event: Event) -> Self::Output {
-        ()
-    }
-
-    fn size(&self, state: &Self::State, ctx: Ctx) -> Size {
-        self.text.size(state, ctx).set_width(self.width)
-    }
-}
-
-pub fn prologue(width: u32) -> TextOverlay {
+pub fn prologue(width: u32) -> CF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -56,7 +26,7 @@ pub fn prologue(width: u32) -> TextOverlay {
         string: text.to_string(),
         style,
     };
-    let text = Text::new(vec![
+    text_component(width, vec![
         t("You tape over the flashing warning light. An overheating engine is the least of your worries. \
         Gotta focus.\n\n\
         The space station looms ahead. It's out of fuel, and about to come crashing down to Earth. \
@@ -73,11 +43,10 @@ pub fn prologue(width: u32) -> TextOverlay {
         t("\n\n\
             Better make those odds 6 to 1...", normal),
             t("\n\n\n\n\n\nPress any key...", faint),
-    ]);
-    TextOverlay { width, text }
+    ])
 }
 
-pub fn help(width: u32) -> TextOverlay {
+pub fn help(width: u32) -> CF<()> {
     let normal = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(false);
@@ -94,7 +63,7 @@ pub fn help(width: u32) -> TextOverlay {
         string: s.to_string(),
         style: normal,
     };
-    let text = Text::new(vec![
+    text_component(width, vec![
         b("Combat\n"),
         t("Each weapon has a DMG(♥) and PEN(♦) stat, and each enemy has heatlh(♥) and armour(♦). "),
         t("If an enemy is hit with a weapon that has a higher PEN than their armour, their health is "),
@@ -125,11 +94,10 @@ pub fn help(width: u32) -> TextOverlay {
         t("Fire Ranged Weapon Slot 2: A/Cross\n"),
         t("Fire Ranged Weapon Slot 2: B/Circle\n"),
         f("\n\n\n\n\nPress any key..."),
-        ]);
-    TextOverlay { width, text }
+    ])
 }
 
-pub fn epilogue1(width: u32) -> TextOverlay {
+fn epilogue1(width: u32) -> CF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -143,36 +111,38 @@ pub fn epilogue1(width: u32) -> TextOverlay {
         string: text.to_string(),
         style,
     };
-    let text = Text::new(vec![
-        t(
-            "With its fuel supply restored, the station flies back into orbit. \
+    text_component(
+        width,
+        vec![
+            t(
+                "With its fuel supply restored, the station flies back into orbit. \
             On autopilot. Shame about the crew, but these things happen. Nobody said \
             space was a safe place to work.\n\n\
             You undock your shuttle and make for Earth. Easy does it. Gotta make it \
             back in one piece and collect on that ",
-            normal,
-        ),
-        t("hefty wager", bold),
-        t(
-            " you placed on yourself. \
+                normal,
+            ),
+            t("hefty wager", bold),
+            t(
+                " you placed on yourself. \
             Serves those suckers right for betting against you!\n\n\
             No doubt there'll be a ton of paperwork to complete before you can go home. \
             The company can't have this getting out. It's gonna be all NDA this and \
             sworn to secrecy that. Don't go running to the press about the ",
-            normal,
-        ),
-        t(
-            "undead space \
+                normal,
+            ),
+            t(
+                "undead space \
             station crew",
-            bold,
-        ),
-        t(" you just put down. Now sign here.", normal),
-        t("\n\n\n\n\n\nPress any key...", faint),
-    ]);
-    TextOverlay { width, text }
+                bold,
+            ),
+            t(" you just put down. Now sign here.", normal),
+            t("\n\n\n\n\n\nPress any key...", faint),
+        ],
+    )
 }
 
-pub fn epilogue2(width: u32) -> TextOverlay {
+fn epilogue2(width: u32) -> CF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -186,7 +156,7 @@ pub fn epilogue2(width: u32) -> TextOverlay {
         string: text.to_string(),
         style,
     };
-    let text = Text::new(vec![
+    text_component(width, vec![
         t(
             "Now that you have time to think, something gives you pause. \
             Pretty big coincidence, the station running out of fuel at the ",
@@ -214,7 +184,9 @@ pub fn epilogue2(width: u32) -> TextOverlay {
             normal,
         ),
         t("\n\n\n\n\n\nPress any key...", faint),
+    ])
+}
 
-        ]);
-    TextOverlay { width, text }
+pub fn epilogue(width: u32) -> CF<()> {
+    epilogue1(width).and_then(move |()| epilogue2(width))
 }

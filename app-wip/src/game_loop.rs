@@ -528,12 +528,6 @@ enum MainMenuOutput {
     Quit,
 }
 
-fn epilogue(width: u32) -> CF<()> {
-    text::epilogue1(width)
-        .into_component()
-        .and_then(move |()| text::epilogue2(width).into_component())
-}
-
 fn main_menu_loop() -> CF<MainMenuOutput> {
     use MainMenuEntry::*;
     let text_width = 40;
@@ -544,11 +538,12 @@ fn main_menu_loop() -> CF<MainMenuOutput> {
             })
             .break_(),
             Options => title_decorate(options_menu()).continue_(),
-            Help => text::help(text_width).into_component().continue_(),
-            Prologue => text::prologue(text_width).into_component().continue_(),
-            Epilogue => epilogue(text_width).continue_(),
+            Help => text::help(text_width).centre().continue_(),
+            Prologue => text::prologue(text_width).centre().continue_(),
+            Epilogue => text::epilogue(text_width).centre().continue_(),
             Quit => val_once(MainMenuOutput::Quit).break_(),
         })
+        .bound_width(42)
         .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
 }
 
@@ -598,7 +593,7 @@ enum PauseOutput {
 
 fn pause(running: witness::Running) -> CF<PauseOutput> {
     use PauseMenuEntry::*;
-    let text_width = 60;
+    let text_width = 64;
     const PAUSE_MUSIC_VOLUME_MULTIPLIER: f32 = 0.25;
     on_state_then(move |state: &mut GameLoopData| {
         // turn down the music in the pause menu
@@ -626,13 +621,9 @@ fn pause(running: witness::Running) -> CF<PauseOutput> {
                         })
                         .break_(),
                         Options => options_menu().continue_with(running),
-                        Help => text::help(text_width)
-                            .into_component()
-                            .continue_with(running),
-                        Prologue => text::prologue(text_width)
-                            .into_component()
-                            .continue_with(running),
-                        Epilogue => epilogue(text_width).continue_with(running),
+                        Help => text::help(text_width).continue_with(running),
+                        Prologue => text::prologue(text_width).continue_with(running),
+                        Epilogue => text::epilogue(text_width).continue_with(running),
                         Clear => on_state(|state: &mut GameLoopData| {
                             state.clear_saved_game();
                             PauseOutput::MainMenu
@@ -707,6 +698,16 @@ impl Component for OptionsMenuComponent {
                     // prevent hitting enter on a menu option from closing the menu
                     if let OptionsMenuEntry::Back = self.menu.selected() {
                         return Some(());
+                    } else {
+                        return None;
+                    }
+                }
+                _ => (),
+            }
+        } else if let Some(mouse_input) = event.mouse_input() {
+            match mouse_input {
+                MouseInput::MousePress { .. } => {
+                    if let OptionsMenuEntry::Back = self.menu.selected() {
                     } else {
                         return None;
                     }
