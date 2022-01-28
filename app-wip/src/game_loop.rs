@@ -651,7 +651,7 @@ fn pause(running: witness::Running) -> CF<PauseOutput> {
     })
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum OptionsMenuEntry {
     MusicVolume,
     SfxVolume,
@@ -667,7 +667,9 @@ impl Component for OptionsMenuComponent {
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
         self.menu.render(&(), ctx, fb);
         let x_offset = 14;
-        let style = Style::default().with_foreground(Rgba32::new_grey(255));
+        let style = Style::default()
+            .with_foreground(Rgba32::new_grey(255))
+            .with_bold(false);
         StyledString {
             string: format!("< {:.0}% >", state.config.music_volume * 100.),
             style,
@@ -693,25 +695,13 @@ impl Component for OptionsMenuComponent {
                 .set_music_volume(state.config.music_volume);
             state.save_config();
         };
-        if let Some(keyboard_input) = event.keyboard_input() {
-            match keyboard_input {
-                KeyboardInput::Left => update_volume(-0.05),
-                KeyboardInput::Right => update_volume(0.05),
-                input::keys::RETURN => {
+        if let Some(input_policy) = event.input_policy() {
+            match input_policy {
+                InputPolicy::Left => update_volume(-0.05),
+                InputPolicy::Right => update_volume(0.05),
+                InputPolicy::Select => {
                     // prevent hitting enter on a menu option from closing the menu
-                    if let OptionsMenuEntry::Back = self.menu.selected() {
-                        return Some(());
-                    } else {
-                        return None;
-                    }
-                }
-                _ => (),
-            }
-        } else if let Some(mouse_input) = event.mouse_input() {
-            match mouse_input {
-                MouseInput::MousePress { .. } => {
-                    if let OptionsMenuEntry::Back = self.menu.selected() {
-                    } else {
+                    if OptionsMenuEntry::Back != *self.menu.selected() {
                         return None;
                     }
                 }
