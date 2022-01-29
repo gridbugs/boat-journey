@@ -100,9 +100,9 @@ impl Upgrade {
         game.witness_handle_input(input, config, private)
     }
 
-    pub fn cancel(self) -> (Witness, Result<(), ActionError>) {
+    pub fn cancel(self) -> Witness {
         let Self(private) = self;
-        (Witness::running(private), Ok(()))
+        Witness::running(private)
     }
 }
 
@@ -137,5 +137,9 @@ impl Game {
 
     pub fn events(&mut self) -> impl '_ + Iterator<Item = ExternalEvent> {
         self.0.events()
+    }
+
+    pub fn player(&self) -> &player::Player {
+        self.0.player()
     }
 }

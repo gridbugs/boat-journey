@@ -7,8 +7,8 @@ use crate::{
     text,
 };
 use chargrid::{
-    border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, prelude::*,
-    text::StyledString,
+    border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, pad_by::Padding,
+    prelude::*, text::StyledString,
 };
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
@@ -434,6 +434,17 @@ impl Component for MenuBackgroundComponent {
     }
 }
 
+fn menu_style<T: 'static>(menu: CF<T>) -> CF<T> {
+    menu.border(BorderStyle::default())
+        .fill(MENU_BACKGROUND)
+        .centre()
+        .overlay(
+            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
+            chargrid::core::TintDim(63),
+            10,
+        )
+}
+
 fn upgrade_identifier(upgrade: player::Upgrade) -> String {
     let name = match upgrade.typ {
         player::UpgradeType::Toughness => "Toughness",
@@ -448,45 +459,152 @@ fn upgrade_identifier(upgrade: player::Upgrade) -> String {
     format!("{} {} (${})", name, level, price)
 }
 
-fn upgrade_menu(upgrades: Vec<player::Upgrade>) -> CF<player::Upgrade> {
-    use menu::builder::*;
-    let mut builder = menu_builder();
-    for upgrade in upgrades {
-        builder = builder.add_item(item(
-            upgrade,
-            identifier::simple(upgrade_identifier(upgrade).as_str()),
-        ));
+fn upgrade_description(upgrade: &player::Upgrade) -> &'static str {
+    use player::{UpgradeLevel::*, UpgradeType::*};
+    match upgrade {
+        player::Upgrade {
+            typ: Toughness,
+            level: Level1,
+        } => "Toughness 1: Strong Back\nGain a third ranged weapon slot.",
+        player::Upgrade {
+            typ: Toughness,
+            level: Level2,
+        } => "Toughness 2: Hardy\nDouble your maximum health.",
+        player::Upgrade {
+            typ: Accuracy,
+            level: Level1,
+        } => "Accuracy 1: Careful\nReduce hull pen chance by half.",
+        player::Upgrade {
+            typ: Accuracy,
+            level: Level2,
+        } => "Accuracy 2: Kill Shot\nDeal double damage to enemies.",
+        player::Upgrade {
+            typ: Endurance,
+            level: Level1,
+        } => "Endurance 1: Sure-Footed\nVacuum pulls you one space each turn instead of two.",
+        player::Upgrade {
+            typ: Endurance,
+            level: Level2,
+        } => "Endurance 2: Big Lungs\nDouble your maximum oxygen.",
     }
-    builder
-        .build_boxed_cf()
-        .border(BorderStyle::default())
-        .centre()
-        .overlay(
-            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
-            chargrid::core::TintDim(63),
-            10,
-        )
 }
 
-fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
+struct UpgradeMenuDecorated {
+    menu: Menu<player::Upgrade>,
+}
+impl UpgradeMenuDecorated {
+    const MENU_Y_OFFSET: i32 = 4;
+    const TEXT_STYLE: Style = Style::new()
+        .with_bold(false)
+        .with_foreground(Rgba32::new_grey(255));
+    const SIZE: Size = Size::new_u16(33, 13);
+
+    fn text(ctx: Ctx, fb: &mut FrameBuffer, string: String) {
+        StyledString {
+            string,
+            style: Self::TEXT_STYLE,
+        }
+        .render(&(), ctx, fb);
+    }
+}
+impl Component for UpgradeMenuDecorated {
+    type Output = Option<player::Upgrade>;
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        let instance = state.instance.as_ref().unwrap();
+        let balance = instance.game.player().credit;
+        Self::text(ctx, fb, "Buy an Upgrade (escape cancels)".to_string());
+        Self::text(ctx.add_y(2), fb, format!("Your balance: ${}", balance));
+        self.menu.render(&(), ctx.add_y(Self::MENU_Y_OFFSET), fb);
+        let description = upgrade_description(self.menu.selected());
+        StyledString {
+            string: description.to_string(),
+            style: Self::TEXT_STYLE,
+        }
+        .wrap_word()
+        .cf()
+        .bound_width(Self::SIZE.width())
+        .render(&(), ctx.add_y(9), fb);
+    }
+
+    fn update(&mut self, _state: &mut Self::State, ctx: Ctx, event: Event) -> Self::Output {
+        self.menu
+            .update(&mut (), ctx.add_y(Self::MENU_Y_OFFSET), event)
+    }
+
+    fn size(&self, _state: &Self::State, _ctx: Ctx) -> Size {
+        Self::SIZE
+    }
+}
+
+fn upgrade_menu() -> CF<player::Upgrade> {
     on_state_then(|state: &mut GameLoopData| {
         let instance = state.instance.as_ref().unwrap();
         let upgrades = instance.game.inner_ref().available_upgrades();
-        upgrade_menu(upgrades).catch_escape().and_then(|result| {
-            on_state(move |state: &mut GameLoopData| {
-                let (witness, result) = match result {
-                    Err(Escape) => upgrade_witness.cancel(),
-                    Ok(upgrade) => {
-                        let instance = state.instance.as_mut().unwrap();
-                        upgrade_witness.upgrade(&mut instance.game, upgrade, &state.game_config)
+        use menu::builder::*;
+        let mut builder = menu_builder();
+        for upgrade in upgrades {
+            let name = upgrade_identifier(upgrade);
+            let identifier = MENU_FADE_SPEC.identifier(move |b| write!(b, "{}", name).unwrap());
+            builder = builder.add_item(item(upgrade, identifier));
+        }
+        let menu = builder.build();
+        UpgradeMenuDecorated { menu }
+    })
+}
+
+fn popup(string: String) -> CF<()> {
+    menu_style(
+        StyledString {
+            string,
+            style: Style::new()
+                .with_bold(false)
+                .with_underline(false)
+                .with_foreground(colours::STRIPE),
+        }
+        .boxed_cf()
+        .pad_by(Padding::all(1))
+        .press_any_key(),
+    )
+}
+
+fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
+    menu_style(upgrade_menu())
+        .catch_escape()
+        .and_then(|result| {
+            on_state_then(move |state: &mut GameLoopData| match result {
+                Err(Escape) => val_once(upgrade_witness.cancel()),
+                Ok(upgrade) => {
+                    let instance = state.instance.as_mut().unwrap();
+                    if upgrade.level.cost() > instance.game.player().credit {
+                        popup("You can't afford that!".to_string())
+                            .map_val(|| upgrade_witness.cancel())
+                    } else {
+                        let (witness, result) = upgrade_witness.upgrade(
+                            &mut instance.game,
+                            upgrade,
+                            &state.game_config,
+                        );
+                        if let Err(upgrade_error) = result {
+                            println!("upgrade error: {:?}", upgrade_error);
+                        }
+                        val_once(witness)
                     }
-                };
-                if let Err(upgrade_error) = result {
-                    println!("upgrade error: {:?}", upgrade_error);
                 }
-                witness
             })
         })
+}
+
+fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
+    on_state_then(move |state: &mut GameLoopData| {
+        let instance = state.instance.as_ref().unwrap();
+        let upgrades = instance.game.inner_ref().available_upgrades();
+        if upgrades.is_empty() {
+            popup("No remaining upgrades!".to_string()).map_val(|| upgrade_witness.cancel())
+        } else {
+            upgrade_component(upgrade_witness)
+        }
     })
 }
 
@@ -607,6 +725,44 @@ fn pause_menu() -> CF<PauseMenuEntry> {
     })
 }
 
+fn pause_menu_loop(running: witness::Running) -> CF<PauseOutput> {
+    use PauseMenuEntry::*;
+    let text_width = 64;
+    pause_menu()
+        .catch_escape()
+        .repeat(
+            running,
+            move |running, entry_or_escape| match entry_or_escape {
+                Ok(entry) => match entry {
+                    Resume => break_(PauseOutput::ContinueGame { running }),
+                    SaveQuit => on_state(|state: &mut GameLoopData| {
+                        state.save_instance(running);
+                        PauseOutput::Quit
+                    })
+                    .break_(),
+                    Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                        running: state.save_instance(running),
+                    })
+                    .break_(),
+                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                        running: state.new_game(),
+                    })
+                    .break_(),
+                    Options => options_menu().continue_with(running),
+                    Help => text::help(text_width).continue_with(running),
+                    Prologue => text::prologue(text_width).continue_with(running),
+                    Epilogue => text::epilogue(text_width).continue_with(running),
+                    Clear => on_state(|state: &mut GameLoopData| {
+                        state.clear_saved_game();
+                        PauseOutput::MainMenu
+                    })
+                    .break_(),
+                },
+                Err(Escape) => break_(PauseOutput::ContinueGame { running }),
+            },
+        )
+}
+
 enum PauseOutput {
     ContinueGame { running: witness::Running },
     MainMenu,
@@ -614,56 +770,14 @@ enum PauseOutput {
 }
 
 fn pause(running: witness::Running) -> CF<PauseOutput> {
-    use PauseMenuEntry::*;
-    let text_width = 64;
     const PAUSE_MUSIC_VOLUME_MULTIPLIER: f32 = 0.25;
     on_state_then(move |state: &mut GameLoopData| {
         // turn down the music in the pause menu
         state
             .audio_state
             .set_music_volume_multiplier(PAUSE_MUSIC_VOLUME_MULTIPLIER);
-        pause_menu()
-            .catch_escape()
-            .repeat(
-                running,
-                move |running, entry_or_escape| match entry_or_escape {
-                    Ok(entry) => match entry {
-                        Resume => break_(PauseOutput::ContinueGame { running }),
-                        SaveQuit => on_state(|state: &mut GameLoopData| {
-                            state.save_instance(running);
-                            PauseOutput::Quit
-                        })
-                        .break_(),
-                        Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                            running: state.save_instance(running),
-                        })
-                        .break_(),
-                        NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
-                            running: state.new_game(),
-                        })
-                        .break_(),
-                        Options => options_menu().continue_with(running),
-                        Help => text::help(text_width).continue_with(running),
-                        Prologue => text::prologue(text_width).continue_with(running),
-                        Epilogue => text::epilogue(text_width).continue_with(running),
-                        Clear => on_state(|state: &mut GameLoopData| {
-                            state.clear_saved_game();
-                            PauseOutput::MainMenu
-                        })
-                        .break_(),
-                    },
-                    Err(Escape) => break_(PauseOutput::ContinueGame { running }),
-                },
-            )
+        menu_style(pause_menu_loop(running))
     })
-    .border(BorderStyle::default())
-    .fill(MENU_BACKGROUND)
-    .centre()
-    .overlay(
-        render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
-        chargrid::core::TintDim(63),
-        10,
-    )
     .then_side_effect(|state: &mut GameLoopData| {
         // turn the music back up
         state.audio_state.set_music_volume_multiplier(1.);
@@ -782,7 +896,9 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
         loop_(initial_state, |state| match state {
             Playing(witness) => match witness {
                 Witness::Running(running) => game_instance_component(running).continue_(),
-                Witness::Upgrade(upgrade) => upgrade_component(upgrade).map(Playing).continue_(),
+                Witness::Upgrade(upgrade) => {
+                    try_upgrade_component(upgrade).map(Playing).continue_()
+                }
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
             Paused(running) => pause(running).map(|pause_output| match pause_output {
