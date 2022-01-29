@@ -285,7 +285,7 @@ pub fn floor(ctx: Ctx, fb: &mut FrameBuffer) {
     fb.set_cell_relative_to_ctx(
         ctx,
         Coord { x: 1, y: 1 },
-        1,
+        0,
         RenderCell::default()
             .with_character(' ')
             .with_background(colours::FLOOR_FOREGROUND),

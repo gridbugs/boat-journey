@@ -24,6 +24,7 @@ pub struct AppArgs {
     pub initial_rng_seed: InitialRngSeed,
     pub audio_player: AppAudioPlayer,
     pub omniscient: bool,
+    pub new_game: bool,
 }
 
 pub fn app(
@@ -32,6 +33,7 @@ pub fn app(
         initial_rng_seed,
         audio_player,
         omniscient,
+        new_game,
     }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {
@@ -40,7 +42,7 @@ pub fn app(
         debug: true,
     };
     let (game_loop_data, initial_state) =
-        game_loop::GameLoopData::new(config, storage, initial_rng_seed, audio_player);
+        game_loop::GameLoopData::new(config, storage, initial_rng_seed, audio_player, new_game);
     let state = AppState { game_loop_data };
     game_loop::game_loop_component(initial_state)
         .lens_state(lens!(AppState[game_loop_data]: game_loop::GameLoopData))

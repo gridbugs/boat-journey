@@ -124,12 +124,12 @@ impl RngSeedSource {
 pub struct AppStorage {
     pub handle: StaticStorage,
     pub save_game_key: String,
+    pub config_key: String,
 }
 
 impl AppStorage {
     const SAVE_GAME_STORAGE_FORMAT: format::Bincode = format::Bincode;
     const CONFIG_STORAGE_FORMAT: format::Json = format::Json;
-    const CONFIG_KEY: &'static str = "config.json";
 
     fn save_game(&mut self, instance: &GameInstanceStorable) {
         let result = self.handle.store(
@@ -190,7 +190,7 @@ impl AppStorage {
     fn save_config(&mut self, config: &Config) {
         let result = self
             .handle
-            .store(Self::CONFIG_KEY, &config, Self::CONFIG_STORAGE_FORMAT);
+            .store(&self.config_key, &config, Self::CONFIG_STORAGE_FORMAT);
         if let Err(e) = result {
             use general_storage_static::{StoreError, StoreRawError};
             match e {
@@ -207,7 +207,7 @@ impl AppStorage {
     fn load_config(&self) -> Option<Config> {
         let result = self
             .handle
-            .load::<_, Config, _>(Self::CONFIG_KEY, Self::CONFIG_STORAGE_FORMAT);
+            .load::<_, Config, _>(&self.config_key, Self::CONFIG_STORAGE_FORMAT);
         match result {
             Err(e) => {
                 use general_storage_static::{LoadError, LoadRawError};
@@ -227,6 +227,14 @@ impl AppStorage {
     }
 }
 
+fn new_game(
+    rng_seed_source: &mut RngSeedSource,
+    game_config: &GameConfig,
+) -> (GameInstance, witness::Running) {
+    let mut rng = Isaac64Rng::seed_from_u64(rng_seed_source.next_seed());
+    GameInstance::new(game_config, &mut rng)
+}
+
 pub struct GameLoopData {
     instance: Option<GameInstance>,
     controls: Controls,
@@ -244,7 +252,9 @@ impl GameLoopData {
         storage: AppStorage,
         initial_rng_seed: InitialRngSeed,
         audio_player: AppAudioPlayer,
+        force_new_game: bool,
     ) -> (Self, GameLoopState) {
+        let mut rng_seed_source = RngSeedSource::new(initial_rng_seed);
         let (instance, state) = match storage.load_game() {
             Some(instance) => {
                 let (instance, running) = instance.into_game_instance();
@@ -253,7 +263,17 @@ impl GameLoopData {
                     GameLoopState::Playing(running.into_witness()),
                 )
             }
-            None => (None, GameLoopState::MainMenu),
+            None => {
+                if force_new_game {
+                    let (instance, running) = new_game(&mut rng_seed_source, &game_config);
+                    (
+                        Some(instance),
+                        GameLoopState::Playing(running.into_witness()),
+                    )
+                } else {
+                    (None, GameLoopState::MainMenu)
+                }
+            }
         };
         let controls = Controls::default();
         let menu_background = MenuBackground::new(&mut Isaac64Rng::from_entropy());
@@ -272,7 +292,7 @@ impl GameLoopData {
                 controls,
                 game_config,
                 storage,
-                rng_seed_source: RngSeedSource::new(initial_rng_seed),
+                rng_seed_source,
                 menu_background,
                 audio_state,
                 config,
@@ -296,8 +316,7 @@ impl GameLoopData {
     }
 
     fn new_game(&mut self) -> witness::Running {
-        let mut rng = Isaac64Rng::seed_from_u64(self.rng_seed_source.next_seed());
-        let (instance, running) = GameInstance::new(&self.game_config, &mut rng);
+        let (instance, running) = new_game(&mut self.rng_seed_source, &self.game_config);
         self.instance = Some(instance);
         running
     }

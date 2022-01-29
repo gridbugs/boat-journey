@@ -12,6 +12,7 @@ fn main() {
         initial_rng_seed,
         audio_player,
         omniscient,
+        new_game,
     } = NativeCommon::parser()
         .with_help_default()
         .parse_env_or_exit();
@@ -42,5 +43,6 @@ fn main() {
         initial_rng_seed,
         audio_player,
         omniscient,
+        new_game,
     }));
 }

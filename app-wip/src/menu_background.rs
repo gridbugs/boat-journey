@@ -15,7 +15,7 @@ impl MenuBackground {
         let config = Config {
             omniscient: Some(Omniscient),
             demo: true,
-            debug: false,
+            debug: true,
         };
         let game = Game::new(&config, rng);
         let stars = Stars::new(rng);

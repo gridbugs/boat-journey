@@ -5,6 +5,7 @@ use orbital_decay_app_wip::{app, AppArgs, AppStorage, InitialRngSeed};
 use wasm_bindgen::prelude::*;
 
 const SAVE_KEY: &str = "save";
+const CONFIG_KEY: &str = "config";
 
 #[wasm_bindgen(start)]
 pub fn run() -> Result<(), JsValue> {
@@ -19,10 +20,12 @@ pub fn run() -> Result<(), JsValue> {
         storage: AppStorage {
             handle: storage,
             save_game_key: SAVE_KEY.to_string(),
+            config_key: CONFIG_KEY.to_string(),
         },
         initial_rng_seed: InitialRngSeed::Random,
         audio_player,
         omniscient: false,
+        new_game: false,
     };
     context.run(app(args));
     Ok(())
