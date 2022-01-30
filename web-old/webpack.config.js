@@ -43,10 +43,5 @@ module.exports = async (env, argv) => {
     experiments: {
       asyncWebAssembly: true,
     },
-    devServer: {
-      client: {
-        overlay: false,
-      },
-    },
   };
 };

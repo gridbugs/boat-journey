@@ -12,12 +12,8 @@ members = [
     "native",
     "ansi-terminal",
     "web",
-    "app-wip",
-    "native-wip",
-    "ggez-wip",
-    "wgpu-wip",
-    "ansi-terminal-wip",
-    "web-wip",
+    "ggez",
+    "wgpu",
 ]
 
 [profile.release]

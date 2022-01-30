@@ -92,18 +92,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "000444226fcff248f2bc4c7625be32c63caccfecc2723a2b9f78a7487a49c407"
 
 [[package]]
-name = "ansi-terminal-wip"
-version = "0.1.0"
-dependencies = [
- "chargrid_ansi_terminal 0.2.0 (git+https://github.com/gridbugs/chargrid)",
- "env_logger",
- "meap",
- "orbital_decay_app_wip",
- "orbital_decay_native_wip",
- "rand",
-]
-
-[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -403,21 +391,6 @@ dependencies = [
 
 [[package]]
 name = "chargrid"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9abd9a6695a5029792793d9e35423c83230b1863ba1133362f84025d3c26de9"
-dependencies = [
- "chargrid_app",
- "chargrid_decorator",
- "chargrid_event_routine",
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_menu",
- "chargrid_render",
- "chargrid_text",
-]
-
-[[package]]
-name = "chargrid"
 version = "0.5.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
@@ -428,38 +401,14 @@ dependencies = [
 [[package]]
 name = "chargrid_ansi_terminal"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f95a6939fd305006fb8d6855d70e98488c08c439fe48a6dbd49d451b1e278186"
-dependencies = [
- "chargrid_app",
- "chargrid_gamepad 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_render",
- "libc",
- "term",
-]
-
-[[package]]
-name = "chargrid_ansi_terminal"
-version = "0.2.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
- "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
- "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_gamepad",
+ "chargrid_input",
  "chargrid_runtime",
  "grid_2d",
  "libc",
  "term",
-]
-
-[[package]]
-name = "chargrid_app"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3c6cdc4e5d964ff09860648e1da45bccd34426d75c97031d5e6bca425ab83dd"
-dependencies = [
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_render",
 ]
 
 [[package]]
@@ -475,42 +424,9 @@ name = "chargrid_core"
 version = "0.1.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
- "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input",
  "grid_2d",
  "rgb_int",
-]
-
-[[package]]
-name = "chargrid_decorator"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "525b6fc92c6acedab1fe2a2de591455a2bad0c21ed860318d78dc515e843b285"
-dependencies = [
- "chargrid_render",
- "serde",
-]
-
-[[package]]
-name = "chargrid_event_routine"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caaaee03cb3bfc09f1ddf672790020e91170326041557c5046632fb8b8398a52"
-dependencies = [
- "chargrid_app",
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_render",
- "log",
-]
-
-[[package]]
-name = "chargrid_gamepad"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1410305485c8245811bf5bb8a63264af50bed32f0cca8b544419ca31e165892"
-dependencies = [
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "gilrs",
- "log",
 ]
 
 [[package]]
@@ -518,7 +434,7 @@ name = "chargrid_gamepad"
 version = "0.2.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
- "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input",
  "gilrs",
  "log",
 ]
@@ -529,7 +445,7 @@ version = "0.1.1"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
  "chargrid_graphical_common",
- "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input",
  "chargrid_runtime",
  "ggez",
  "hashbrown 0.12.0",
@@ -544,44 +460,9 @@ source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c4
 [[package]]
 name = "chargrid_input"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e01a68f597d13b6874eaa32eecc2d97a5033cee1ceabb4583e57c2220c33a3fe"
-dependencies = [
- "coord_2d",
- "serde",
-]
-
-[[package]]
-name = "chargrid_input"
-version = "0.2.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
  "coord_2d",
- "serde",
-]
-
-[[package]]
-name = "chargrid_menu"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b9a6ebe932e7bd1db9dc1888f04f0f7f2fc410b5ec3140e8d1b948e2414cc5b"
-dependencies = [
- "chargrid_event_routine",
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_render",
- "chargrid_text",
- "serde",
-]
-
-[[package]]
-name = "chargrid_render"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7d9eb81fda96efff8684a299409092fda4078148056fa940f59939b27b60391"
-dependencies = [
- "coord_2d",
- "grid_2d",
- "rgb24",
  "serde",
 ]
 
@@ -594,36 +475,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "chargrid_text"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11f614a5e0abbf8fbb036aa9cb089f4cb343ed59fea0d544aa80ed339fcf5005"
-dependencies = [
- "chargrid_render",
- "serde",
-]
-
-[[package]]
-name = "chargrid_web"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a50027c78221b11b9d4e4478a3b79d558d65489594e364e79d08ee98e02da8a"
-dependencies = [
- "chargrid_app",
- "chargrid_input 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "chargrid_render",
- "grid_2d",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "chargrid_web"
 version = "0.2.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
- "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input",
  "chargrid_runtime",
  "grid_2d",
  "js-sys",
@@ -637,9 +493,9 @@ version = "0.1.0"
 source = "git+https://github.com/gridbugs/chargrid#b433eb827418ae45b84d071e7c8c44d3f8bf6d9e"
 dependencies = [
  "async-executor",
- "chargrid_gamepad 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_gamepad",
  "chargrid_graphical_common",
- "chargrid_input 0.2.0 (git+https://github.com/gridbugs/chargrid)",
+ "chargrid_input",
  "chargrid_runtime",
  "grid_2d",
  "log",
@@ -2665,8 +2521,9 @@ checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
 name = "orbital_decay_ansi_terminal"
 version = "0.1.0"
 dependencies = [
- "chargrid_ansi_terminal 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chargrid_ansi_terminal",
  "env_logger",
+ "meap",
  "orbital_decay_app",
  "orbital_decay_native",
  "rand",
@@ -2676,27 +2533,7 @@ dependencies = [
 name = "orbital_decay_app"
 version = "0.1.0"
 dependencies = [
- "chargrid 0.4.0",
- "direction",
- "general_audio_static",
- "general_storage_static",
- "getrandom",
- "line_2d",
- "log",
- "maplit",
- "orbital_decay_game",
- "rand",
- "rand_isaac",
- "rand_xorshift",
- "rgb24",
- "serde",
-]
-
-[[package]]
-name = "orbital_decay_app_wip"
-version = "0.1.0"
-dependencies = [
- "chargrid 0.5.0",
+ "chargrid",
  "direction",
  "general_audio_static",
  "general_storage_static",
@@ -2735,13 +2572,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "orbital_decay_ggez_wip"
+name = "orbital_decay_ggez"
 version = "0.1.0"
 dependencies = [
  "chargrid_ggez",
  "env_logger",
- "orbital_decay_app_wip",
- "orbital_decay_native_wip",
+ "orbital_decay_app",
+ "orbital_decay_native",
 ]
 
 [[package]]
@@ -2753,25 +2590,13 @@ dependencies = [
  "log",
  "meap",
  "orbital_decay_app",
- "serde_json",
-]
-
-[[package]]
-name = "orbital_decay_native_wip"
-version = "0.1.0"
-dependencies = [
- "general_audio_static",
- "general_storage_static",
- "log",
- "meap",
- "orbital_decay_app_wip",
 ]
 
 [[package]]
 name = "orbital_decay_web"
 version = "0.1.0"
 dependencies = [
- "chargrid_web 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chargrid_web",
  "console_error_panic_hook",
  "general_audio_static",
  "general_storage_static",
@@ -2782,27 +2607,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "orbital_decay_web_wip"
-version = "0.1.0"
-dependencies = [
- "chargrid_web 0.2.0 (git+https://github.com/gridbugs/chargrid)",
- "console_error_panic_hook",
- "general_audio_static",
- "general_storage_static",
- "log",
- "orbital_decay_app_wip",
- "wasm-bindgen",
- "wasm-logger",
-]
-
-[[package]]
-name = "orbital_decay_wgpu_wip"
+name = "orbital_decay_wgpu"
 version = "0.1.0"
 dependencies = [
  "chargrid_wgpu",
  "env_logger",
- "orbital_decay_app_wip",
- "orbital_decay_native_wip",
+ "orbital_decay_app",
+ "orbital_decay_native",
 ]
 
 [[package]]
@@ -3182,15 +2993,6 @@ name = "renderdoc-sys"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1382d1f0a252c4bf97dc20d979a2fdd05b024acd7c2ed0f7595d7817666a157"
-
-[[package]]
-name = "rgb24"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5c053c8a6ea11b5ae150f4d518c8da12f04a8d1f2d0f3df618310fa37e0cf19"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "rgb_int"

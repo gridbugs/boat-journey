@@ -1,0 +1,11 @@
+[package]
+name = "orbital_decay_wgpu"
+version = "0.1.0"
+authors = ["Stephen Sherratt <stephen@sherra.tt>"]
+edition = "2021"
+
+[dependencies]
+chargrid_wgpu = { git = "https://github.com/gridbugs/chargrid", features = ["gamepad"] }
+env_logger = "0.9"
+orbital_decay_app = { path = "../app", features = ["print_stdout"] }
+orbital_decay_native = { path = "../native" }

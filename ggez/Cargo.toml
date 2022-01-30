@@ -1,13 +1,11 @@
 [package]
-name = "orbital_decay_ansi_terminal"
+name = "orbital_decay_ggez"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-chargrid_ansi_terminal = { git = "https://github.com/gridbugs/chargrid", features = ["gamepad"] }
+chargrid_ggez = { git = "https://github.com/gridbugs/chargrid", features = ["gamepad"] }
 env_logger = "0.9"
-meap = "0.5"
 orbital_decay_app = { path = "../app" }
 orbital_decay_native = { path = "../native" }
-rand = "0.8"

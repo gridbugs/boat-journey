@@ -5,7 +5,7 @@ use orbital_decay_game::player::RangedWeaponSlot;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum AppInput {
     Move(CardinalDirection),
     Aim(RangedWeaponSlot),

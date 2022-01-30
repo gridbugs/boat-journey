@@ -1,11 +1,11 @@
 {
-  "name": "orbital_decay_web",
+  "name": "orbital_decay_web_old",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "webpack serve --mode development",
+    "serve": "webpack serve",
     "build": "webpack --mode development",
     "build-production": "webpack --mode production"
   },
@@ -18,6 +18,6 @@
     "text-encoding": "^0.7.0",
     "webpack": "^5.45.1",
     "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^4.3.1"
+    "webpack-dev-server": "^3.11.2"
   }
 }

@@ -1,6 +1,6 @@
 use chargrid_ansi_terminal::{col_encode, Context};
-use orbital_decay_app::{app, AppArgs, InitialRngSeed};
-use orbital_decay_native::NativeCommon;
+use orbital_decay_app_old::{app, EnvNull, Frontend, RngSeed};
+use orbital_decay_native_old::{meap, NativeCommon};
 use rand::Rng;
 
 enum ColEncodeChoice {
@@ -43,38 +43,47 @@ impl Args {
 
 fn main() {
     use meap::Parser;
+    env_logger::init();
     let Args {
         native_common:
             NativeCommon {
-                storage,
-                initial_rng_seed,
+                rng_seed,
+                file_storage,
+                controls,
+                save_file,
                 audio_player,
-                omniscient,
-                new_game,
+                game_config,
             },
         col_encode_choice,
     } = Args::parser().with_help_default().parse_env_or_exit();
+    // We won't be able to print once the context is created. Choose the initial rng
+    // seed before starting the game so it can be logged in case of error.
+    let rng_seed_u64 = match rng_seed {
+        RngSeed::U64(seed) => seed,
+        RngSeed::Random => rand::thread_rng().gen(),
+    };
     if let ColEncodeChoice::TrueColour = col_encode_choice {
         println!("Running in true-colour mode.\nIf colours look wrong, run with `--rgb` or try a different terminal emulator.");
     }
-    let initial_rng_seed = match initial_rng_seed {
-        InitialRngSeed::U64(seed) => seed,
-        InitialRngSeed::Random => rand::thread_rng().gen(),
-    };
-    println!("Initial RNG Seed: {}", initial_rng_seed);
+    println!("Initial RNG Seed: {}", rng_seed_u64);
     let context = Context::new().unwrap();
-    let app = app(AppArgs {
-        storage,
-        initial_rng_seed: InitialRngSeed::U64(initial_rng_seed),
+    let app = app(
+        game_config,
+        Frontend::AnsiTerminal,
+        controls,
+        file_storage,
+        save_file,
         audio_player,
-        omniscient,
-        new_game,
-    });
+        RngSeed::U64(rng_seed_u64),
+        None,
+        None,
+        Box::new(EnvNull),
+    );
     use ColEncodeChoice as C;
     match col_encode_choice {
-        C::TrueColour => context.run(app, col_encode::XtermTrueColour),
-        C::Rgb => context.run(app, col_encode::FromTermInfoRgb),
-        C::Greyscale => context.run(app, col_encode::FromTermInfoGreyscale),
-        C::Ansi => context.run(app, col_encode::FromTermInfoAnsi16Colour),
+        C::TrueColour => context.run_app(app, col_encode::XtermTrueColour),
+        C::Rgb => context.run_app(app, col_encode::FromTermInfoRgb),
+        C::Greyscale => context.run_app(app, col_encode::FromTermInfoGreyscale),
+        C::Ansi => context.run_app(app, col_encode::FromTermInfoAnsi16Colour),
     }
 }
