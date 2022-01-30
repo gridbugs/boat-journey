@@ -6,7 +6,7 @@ echo $ZIP_NAME
 
 TMP=$(mktemp -d)
 mkdir $TMP/$ZIP_NAME
-cp -v target/$MODE/orbital_decay_graphical $TMP/$ZIP_NAME/orbital-decay-graphical
+cp -v target/$MODE/orbital_decay_wgpu $TMP/$ZIP_NAME/orbital-decay-graphical
 cp -v target/$MODE/orbital_decay_ansi_terminal $TMP/$ZIP_NAME/orbital-decay-terminal
 
 cp -v extras/unix/* $TMP/$ZIP_NAME
