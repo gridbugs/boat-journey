@@ -14,6 +14,7 @@ environment:
       HOST: x86_64-pc-windows-gnu
       TARGET: x86_64-pc-windows-gnu
       BIN_NAME: orbital-decay
+      BIN_NAME_COMPAT: orbital-decay-compatibility
       ARCHIVE_NAME: orbital-decay-windows-x86_64
       MODE: release
     - APPVEYOR_BUILD_WORKER_IMAGE: macOS
@@ -61,6 +62,10 @@ for:
 
           copy target\%TARGET_DIR%\orbital_decay_wgpu.exe tmp\%FULL_NAME%\%BIN_NAME%.exe
 
+          cargo build %RELEASE_FLAG% --manifest-path=ggez/Cargo.toml
+
+          copy target\%TARGET_DIR%\orbital_decay_ggez.exe tmp\%FULL_NAME%\%BIN_NAME_COMPAT%.exe
+
           powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('tmp', '%FULL_NAME%.zip'); }"
 
     artifacts:
@@ -104,9 +109,13 @@ for:
 
           cargo build $RELEASE_FLAG --manifest-path=wgpu/Cargo.toml
 
+          cargo build $RELEASE_FLAG --manifest-path=ggez/Cargo.toml
+
           cargo build $RELEASE_FLAG --manifest-path=ansi-terminal/Cargo.toml
 
           strip -v target/$TARGET_DIR/orbital_decay_wgpu
+
+          strip -v target/$TARGET_DIR/orbital_decay_ggez
 
           strip -v target/$TARGET_DIR/orbital_decay_ansi_terminal
 
@@ -206,9 +215,13 @@ for:
 
           cargo build $RELEASE_FLAG --manifest-path=wgpu/Cargo.toml
 
+          cargo build $RELEASE_FLAG --manifest-path=ggez/Cargo.toml
+
           cargo build $RELEASE_FLAG --manifest-path=ansi-terminal/Cargo.toml
 
           strip -v target/$TARGET_DIR/orbital_decay_wgpu
+
+          strip -v target/$TARGET_DIR/orbital_decay_ggez
 
           strip -v target/$TARGET_DIR/orbital_decay_ansi_terminal
 
