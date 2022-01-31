@@ -4,18 +4,38 @@ use orbital_decay_native::{meap, NativeCommon};
 
 const CELL_SIZE: f64 = 12.;
 
+struct Args {
+    native_common: NativeCommon,
+    force_opengl: bool,
+}
+
+impl Args {
+    fn parser() -> impl meap::Parser<Item = Self> {
+        meap::let_map! {
+            let {
+                native_common = NativeCommon::parser();
+                force_opengl = flag("force-opengl").desc("force opengl");
+            } in {
+                Self { native_common, force_opengl }
+            }
+        }
+    }
+}
+
 fn main() {
     use meap::Parser;
     env_logger::init();
-    let NativeCommon {
-        storage,
-        initial_rng_seed,
-        audio_player,
-        omniscient,
-        new_game,
-    } = NativeCommon::parser()
-        .with_help_default()
-        .parse_env_or_exit();
+    let Args {
+        native_common:
+            NativeCommon {
+                storage,
+                initial_rng_seed,
+                audio_player,
+                omniscient,
+                new_game,
+            },
+        force_opengl,
+    } = Args::parser().with_help_default().parse_env_or_exit();
     let context = Context::new(Config {
         font_bytes: FontBytes {
             normal: include_bytes!("./fonts/PxPlus_IBM_CGAthin-with-quadrant-blocks.ttf").to_vec(),
@@ -37,6 +57,7 @@ fn main() {
         underline_width_cell_ratio: 0.1,
         underline_top_offset_cell_ratio: 0.8,
         resizable: false,
+        force_secondary_adapter: force_opengl,
     });
     context.run(app(AppArgs {
         storage,
