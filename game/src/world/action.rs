@@ -19,6 +19,7 @@ use std::time::Duration;
 pub enum Error {
     WalkIntoSolidCell,
     CannotAffordUpgrade,
+    NoItemToGet,
 }
 
 const KNOCKBACK: usize = 3;

@@ -26,10 +26,12 @@ struct Private;
 
 pub struct Running(Private);
 pub struct Upgrade(Private);
+pub struct GetRangedWeapon(Private);
 
 pub enum Witness {
     Running(Running),
     Upgrade(Upgrade),
+    GetRangedWeapon(GetRangedWeapon),
     GameOver,
 }
 
@@ -86,6 +88,16 @@ impl Running {
         let Self(private) = self;
         game.witness_handle_input(Input::Wait, config, private)
     }
+
+    pub fn get(self, game: &Game) -> (Witness, Result<(), ActionError>) {
+        if let Some(weapon) = game.inner_ref().weapon_under_player() {
+            if weapon.is_ranged() {
+                let Self(private) = self;
+                return (Witness::GetRangedWeapon(GetRangedWeapon(private)), Ok(()));
+            }
+        }
+        (self.into_witness(), Err(ActionError::NoItemToGet))
+    }
 }
 
 impl Upgrade {
@@ -98,6 +110,19 @@ impl Upgrade {
         let Self(private) = self;
         let input = Input::Upgrade(upgrade);
         game.witness_handle_input(input, config, private)
+    }
+
+    pub fn cancel(self) -> Witness {
+        let Self(private) = self;
+        Witness::running(private)
+    }
+}
+
+impl GetRangedWeapon {
+    pub fn commit(self, game: &mut Game, slot: player::RangedWeaponSlot) -> Witness {
+        game.0.player_equip_ranged_weapon_from_ground(slot);
+        let Self(private) = self;
+        Witness::running(private)
     }
 
     pub fn cancel(self) -> Witness {

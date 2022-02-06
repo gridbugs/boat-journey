@@ -1,5 +1,5 @@
-use crate::{game, stars::Stars};
-use chargrid::prelude::*;
+use crate::{game, stars::Stars, ui};
+use chargrid::{prelude::*, text::StyledString};
 use orbital_decay_game::{
     witness::{self, Game, RunningGame},
     Config, Music,
@@ -45,6 +45,51 @@ impl GameInstance {
         self.stars
             .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
         game::render_game_with_visibility(self.game.inner_ref(), ctx, fb);
+        self.render_floor_text(ctx, fb);
+        self.render_message_log(ctx, fb);
+    }
+
+    fn floor_text(&self) -> StyledString {
+        let current_floor = self.game.inner_ref().current_level();
+        let final_floor = orbital_decay_game::FINAL_LEVEL;
+        if current_floor == 0 {
+            StyledString {
+                style: Style::new()
+                    .with_foreground(Rgba32::new_grey(255))
+                    .with_bold(true),
+                string: format!(
+                    "Gotta get to the fuel bay on the {}th floor...",
+                    final_floor
+                ),
+            }
+        } else if current_floor == final_floor {
+            StyledString {
+                style: Style::new().with_foreground(Rgba32::new_grey(255)),
+                string: format!(
+                    "Gotta get to the fuel bay on the {}th floor...",
+                    final_floor
+                ),
+            }
+        } else {
+            StyledString {
+                style: Style::new()
+                    .with_foreground(Rgba32::new_grey(255))
+                    .with_bold(true),
+                string: format!("Floor {}/{}", current_floor, final_floor),
+            }
+        }
+    }
+
+    fn render_floor_text(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        self.floor_text().render(&(), ctx, fb);
+    }
+
+    fn render_message_log(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        ui::render_message_log(
+            self.game.inner_ref().message_log(),
+            ctx.add_offset(Coord { x: 1, y: 46 }),
+            fb,
+        );
     }
 }
 

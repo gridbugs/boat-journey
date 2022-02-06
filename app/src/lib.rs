@@ -11,6 +11,7 @@ mod menu_background;
 mod stars;
 mod text;
 mod tile_3x3;
+mod ui;
 
 pub use audio::AppAudioPlayer;
 pub use game_loop::{AppStorage, InitialRngSeed};

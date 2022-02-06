@@ -340,7 +340,8 @@ impl GameLoopData {
                             running.walk(&mut instance.game, direction, &self.game_config)
                         }
                         AppInput::Wait => running.wait(&mut instance.game, &self.game_config),
-                        AppInput::Examine | AppInput::Aim(_) | AppInput::Get => {
+                        AppInput::Get => running.get(&instance.game),
+                        AppInput::Examine | AppInput::Aim(_) => {
                             println!("todo");
                             (Witness::Running(running), Ok(()))
                         }
@@ -606,6 +607,10 @@ fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
             upgrade_component(upgrade_witness)
         }
     })
+}
+
+fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
+    todo!()
 }
 
 #[derive(Clone)]
@@ -899,6 +904,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                 Witness::Upgrade(upgrade) => {
                     try_upgrade_component(upgrade).map(Playing).continue_()
                 }
+                Witness::GetRangedWeapon(get_ranged_weapon) => todo!(),
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
             Paused(running) => pause(running).map(|pause_output| match pause_output {
