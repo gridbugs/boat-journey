@@ -905,6 +905,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                     try_upgrade_component(upgrade).map(Playing).continue_()
                 }
                 Witness::GetRangedWeapon(get_ranged_weapon) => todo!(),
+                Witness::GetMeleeWeapon(get_melee_weapon) => todo!(),
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
             Paused(running) => pause(running).map(|pause_output| match pause_output {

@@ -27,11 +27,13 @@ struct Private;
 pub struct Running(Private);
 pub struct Upgrade(Private);
 pub struct GetRangedWeapon(Private);
+pub struct GetMeleeWeapon(Private);
 
 pub enum Witness {
     Running(Running),
     Upgrade(Upgrade),
     GetRangedWeapon(GetRangedWeapon),
+    GetMeleeWeapon(GetMeleeWeapon),
     GameOver,
 }
 
@@ -95,6 +97,10 @@ impl Running {
                 let Self(private) = self;
                 return (Witness::GetRangedWeapon(GetRangedWeapon(private)), Ok(()));
             }
+            if weapon.is_melee() {
+                let Self(private) = self;
+                return (Witness::GetMeleeWeapon(GetMeleeWeapon(private)), Ok(()));
+            }
         }
         (self.into_witness(), Err(ActionError::NoItemToGet))
     }
@@ -121,6 +127,19 @@ impl Upgrade {
 impl GetRangedWeapon {
     pub fn commit(self, game: &mut Game, slot: player::RangedWeaponSlot) -> Witness {
         game.0.player_equip_ranged_weapon_from_ground(slot);
+        let Self(private) = self;
+        Witness::running(private)
+    }
+
+    pub fn cancel(self) -> Witness {
+        let Self(private) = self;
+        Witness::running(private)
+    }
+}
+
+impl GetMeleeWeapon {
+    pub fn commit(self, game: &mut Game) -> Witness {
+        game.0.player_equip_melee_weapon_from_ground();
         let Self(private) = self;
         Witness::running(private)
     }

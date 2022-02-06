@@ -528,8 +528,13 @@ impl Game {
         self.world
             .equip_ranged_weapon_from_ground(self.player, slot, &mut self.message_log);
     }
+    pub fn player_equip_melee_weapon_from_ground(&mut self) {
+        self.world
+            .equip_melee_weapon_from_ground(self.player, &mut self.message_log);
+    }
 
     fn npc_turn(&mut self) {
+        panic!("npc turn");
         for i in 0..2 {
             let to_move = self
                 .world
