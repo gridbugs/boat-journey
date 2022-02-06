@@ -47,6 +47,7 @@ impl GameInstance {
         game::render_game_with_visibility(self.game.inner_ref(), ctx, fb);
         self.render_floor_text(ctx, fb);
         self.render_message_log(ctx, fb);
+        self.render_hud(ctx, fb);
     }
 
     fn floor_text(&self) -> StyledString {
@@ -90,6 +91,12 @@ impl GameInstance {
             ctx.add_offset(Coord { x: 1, y: 46 }),
             fb,
         );
+    }
+
+    fn render_hud(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        let player = self.game.inner_ref().player();
+        let player_info = self.game.inner_ref().player_info();
+        ui::render_hud(player, player_info, ctx.add_xy(64, 4), fb);
     }
 }
 
