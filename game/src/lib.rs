@@ -534,7 +534,6 @@ impl Game {
     }
 
     fn npc_turn(&mut self) {
-        panic!("npc turn");
         for i in 0..2 {
             let to_move = self
                 .world

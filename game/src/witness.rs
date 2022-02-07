@@ -4,7 +4,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-pub struct Game(crate::Game);
+pub struct Game {
+    inner_game: crate::Game,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct RunningGame {
@@ -14,11 +16,18 @@ pub struct RunningGame {
 impl RunningGame {
     pub fn new(game: Game, running: Running) -> Self {
         let _ = running;
-        Self { game: game.0 }
+        Self {
+            game: game.inner_game,
+        }
     }
 
     pub fn into_game(self) -> (Game, Running) {
-        (Game(self.game), Running(Private))
+        (
+            Game {
+                inner_game: self.game,
+            },
+            Running(Private),
+        )
     }
 }
 
@@ -52,7 +61,9 @@ pub enum ControlInput {
 }
 
 pub fn new_game<R: Rng>(config: &Config, base_rng: &mut R) -> (Game, Running) {
-    let g = Game(crate::Game::new(config, base_rng));
+    let g = Game {
+        inner_game: crate::Game::new(config, base_rng),
+    };
     (g, Running(Private))
 }
 
@@ -68,7 +79,7 @@ impl Running {
     pub fn tick(self, game: &mut Game, since_last_tick: Duration, config: &Config) -> Witness {
         use GameControlFlow::*;
         let Self(private) = self;
-        match game.0.handle_tick(since_last_tick, config) {
+        match game.inner_game.handle_tick(since_last_tick, config) {
             None => Witness::running(private),
             Some(Upgrade) => Witness::upgrade(private),
             Some(GameOver) => Witness::GameOver,
@@ -126,7 +137,7 @@ impl Upgrade {
 
 impl GetRangedWeapon {
     pub fn commit(self, game: &mut Game, slot: player::RangedWeaponSlot) -> Witness {
-        game.0.player_equip_ranged_weapon_from_ground(slot);
+        game.inner_game.player_equip_ranged_weapon_from_ground(slot);
         let Self(private) = self;
         Witness::running(private)
     }
@@ -139,7 +150,7 @@ impl GetRangedWeapon {
 
 impl GetMeleeWeapon {
     pub fn commit(self, game: &mut Game) -> Witness {
-        game.0.player_equip_melee_weapon_from_ground();
+        game.inner_game.player_equip_melee_weapon_from_ground();
         let Self(private) = self;
         Witness::running(private)
     }
@@ -158,7 +169,7 @@ impl Game {
         private: Private,
     ) -> (Witness, Result<(), ActionError>) {
         use GameControlFlow::*;
-        match self.0.handle_input(input, config) {
+        match self.inner_game.handle_input(input, config) {
             Err(e) => (Witness::running(private), Err(e)),
             Ok(None) => (Witness::running(private), Ok(())),
             Ok(Some(Upgrade)) => (Witness::upgrade(private), Ok(())),
@@ -168,7 +179,7 @@ impl Game {
     }
 
     pub fn inner_ref(&self) -> &crate::Game {
-        &self.0
+        &self.inner_game
     }
 
     pub fn into_running_game(self, running: Running) -> RunningGame {
@@ -176,14 +187,18 @@ impl Game {
     }
 
     pub fn npc_turn(&mut self) {
-        self.0.handle_npc_turn()
+        self.inner_game.handle_npc_turn()
+    }
+
+    pub fn update_visibility(&mut self, config: &Config) {
+        self.inner_game.update_visibility(config);
     }
 
     pub fn events(&mut self) -> impl '_ + Iterator<Item = ExternalEvent> {
-        self.0.events()
+        self.inner_game.events()
     }
 
     pub fn player(&self) -> &player::Player {
-        self.0.player()
+        self.inner_game.player()
     }
 }

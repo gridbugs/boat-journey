@@ -14,7 +14,7 @@ use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
     witness::{self, Witness},
-    Config as GameConfig, ExternalEvent, Music,
+    ActionError, Config as GameConfig, ExternalEvent, Music,
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
@@ -235,6 +235,17 @@ fn new_game(
     GameInstance::new(game_config, &mut rng)
 }
 
+fn action_error_message(action_error: ActionError) -> StyledString {
+    let style = Style::plain_text();
+    let string = match action_error {
+        ActionError::WalkIntoSolidCell => "You can't walk there!",
+        ActionError::CannotAffordUpgrade => "You can't afford that!",
+        ActionError::NoItemToGet => "There is no item here!",
+    }
+    .to_string();
+    StyledString { string, style }
+}
+
 pub struct GameLoopData {
     instance: Option<GameInstance>,
     controls: Controls,
@@ -244,6 +255,7 @@ pub struct GameLoopData {
     menu_background: MenuBackground,
     audio_state: AudioState,
     config: Config,
+    context_message: Option<StyledString>,
 }
 
 impl GameLoopData {
@@ -296,6 +308,7 @@ impl GameLoopData {
                 menu_background,
                 audio_state,
                 config,
+                context_message: None,
             },
             state,
         )
@@ -328,6 +341,9 @@ impl GameLoopData {
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
         instance.render(ctx, fb);
+        if let Some(context_message) = self.context_message.as_ref() {
+            context_message.render(&(), ctx.add_y(1), fb);
+        }
     }
 
     fn update(&mut self, event: Event, running: witness::Running) -> Witness {
@@ -347,7 +363,9 @@ impl GameLoopData {
                         }
                     };
                     if let Err(action_error) = action_result {
-                        println!("action error: {:?}", action_error);
+                        self.context_message = Some(action_error_message(action_error));
+                    } else {
+                        self.context_message = None;
                     }
                     witness
                 } else {
@@ -375,6 +393,23 @@ impl GameLoopData {
                 _ => (),
             }
         }
+    }
+
+    fn player_has_third_weapon_slot(&self) -> bool {
+        self.instance
+            .as_ref()
+            .unwrap()
+            .game
+            .inner_ref()
+            .player_has_third_weapon_slot()
+    }
+
+    fn update_visibility(&mut self) {
+        self.instance
+            .as_mut()
+            .unwrap()
+            .game
+            .update_visibility(&self.game_config);
     }
 }
 
@@ -544,7 +579,7 @@ fn upgrade_menu() -> CF<player::Upgrade> {
         let instance = state.instance.as_ref().unwrap();
         let upgrades = instance.game.inner_ref().available_upgrades();
         use menu::builder::*;
-        let mut builder = menu_builder();
+        let mut builder = menu_builder().vi_keys();
         for upgrade in upgrades {
             let name = upgrade_identifier(upgrade);
             let identifier = MENU_FADE_SPEC.identifier(move |b| write!(b, "{}", name).unwrap());
@@ -610,7 +645,54 @@ fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
 }
 
 fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
-    todo!()
+    on_state_then(move |state: &mut GameLoopData| {
+        let num_weapon_slots = if state.player_has_third_weapon_slot() {
+            3
+        } else {
+            2
+        };
+        state.context_message = Some(StyledString {
+            string: format!(
+                "Choose a weapon slot: (press 1-{} or escape to cancel)",
+                num_weapon_slots
+            ),
+            style: Style::plain_text()
+                .with_bold(true)
+                .with_foreground(Rgba32::hex_rgb(0xFF0000)),
+        });
+        on_input(move |input| {
+            use player::RangedWeaponSlot::*;
+            match input {
+                Input::Keyboard(KeyboardInput::Char('1')) => Some(Ok(Slot1)),
+                Input::Keyboard(KeyboardInput::Char('2')) => Some(Ok(Slot2)),
+                Input::Keyboard(KeyboardInput::Char('3')) => {
+                    if num_weapon_slots == 3 {
+                        Some(Ok(Slot3))
+                    } else {
+                        None
+                    }
+                }
+                Input::Keyboard(keys::ESCAPE) => Some(Err(Escape)),
+                _ => None,
+            }
+        })
+        .overlay(
+            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
+            chargrid::core::TintIdentity,
+            10,
+        )
+        .and_then(|slot_or_err| {
+            on_state(move |state: &mut GameLoopData| {
+                state.context_message = None;
+                let witness = match slot_or_err {
+                    Err(Escape) => witness.cancel(),
+                    Ok(slot) => witness.commit(&mut state.instance.as_mut().unwrap().game, slot),
+                };
+                state.update_visibility();
+                witness
+            })
+        })
+    })
 }
 
 #[derive(Clone)]
@@ -649,7 +731,7 @@ fn main_menu() -> CF<MainMenuEntry> {
     on_state_then(|state: &mut GameLoopData| {
         use menu::builder::*;
         use MainMenuEntry::*;
-        let mut builder = menu_builder();
+        let mut builder = menu_builder().vi_keys();
         let mut add_item = |entry, name, ch: char| {
             let identifier =
                 MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
@@ -709,7 +791,7 @@ fn pause_menu() -> CF<PauseMenuEntry> {
     on_state_then(|state: &mut GameLoopData| {
         use menu::builder::*;
         use PauseMenuEntry::*;
-        let mut builder = menu_builder();
+        let mut builder = menu_builder().vi_keys();
         let mut add_item = |entry, name, ch: char| {
             let identifier =
                 MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
@@ -856,7 +938,7 @@ impl Component for OptionsMenuComponent {
 fn options_menu() -> CF<()> {
     use menu::builder::*;
     use OptionsMenuEntry::*;
-    let mut builder = menu_builder();
+    let mut builder = menu_builder().vi_keys();
     let add_item = |builder: &mut MenuBuilder<_>, entry, name| {
         let identifier = MENU_FADE_SPEC.identifier(move |b| write!(b, "{}", name).unwrap());
         builder.add_item_mut(item(entry, identifier));
@@ -904,7 +986,11 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                 Witness::Upgrade(upgrade) => {
                     try_upgrade_component(upgrade).map(Playing).continue_()
                 }
-                Witness::GetRangedWeapon(get_ranged_weapon) => todo!(),
+                Witness::GetRangedWeapon(get_ranged_weapon) => {
+                    try_get_ranged_weapon(get_ranged_weapon)
+                        .map(Playing)
+                        .continue_()
+                }
                 Witness::GetMeleeWeapon(get_melee_weapon) => todo!(),
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
