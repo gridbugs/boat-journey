@@ -190,10 +190,6 @@ impl Game {
         self.inner_game.handle_npc_turn()
     }
 
-    pub fn update_visibility(&mut self, config: &Config) {
-        self.inner_game.update_visibility(config);
-    }
-
     pub fn events(&mut self) -> impl '_ + Iterator<Item = ExternalEvent> {
         self.inner_game.events()
     }

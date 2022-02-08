@@ -14,7 +14,7 @@ use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
     witness::{self, Witness},
-    ActionError, Config as GameConfig, ExternalEvent, Music,
+    ActionError, Config as GameConfig, ExternalEvent, Game, Music,
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
@@ -395,21 +395,24 @@ impl GameLoopData {
         }
     }
 
-    fn player_has_third_weapon_slot(&self) -> bool {
-        self.instance
-            .as_ref()
-            .unwrap()
-            .game
-            .inner_ref()
-            .player_has_third_weapon_slot()
+    fn game(&self) -> &witness::Game {
+        &self.instance.as_ref().unwrap().game
     }
 
-    fn update_visibility(&mut self) {
-        self.instance
-            .as_mut()
-            .unwrap()
-            .game
-            .update_visibility(&self.game_config);
+    fn game_mut(&mut self) -> &mut witness::Game {
+        &mut self.instance.as_mut().unwrap().game
+    }
+
+    fn game_inner(&self) -> &Game {
+        self.game().inner_ref()
+    }
+
+    fn player_has_third_weapon_slot(&self) -> bool {
+        self.game_inner().player_has_third_weapon_slot()
+    }
+
+    fn player_has_weapon_in_slot(&self, slot: player::RangedWeaponSlot) -> bool {
+        self.game_inner().player_has_weapon_in_slot(slot)
     }
 }
 
@@ -474,7 +477,7 @@ fn menu_style<T: 'static>(menu: CF<T>) -> CF<T> {
     menu.border(BorderStyle::default())
         .fill(MENU_BACKGROUND)
         .centre()
-        .overlay(
+        .overlay_tint(
             render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
             chargrid::core::TintDim(63),
             10,
@@ -590,6 +593,46 @@ fn upgrade_menu() -> CF<player::Upgrade> {
     })
 }
 
+fn yes_no_menu() -> CF<bool> {
+    use menu::builder::*;
+    menu_builder()
+        .vi_keys()
+        .add_item(
+            item(
+                true,
+                MENU_FADE_SPEC.identifier(move |b| write!(b, "(y) Yes").unwrap()),
+            )
+            .add_hotkey_char('y')
+            .add_hotkey_char('Y'),
+        )
+        .add_item(
+            item(
+                false,
+                MENU_FADE_SPEC.identifier(move |b| write!(b, "(n) No").unwrap()),
+            )
+            .add_hotkey_char('n')
+            .add_hotkey_char('N'),
+        )
+        .build_boxed_cf()
+}
+
+fn yes_no(message: String) -> CF<bool> {
+    menu_style(
+        yes_no_menu().with_title(
+            boxed_cf(
+                StyledString {
+                    string: message,
+                    style: Style::plain_text(),
+                }
+                .wrap_word(),
+            )
+            .ignore_state()
+            .bound_width(40),
+            1,
+        ),
+    )
+}
+
 fn popup(string: String) -> CF<()> {
     menu_style(
         StyledString {
@@ -678,18 +721,33 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
         })
         .overlay(
             render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
-            chargrid::core::TintIdentity,
             10,
         )
         .and_then(|slot_or_err| {
-            on_state(move |state: &mut GameLoopData| {
+            on_state_then(move |state: &mut GameLoopData| {
                 state.context_message = None;
-                let witness = match slot_or_err {
-                    Err(Escape) => witness.cancel(),
-                    Ok(slot) => witness.commit(&mut state.instance.as_mut().unwrap().game, slot),
-                };
-                state.update_visibility();
-                witness
+                match slot_or_err {
+                    Err(Escape) => val_once(witness.cancel()),
+                    Ok(slot) => {
+                        if state.player_has_weapon_in_slot(slot) {
+                            yes_no(format!(
+                                "Replace ranged weapon in slot {}?",
+                                slot.index() + 1
+                            ))
+                            .and_then(move |yes| {
+                                on_state(move |state: &mut GameLoopData| {
+                                    if yes {
+                                        witness.commit(state.game_mut(), slot)
+                                    } else {
+                                        witness.cancel()
+                                    }
+                                })
+                            })
+                        } else {
+                            val_once(witness.commit(state.game_mut(), slot))
+                        }
+                    }
+                }
             })
         })
     })
@@ -724,7 +782,7 @@ fn title_decorate<T: 'static>(cf: CF<T>) -> CF<T> {
         ]
     };
     cf.add_offset(Coord { x: 14, y: 28 })
-        .overlay(decoration, chargrid::core::TintIdentity, 10)
+        .overlay(decoration, 10)
 }
 
 fn main_menu() -> CF<MainMenuEntry> {
@@ -771,7 +829,7 @@ fn main_menu_loop() -> CF<MainMenuOutput> {
             Quit => val_once(MainMenuOutput::Quit).break_(),
         })
         .bound_width(42)
-        .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
+        .overlay(MenuBackgroundComponent, 10)
 }
 
 #[derive(Clone)]
@@ -970,7 +1028,7 @@ fn first_run_prologue() -> CF<()> {
             text::prologue(MAIN_MENU_TEXT_WIDTH)
                 .centre()
                 .bound_width(42)
-                .overlay(MenuBackgroundComponent, chargrid::core::TintIdentity, 10)
+                .overlay(MenuBackgroundComponent, 10)
         } else {
             unit().some()
         }

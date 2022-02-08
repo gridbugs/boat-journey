@@ -527,10 +527,12 @@ impl Game {
     pub fn player_equip_ranged_weapon_from_ground(&mut self, slot: player::RangedWeaponSlot) {
         self.world
             .equip_ranged_weapon_from_ground(self.player, slot, &mut self.message_log);
+        self.world.cleanup();
     }
     pub fn player_equip_melee_weapon_from_ground(&mut self) {
         self.world
             .equip_melee_weapon_from_ground(self.player, &mut self.message_log);
+        self.world.cleanup();
     }
 
     fn npc_turn(&mut self) {
