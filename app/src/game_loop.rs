@@ -753,6 +753,18 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
     })
 }
 
+fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> CF<Witness> {
+    yes_no("Replace current melee weapon?".to_string()).and_then(move |yes| {
+        on_state(move |state: &mut GameLoopData| {
+            if yes {
+                witness.commit(state.game_mut())
+            } else {
+                witness.cancel()
+            }
+        })
+    })
+}
+
 #[derive(Clone)]
 enum MainMenuEntry {
     NewGame,
@@ -1049,7 +1061,9 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                         .map(Playing)
                         .continue_()
                 }
-                Witness::GetMeleeWeapon(get_melee_weapon) => todo!(),
+                Witness::GetMeleeWeapon(get_melee_weapon) => try_get_melee_weapon(get_melee_weapon)
+                    .map(Playing)
+                    .continue_(),
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
             Paused(running) => pause(running).map(|pause_output| match pause_output {
