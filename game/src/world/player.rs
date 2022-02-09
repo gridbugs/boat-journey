@@ -26,6 +26,10 @@ impl Player {
         }
     }
 
+    pub fn weapon_in_slot(&self, slot: RangedWeaponSlot) -> Option<&Weapon> {
+        self.ranged_weapons[slot.index()].as_ref()
+    }
+
     pub fn melee_dmg(&self) -> u32 {
         self.melee_weapon.dmg
     }
@@ -237,6 +241,13 @@ pub enum RangedWeaponSlot {
 }
 
 impl RangedWeaponSlot {
+    pub fn number(self) -> u32 {
+        match self {
+            Self::Slot1 => 1,
+            Self::Slot2 => 2,
+            Self::Slot3 => 3,
+        }
+    }
     pub fn index(self) -> usize {
         match self {
             Self::Slot1 => 0,

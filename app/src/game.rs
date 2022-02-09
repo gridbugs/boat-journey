@@ -70,6 +70,36 @@ pub fn render_game_with_visibility(game: &Game, ctx: Ctx, fb: &mut FrameBuffer) 
             | CellVisibility::CurrentlyVisibleWithLightColour(None) => (),
         }
     }
+    for entity in game.to_render_entities_realtime() {
+        match game.visibility_grid().cell_visibility(entity.coord) {
+            CellVisibility::CurrentlyVisibleWithLightColour(Some(light_colour)) => {
+                let light_colour = Rgb24::new(light_colour.r, light_colour.g, light_colour.b);
+                if let Some(tile) = entity.tile {
+                    tile_3x3::render_3x3_tile(
+                        entity.coord,
+                        tile,
+                        ctx_tint!(ctx, LightBlend { light_colour }),
+                        fb,
+                    );
+                }
+                if entity.particle {
+                    if let Some(fade) = entity.fade {
+                        let base_coord = entity.coord * 3;
+                        let alpha = (255 - fade) / 10;
+                        let cell = RenderCell::BLANK.with_background(
+                            Rgb24::new_grey(187)
+                                .normalised_mul(light_colour)
+                                .to_rgba32(alpha),
+                        );
+                        for offset in Size::new_u16(3, 3).coord_iter_row_major() {
+                            fb.set_cell_relative_to_ctx(ctx, base_coord + offset, 1, cell);
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
 }
 
 fn layer_depth(layer: Option<Layer>) -> i8 {

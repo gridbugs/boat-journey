@@ -10,6 +10,7 @@ use chargrid::{
     border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, pad_by::Padding,
     prelude::*, text::StyledString,
 };
+use direction::CardinalDirection;
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
@@ -238,11 +239,17 @@ fn new_game(
 fn action_error_message(action_error: ActionError) -> StyledString {
     let style = Style::plain_text();
     let string = match action_error {
-        ActionError::WalkIntoSolidCell => "You can't walk there!",
-        ActionError::CannotAffordUpgrade => "You can't afford that!",
-        ActionError::NoItemToGet => "There is no item here!",
-    }
-    .to_string();
+        ActionError::WalkIntoSolidCell => "You can't walk there!".to_string(),
+        ActionError::CannotAffordUpgrade => "You can't afford that!".to_string(),
+        ActionError::NoItemToGet => "There is no item here!".to_string(),
+        ActionError::NoWeaponInSlot(slot) => format!("No weapon in slot {}!", slot.number()),
+        ActionError::WeaponOutOfAmmo(name) => {
+            format!(
+                "{} is out of ammo!",
+                crate::ui::weapon_name_text(name).string
+            )
+        }
+    };
     StyledString { string, style }
 }
 
@@ -357,7 +364,8 @@ impl GameLoopData {
                         }
                         AppInput::Wait => running.wait(&mut instance.game, &self.game_config),
                         AppInput::Get => running.get(&instance.game),
-                        AppInput::Examine | AppInput::Aim(_) => {
+                        AppInput::Aim(slot) => running.fire_weapon(&instance.game, slot),
+                        AppInput::Examine => {
                             println!("todo");
                             (Witness::Running(running), Ok(()))
                         }
@@ -401,6 +409,10 @@ impl GameLoopData {
 
     fn game_mut(&mut self) -> &mut witness::Game {
         &mut self.instance.as_mut().unwrap().game
+    }
+
+    fn game_mut_config(&mut self) -> (&mut witness::Game, &GameConfig) {
+        (&mut self.instance.as_mut().unwrap().game, &self.game_config)
     }
 
     fn game_inner(&self) -> &Game {
@@ -660,11 +672,8 @@ fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
                         popup("You can't afford that!".to_string())
                             .map_val(|| upgrade_witness.cancel())
                     } else {
-                        let (witness, result) = upgrade_witness.upgrade(
-                            &mut instance.game,
-                            upgrade,
-                            &state.game_config,
-                        );
+                        let (witness, result) =
+                            upgrade_witness.commit(&mut instance.game, upgrade, &state.game_config);
                         if let Err(upgrade_error) = result {
                             println!("upgrade error: {:?}", upgrade_error);
                         }
@@ -730,21 +739,20 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
                     Err(Escape) => val_once(witness.cancel()),
                     Ok(slot) => {
                         if state.player_has_weapon_in_slot(slot) {
-                            yes_no(format!(
-                                "Replace ranged weapon in slot {}?",
-                                slot.index() + 1
-                            ))
-                            .and_then(move |yes| {
-                                on_state(move |state: &mut GameLoopData| {
-                                    if yes {
-                                        witness.commit(state.game_mut(), slot)
-                                    } else {
-                                        witness.cancel()
-                                    }
+                            yes_no(format!("Replace ranged weapon in slot {}?", slot.number()))
+                                .and_then(move |yes| {
+                                    on_state(move |state: &mut GameLoopData| {
+                                        if yes {
+                                            let (game, config) = state.game_mut_config();
+                                            witness.commit(game, slot, config)
+                                        } else {
+                                            witness.cancel()
+                                        }
+                                    })
                                 })
-                            })
                         } else {
-                            val_once(witness.commit(state.game_mut(), slot))
+                            let (game, config) = state.game_mut_config();
+                            val_once(witness.commit(game, slot, config))
                         }
                     }
                 }
@@ -757,10 +765,57 @@ fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> CF<Witness> {
     yes_no("Replace current melee weapon?".to_string()).and_then(move |yes| {
         on_state(move |state: &mut GameLoopData| {
             if yes {
-                witness.commit(state.game_mut())
+                let (game, config) = state.game_mut_config();
+                witness.commit(game, config)
             } else {
                 witness.cancel()
             }
+        })
+    })
+}
+
+fn fire_weapon(witness: witness::FireWeapon) -> CF<Witness> {
+    on_state_then(move |state: &mut GameLoopData| {
+        state.context_message = Some(StyledString {
+            string: format!(
+                "Fire weapon {} in which direction? (escape to cancel)",
+                witness.slot().number()
+            ),
+            style: Style::plain_text()
+                .with_bold(true)
+                .with_foreground(Rgba32::hex_rgb(0xFF0000)),
+        });
+        on_input(move |input| match input {
+            Input::Keyboard(KeyboardInput::Up | KeyboardInput::Char('k' | 'w')) => {
+                Some(Ok(CardinalDirection::North))
+            }
+            Input::Keyboard(KeyboardInput::Left | KeyboardInput::Char('h' | 'a')) => {
+                Some(Ok(CardinalDirection::West))
+            }
+            Input::Keyboard(KeyboardInput::Down | KeyboardInput::Char('j' | 's')) => {
+                Some(Ok(CardinalDirection::South))
+            }
+            Input::Keyboard(KeyboardInput::Right | KeyboardInput::Char('l' | 'd')) => {
+                Some(Ok(CardinalDirection::East))
+            }
+            Input::Keyboard(keys::ESCAPE) => Some(Err(Escape)),
+            _ => None,
+        })
+        .overlay(
+            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
+            10,
+        )
+        .and_then(|direction_or_err| {
+            on_state(move |state: &mut GameLoopData| {
+                state.context_message = None;
+                match direction_or_err {
+                    Err(Escape) => witness.cancel(),
+                    Ok(direction) => {
+                        let (game, config) = state.game_mut_config();
+                        witness.commit(game, direction, config)
+                    }
+                }
+            })
         })
     })
 }
@@ -1064,6 +1119,9 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                 Witness::GetMeleeWeapon(get_melee_weapon) => try_get_melee_weapon(get_melee_weapon)
                     .map(Playing)
                     .continue_(),
+                Witness::FireWeapon(fire_weapon_witness) => {
+                    fire_weapon(fire_weapon_witness).map(Playing).continue_()
+                }
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
             Paused(running) => pause(running).map(|pause_output| match pause_output {

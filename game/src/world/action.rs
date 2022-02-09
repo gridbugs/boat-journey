@@ -20,6 +20,8 @@ pub enum Error {
     WalkIntoSolidCell,
     CannotAffordUpgrade,
     NoItemToGet,
+    NoWeaponInSlot(player::RangedWeaponSlot),
+    WeaponOutOfAmmo(player::WeaponName),
 }
 
 const KNOCKBACK: usize = 3;

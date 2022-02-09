@@ -116,7 +116,7 @@ pub fn render_message_log(messages: &[Message], ctx: Ctx, fb: &mut FrameBuffer) 
     }
 }
 
-fn weapon_name_text(weapon_name: WeaponName) -> StyledString {
+pub fn weapon_name_text(weapon_name: WeaponName) -> StyledString {
     let t = |s: &str, c| StyledString {
         string: s.to_string(),
         style: Style::new().with_foreground(c).with_bold(true),

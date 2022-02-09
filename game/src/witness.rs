@@ -37,12 +37,17 @@ pub struct Running(Private);
 pub struct Upgrade(Private);
 pub struct GetRangedWeapon(Private);
 pub struct GetMeleeWeapon(Private);
+pub struct FireWeapon {
+    private: Private,
+    slot: player::RangedWeaponSlot,
+}
 
 pub enum Witness {
     Running(Running),
     Upgrade(Upgrade),
     GetRangedWeapon(GetRangedWeapon),
     GetMeleeWeapon(GetMeleeWeapon),
+    FireWeapon(FireWeapon),
     GameOver,
 }
 
@@ -115,10 +120,29 @@ impl Running {
         }
         (self.into_witness(), Err(ActionError::NoItemToGet))
     }
+
+    pub fn fire_weapon(
+        self,
+        game: &Game,
+        slot: player::RangedWeaponSlot,
+    ) -> (Witness, Result<(), ActionError>) {
+        if let Some(weapon) = game.inner_game.player().weapon_in_slot(slot) {
+            if weapon.ammo.unwrap().current == 0 {
+                return (
+                    self.into_witness(),
+                    Err(ActionError::WeaponOutOfAmmo(weapon.name)),
+                );
+            } else {
+                let Self(private) = self;
+                return (Witness::FireWeapon(FireWeapon { private, slot }), Ok(()));
+            }
+        }
+        (self.into_witness(), Err(ActionError::NoWeaponInSlot(slot)))
+    }
 }
 
 impl Upgrade {
-    pub fn upgrade(
+    pub fn commit(
         self,
         game: &mut Game,
         upgrade: player::Upgrade,
@@ -136,10 +160,17 @@ impl Upgrade {
 }
 
 impl GetRangedWeapon {
-    pub fn commit(self, game: &mut Game, slot: player::RangedWeaponSlot) -> Witness {
-        game.inner_game.player_equip_ranged_weapon_from_ground(slot);
+    pub fn commit(
+        self,
+        game: &mut Game,
+        slot: player::RangedWeaponSlot,
+        config: &Config,
+    ) -> Witness {
         let Self(private) = self;
-        Witness::running(private)
+        let input = Input::EquipRangedWeapon(slot);
+        let (witness, result) = game.witness_handle_input(input, config, private);
+        let _ = result.unwrap();
+        witness
     }
 
     pub fn cancel(self) -> Witness {
@@ -149,14 +180,35 @@ impl GetRangedWeapon {
 }
 
 impl GetMeleeWeapon {
-    pub fn commit(self, game: &mut Game) -> Witness {
-        game.inner_game.player_equip_melee_weapon_from_ground();
+    pub fn commit(self, game: &mut Game, config: &Config) -> Witness {
         let Self(private) = self;
-        Witness::running(private)
+        let input = Input::EquipMeleeWeapon;
+        let (witness, result) = game.witness_handle_input(input, config, private);
+        let _ = result.unwrap();
+        witness
     }
 
     pub fn cancel(self) -> Witness {
         let Self(private) = self;
+        Witness::running(private)
+    }
+}
+
+impl FireWeapon {
+    pub fn slot(&self) -> player::RangedWeaponSlot {
+        self.slot
+    }
+
+    pub fn commit(self, game: &mut Game, direction: CardinalDirection, config: &Config) -> Witness {
+        let Self { private, slot } = self;
+        let input = Input::Fire { direction, slot };
+        let (witness, result) = game.witness_handle_input(input, config, private);
+        let _ = result.unwrap();
+        witness
+    }
+
+    pub fn cancel(self) -> Witness {
+        let Self { private, .. } = self;
         Witness::running(private)
     }
 }

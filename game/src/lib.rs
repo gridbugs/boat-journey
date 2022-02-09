@@ -56,6 +56,15 @@ pub struct Config {
 impl Config {
     pub const OMNISCIENT: Option<Omniscient> = Some(Omniscient);
 }
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            omniscient: None,
+            demo: false,
+            debug: false,
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum Music {
@@ -524,11 +533,34 @@ impl Game {
         result
     }
 
+    pub fn resolve_realtime(&mut self) {
+        if self.is_gameplay_blocked() {
+            self.after_player_turn_countdown = Some(Duration::from_millis(0));
+            self.before_npc_turn_cooldown = Some(Duration::from_millis(100));
+        }
+        self.turn_during_animation = Some(Turn::Player);
+    }
+
+    pub fn player_fire_weapon(
+        &mut self,
+        slot: player::RangedWeaponSlot,
+        direction: CardinalDirection,
+    ) {
+        self.world.character_fire_bullet(
+            self.player,
+            self.player_coord() + (direction.coord() * 100),
+            slot,
+            &mut self.events,
+        );
+        self.resolve_realtime();
+    }
+
     pub fn player_equip_ranged_weapon_from_ground(&mut self, slot: player::RangedWeaponSlot) {
         self.world
             .equip_ranged_weapon_from_ground(self.player, slot, &mut self.message_log);
         self.world.cleanup();
     }
+
     pub fn player_equip_melee_weapon_from_ground(&mut self) {
         self.world
             .equip_melee_weapon_from_ground(self.player, &mut self.message_log);
