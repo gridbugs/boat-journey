@@ -45,12 +45,11 @@ impl GameInstance {
         self.stars
             .render_with_visibility(self.game.inner_ref().visibility_grid(), ctx, fb);
         game::render_game_with_visibility(self.game.inner_ref(), ctx, fb);
-        self.render_floor_text(ctx, fb);
         self.render_message_log(ctx, fb);
         self.render_hud(ctx, fb);
     }
 
-    fn floor_text(&self) -> StyledString {
+    pub fn floor_text(&self) -> StyledString {
         let current_floor = self.game.inner_ref().current_level();
         let final_floor = orbital_decay_game::FINAL_LEVEL;
         if current_floor == 0 {
@@ -79,10 +78,6 @@ impl GameInstance {
                 string: format!("Floor {}/{}", current_floor, final_floor),
             }
         }
-    }
-
-    fn render_floor_text(&self, ctx: Ctx, fb: &mut FrameBuffer) {
-        self.floor_text().render(&(), ctx, fb);
     }
 
     fn render_message_log(&self, ctx: Ctx, fb: &mut FrameBuffer) {

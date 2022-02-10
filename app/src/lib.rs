@@ -4,6 +4,7 @@ use orbital_decay_game::Config;
 mod audio;
 mod colours;
 mod controls;
+mod examine;
 mod game;
 mod game_instance;
 mod game_loop;

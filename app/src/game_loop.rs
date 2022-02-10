@@ -2,6 +2,7 @@ use crate::audio::{AppAudioPlayer, Audio, AudioState};
 use crate::{
     colours,
     controls::{AppInput, Controls},
+    examine,
     game_instance::{GameInstance, GameInstanceStorable},
     menu_background::MenuBackground,
     text,
@@ -15,7 +16,7 @@ use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
     witness::{self, Witness},
-    ActionError, Config as GameConfig, ExternalEvent, Game, Music,
+    ActionError, Config as GameConfig, ExternalEvent, Game, Music, MAP_SIZE,
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
@@ -263,6 +264,8 @@ pub struct GameLoopData {
     audio_state: AudioState,
     config: Config,
     context_message: Option<StyledString>,
+    examine_message: Option<StyledString>,
+    cursor: Option<Coord>,
 }
 
 impl GameLoopData {
@@ -316,6 +319,8 @@ impl GameLoopData {
                 audio_state,
                 config,
                 context_message: None,
+                examine_message: None,
+                cursor: None,
             },
             state,
         )
@@ -351,9 +356,28 @@ impl GameLoopData {
         if let Some(context_message) = self.context_message.as_ref() {
             context_message.render(&(), ctx.add_y(1), fb);
         }
+        if let Some(top_text) = self.examine_message.as_ref() {
+            top_text.clone().wrap_word().render(&(), ctx, fb);
+        } else {
+            instance.floor_text().render(&(), ctx, fb);
+        }
+        if let Some(cursor) = self.cursor {
+            let game_cursor = cursor / 3;
+            if game_cursor.is_valid(MAP_SIZE) {
+                let cursor = game_cursor * 3;
+                for offset in Size::new_u16(3, 3).coord_iter_row_major() {
+                    fb.set_cell_relative_to_ctx(
+                        ctx,
+                        cursor + offset,
+                        1,
+                        RenderCell::BLANK.with_background(Rgba32::new(255, 255, 0, 128)),
+                    );
+                }
+            }
+        }
     }
 
-    fn update(&mut self, event: Event, running: witness::Running) -> Witness {
+    fn update(&mut self, event: Event, running: witness::Running) -> GameLoopState {
         let instance = self.instance.as_mut().unwrap();
         let witness = match event {
             Event::Input(Input::Keyboard(keyboard_input)) => {
@@ -366,8 +390,7 @@ impl GameLoopData {
                         AppInput::Get => running.get(&instance.game),
                         AppInput::Aim(slot) => running.fire_weapon(&instance.game, slot),
                         AppInput::Examine => {
-                            println!("todo");
-                            (Witness::Running(running), Ok(()))
+                            return GameLoopState::Examine(running);
                         }
                     };
                     if let Err(action_error) = action_result {
@@ -377,8 +400,18 @@ impl GameLoopData {
                     }
                     witness
                 } else {
-                    Witness::Running(running)
+                    running.into_witness()
                 }
+            }
+            Event::Input(Input::Mouse(mouse_input)) => {
+                match mouse_input {
+                    MouseInput::MouseMove { button: _, coord } => {
+                        self.examine_message = examine::examine(self.game().inner_ref(), coord);
+                        self.cursor = Some(coord);
+                    }
+                    _ => (),
+                }
+                running.into_witness()
             }
             Event::Tick(since_previous) => {
                 running.tick(&mut instance.game, since_previous, &self.game_config)
@@ -386,7 +419,7 @@ impl GameLoopData {
             _ => Witness::Running(running),
         };
         self.handle_game_events();
-        witness
+        GameLoopState::Playing(witness)
     }
 
     fn handle_game_events(&mut self) {
@@ -405,10 +438,6 @@ impl GameLoopData {
 
     fn game(&self) -> &witness::Game {
         &self.instance.as_ref().unwrap().game
-    }
-
-    fn game_mut(&mut self) -> &mut witness::Game {
-        &mut self.instance.as_mut().unwrap().game
     }
 
     fn game_mut_config(&mut self) -> (&mut witness::Game, &GameConfig) {
@@ -437,6 +466,7 @@ impl GameInstanceComponent {
 }
 
 pub enum GameLoopState {
+    Examine(witness::Running),
     Paused(witness::Running),
     Playing(Witness),
     MainMenu,
@@ -455,7 +485,7 @@ impl Component for GameInstanceComponent {
         if event.is_escape() {
             GameLoopState::Paused(running)
         } else {
-            GameLoopState::Playing(state.update(event, running))
+            state.update(event, running)
         }
     }
 
@@ -1124,6 +1154,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                 }
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
+            Examine(running) => todo!(),
             Paused(running) => pause(running).map(|pause_output| match pause_output {
                 PauseOutput::ContinueGame { running } => {
                     LoopControl::Continue(Playing(running.into_witness()))
