@@ -5,7 +5,7 @@ use crate::{
     examine,
     game_instance::{GameInstance, GameInstanceStorable},
     menu_background::MenuBackground,
-    text,
+    text, ui,
 };
 use chargrid::{
     border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, pad_by::Padding,
@@ -245,10 +245,7 @@ fn action_error_message(action_error: ActionError) -> StyledString {
         ActionError::NoItemToGet => "There is no item here!".to_string(),
         ActionError::NoWeaponInSlot(slot) => format!("No weapon in slot {}!", slot.number()),
         ActionError::WeaponOutOfAmmo(name) => {
-            format!(
-                "{} is out of ammo!",
-                crate::ui::weapon_name_text(name).string
-            )
+            format!("{} is out of ammo!", ui::weapon_name_text(name).string)
         }
     };
     StyledString { string, style }
@@ -363,17 +360,30 @@ impl GameLoopData {
         }
         if let Some(cursor) = self.cursor {
             let game_cursor = cursor / 3;
-            if game_cursor.is_valid(MAP_SIZE) {
+            if game_cursor.is_valid(MAP_SIZE + Size::new_u16(1, 1)) {
                 let cursor = game_cursor * 3;
                 for offset in Size::new_u16(3, 3).coord_iter_row_major() {
                     fb.set_cell_relative_to_ctx(
                         ctx,
                         cursor + offset,
-                        1,
-                        RenderCell::BLANK.with_background(Rgba32::new(255, 255, 0, 128)),
+                        10,
+                        RenderCell::BLANK.with_background(Rgba32::new(255, 255, 0, 96)),
                     );
                 }
             }
+        }
+    }
+
+    fn examine_mouse(&mut self, event: Event) {
+        match event {
+            Event::Input(Input::Mouse(mouse_input)) => match mouse_input {
+                MouseInput::MouseMove { button: _, coord } => {
+                    self.examine_message = examine::examine(self.game().inner_ref(), coord);
+                    self.cursor = Some(coord);
+                }
+                _ => (),
+            },
+            _ => (),
         }
     }
 
@@ -403,21 +413,12 @@ impl GameLoopData {
                     running.into_witness()
                 }
             }
-            Event::Input(Input::Mouse(mouse_input)) => {
-                match mouse_input {
-                    MouseInput::MouseMove { button: _, coord } => {
-                        self.examine_message = examine::examine(self.game().inner_ref(), coord);
-                        self.cursor = Some(coord);
-                    }
-                    _ => (),
-                }
-                running.into_witness()
-            }
             Event::Tick(since_previous) => {
                 running.tick(&mut instance.game, since_previous, &self.game_config)
             }
             _ => Witness::Running(running),
         };
+        self.examine_mouse(event);
         self.handle_game_events();
         GameLoopState::Playing(witness)
     }
@@ -492,6 +493,48 @@ impl Component for GameInstanceComponent {
     fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
         ctx.bounding_box.size()
     }
+}
+
+struct GameExamineWithMouseComponent;
+
+impl Component for GameExamineWithMouseComponent {
+    type Output = ();
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        state.render(ctx, fb);
+    }
+
+    fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
+        state.examine_mouse(event);
+    }
+
+    fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
+        ctx.bounding_box.size()
+    }
+}
+
+struct GameExamineComponent;
+
+impl Component for GameExamineComponent {
+    type Output = ();
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        state.render(ctx, fb);
+    }
+
+    fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
+        state.examine_mouse(event);
+    }
+
+    fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
+        ctx.bounding_box.size()
+    }
+}
+
+fn game_examine_component() -> CF<()> {
+    todo!()
 }
 
 struct MenuBackgroundComponent;
@@ -831,10 +874,7 @@ fn fire_weapon(witness: witness::FireWeapon) -> CF<Witness> {
             Input::Keyboard(keys::ESCAPE) => Some(Err(Escape)),
             _ => None,
         })
-        .overlay(
-            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
-            10,
-        )
+        .overlay(GameExamineWithMouseComponent, 10)
         .and_then(|direction_or_err| {
             on_state(move |state: &mut GameLoopData| {
                 state.context_message = None;
@@ -1154,7 +1194,9 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                 }
                 Witness::GameOver => break_(GameExitReason::GameOver),
             },
-            Examine(running) => todo!(),
+            Examine(running) => game_examine_component()
+                .map_val(|| Playing(running.into_witness()))
+                .continue_(),
             Paused(running) => pause(running).map(|pause_output| match pause_output {
                 PauseOutput::ContinueGame { running } => {
                     LoopControl::Continue(Playing(running.into_witness()))
