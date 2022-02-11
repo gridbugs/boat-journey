@@ -15,4 +15,4 @@
 # Nobody seems to agree on what this error means.
 set -euxo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-$DIR/OrbitalDecayApp
+"$DIR/OrbitalDecayApp"
