@@ -50,6 +50,7 @@ impl Default for Config {
 
 /// An interactive, renderable process yielding a value of type `T`
 pub type CF<T> = BoxedCF<Option<T>, GameLoopData>;
+pub type State = GameLoopData;
 
 const CURSOR_COLOUR: Rgba32 = Rgba32::new(255, 255, 0, 64);
 const MENU_BACKGROUND: Rgba32 = colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3);
@@ -601,7 +602,7 @@ impl Component for GameExamineComponent {
 }
 
 fn game_examine_component() -> CF<()> {
-    on_state_then(|state: &mut GameLoopData| {
+    on_state_then(|state: &mut State| {
         state.context_message = Some(StyledString {
             string: "Examining (escape/start to return to game)".to_string(),
             style: Style::plain_text().with_foreground(Rgba32::new_grey(100)),
@@ -613,7 +614,7 @@ fn game_examine_component() -> CF<()> {
         boxed_cf(GameExamineComponent)
             .catch_escape_or_start()
             .map_val(|| ())
-            .then_side_effect(|state: &mut GameLoopData| {
+            .then_side_effect(|state: &mut State| {
                 state.context_message = None;
             })
     })
@@ -745,7 +746,7 @@ impl Component for UpgradeMenuDecorated {
 }
 
 fn upgrade_menu() -> CF<player::Upgrade> {
-    on_state_then(|state: &mut GameLoopData| {
+    on_state_then(|state: &mut State| {
         let instance = state.instance.as_ref().unwrap();
         let upgrades = instance.game.inner_ref().available_upgrades();
         use menu::builder::*;
@@ -819,7 +820,7 @@ fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
     menu_style(upgrade_menu())
         .menu_harness()
         .and_then(|result| {
-            on_state_then(move |state: &mut GameLoopData| match result {
+            on_state_then(move |state: &mut State| match result {
                 Err(Close) => val_once(upgrade_witness.cancel()),
                 Ok(upgrade) => {
                     let instance = state.instance.as_mut().unwrap();
@@ -840,7 +841,7 @@ fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
 }
 
 fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
-    on_state_then(move |state: &mut GameLoopData| {
+    on_state_then(move |state: &mut State| {
         let instance = state.instance.as_ref().unwrap();
         let upgrades = instance.game.inner_ref().available_upgrades();
         if upgrades.is_empty() {
@@ -852,7 +853,7 @@ fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
 }
 
 fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
-    on_state_then(move |state: &mut GameLoopData| {
+    on_state_then(move |state: &mut State| {
         let num_weapon_slots = if state.player_has_third_weapon_slot() {
             3
         } else {
@@ -867,7 +868,7 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
                 .with_bold(true)
                 .with_foreground(Rgba32::hex_rgb(0xFF0000)),
         });
-        on_input_state(move |input, state: &mut GameLoopData| {
+        on_input_state(move |input, state: &mut State| {
             use player::RangedWeaponSlot::*;
             let slot = state.controls.get_slot(input);
             if slot == Some(Slot3) && num_weapon_slots < 3 {
@@ -882,7 +883,7 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
             10,
         )
         .and_then(|slot_or_err| {
-            on_state_then(move |state: &mut GameLoopData| {
+            on_state_then(move |state: &mut State| {
                 state.context_message = None;
                 match slot_or_err {
                     Err(_escape_or_start) => val_once(witness.cancel()),
@@ -890,7 +891,7 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
                         if state.player_has_weapon_in_slot(slot) {
                             yes_no(format!("Replace ranged weapon in slot {}?", slot.number()))
                                 .and_then(move |yes| {
-                                    on_state(move |state: &mut GameLoopData| {
+                                    on_state(move |state: &mut State| {
                                         if yes {
                                             let (game, config) = state.game_mut_config();
                                             witness.commit(game, slot, config)
@@ -912,7 +913,7 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
 
 fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> CF<Witness> {
     yes_no("Replace current melee weapon?".to_string()).and_then(move |yes| {
-        on_state(move |state: &mut GameLoopData| {
+        on_state(move |state: &mut State| {
             if yes {
                 let (game, config) = state.game_mut_config();
                 witness.commit(game, config)
@@ -924,7 +925,7 @@ fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> CF<Witness> {
 }
 
 fn fire_weapon(witness: witness::FireWeapon) -> CF<Witness> {
-    on_state_then(move |state: &mut GameLoopData| {
+    on_state_then(move |state: &mut State| {
         state.context_message = Some(StyledString {
             string: format!(
                 "Fire weapon {} in which direction? (escape/start to cancel)",
@@ -934,11 +935,11 @@ fn fire_weapon(witness: witness::FireWeapon) -> CF<Witness> {
                 .with_bold(true)
                 .with_foreground(Rgba32::hex_rgb(0xFF0000)),
         });
-        on_input_state(move |input, state: &mut GameLoopData| state.controls.get_direction(input))
+        on_input_state(move |input, state: &mut State| state.controls.get_direction(input))
             .catch_escape_or_start()
             .overlay(GameExamineWithMouseComponent, 10)
             .and_then(|direction_or_err| {
-                on_state(move |state: &mut GameLoopData| {
+                on_state(move |state: &mut State| {
                     state.context_message = None;
                     match direction_or_err {
                         Err(_escape_or_start) => witness.cancel(),
@@ -985,7 +986,7 @@ fn title_decorate<T: 'static>(cf: CF<T>) -> CF<T> {
 }
 
 fn main_menu() -> CF<MainMenuEntry> {
-    on_state_then(|state: &mut GameLoopData| {
+    on_state_then(|state: &mut State| {
         use menu::builder::*;
         use MainMenuEntry::*;
         let mut builder = menu_builder().vi_keys();
@@ -1017,7 +1018,7 @@ fn main_menu_loop() -> CF<MainMenuOutput> {
     use MainMenuEntry::*;
     title_decorate(main_menu())
         .repeat_unit(move |entry| match entry {
-            NewGame => on_state(|state: &mut GameLoopData| MainMenuOutput::NewGame {
+            NewGame => on_state(|state: &mut State| MainMenuOutput::NewGame {
                 new_running: state.new_game(),
             })
             .break_(),
@@ -1045,7 +1046,7 @@ enum PauseMenuEntry {
 }
 
 fn pause_menu() -> CF<PauseMenuEntry> {
-    on_state_then(|state: &mut GameLoopData| {
+    on_state_then(|state: &mut State| {
         use menu::builder::*;
         use PauseMenuEntry::*;
         let mut builder = menu_builder().vi_keys();
@@ -1079,16 +1080,16 @@ fn pause_menu_loop(running: witness::Running) -> CF<PauseOutput> {
             move |running, entry_or_escape| match entry_or_escape {
                 Ok(entry) => match entry {
                     Resume => break_(PauseOutput::ContinueGame { running }),
-                    SaveQuit => on_state(|state: &mut GameLoopData| {
+                    SaveQuit => on_state(|state: &mut State| {
                         state.save_instance(running);
                         PauseOutput::Quit
                     })
                     .break_(),
-                    Save => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                    Save => on_state(|state: &mut State| PauseOutput::ContinueGame {
                         running: state.save_instance(running),
                     })
                     .break_(),
-                    NewGame => on_state(|state: &mut GameLoopData| PauseOutput::ContinueGame {
+                    NewGame => on_state(|state: &mut State| PauseOutput::ContinueGame {
                         running: state.new_game(),
                     })
                     .break_(),
@@ -1096,7 +1097,7 @@ fn pause_menu_loop(running: witness::Running) -> CF<PauseOutput> {
                     Help => text::help(text_width).continue_with(running),
                     Prologue => text::prologue(text_width).continue_with(running),
                     Epilogue => text::epilogue(text_width).continue_with(running),
-                    Clear => on_state(|state: &mut GameLoopData| {
+                    Clear => on_state(|state: &mut State| {
                         state.clear_saved_game();
                         PauseOutput::MainMenu
                     })
@@ -1115,14 +1116,14 @@ enum PauseOutput {
 
 fn pause(running: witness::Running) -> CF<PauseOutput> {
     const PAUSE_MUSIC_VOLUME_MULTIPLIER: f32 = 0.25;
-    on_state_then(move |state: &mut GameLoopData| {
+    on_state_then(move |state: &mut State| {
         // turn down the music in the pause menu
         state
             .audio_state
             .set_music_volume_multiplier(PAUSE_MUSIC_VOLUME_MULTIPLIER);
         menu_style(pause_menu_loop(running))
     })
-    .then_side_effect(|state: &mut GameLoopData| {
+    .then_side_effect(|state: &mut State| {
         // turn the music back up
         state.audio_state.set_music_volume_multiplier(1.);
     })
@@ -1220,7 +1221,7 @@ pub enum GameExitReason {
 }
 
 fn first_run_prologue() -> CF<()> {
-    on_state_then(|state: &mut GameLoopData| {
+    on_state_then(|state: &mut State| {
         if state.config.first_run {
             state.config.first_run = false;
             state.save_config();
