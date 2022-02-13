@@ -11,7 +11,6 @@ use chargrid::{
     border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, pad_by::Padding,
     prelude::*, text::StyledString,
 };
-use direction::CardinalDirection;
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
@@ -52,6 +51,7 @@ impl Default for Config {
 /// An interactive, renderable process yielding a value of type `T`
 pub type CF<T> = BoxedCF<Option<T>, GameLoopData>;
 
+const CURSOR_COLOUR: Rgba32 = Rgba32::new(255, 255, 0, 64);
 const MENU_BACKGROUND: Rgba32 = colours::SPACE_BACKGROUND.saturating_scalar_mul_div(2, 3);
 const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
     use menu::identifier::fade_spec::*;
@@ -127,11 +127,13 @@ pub struct AppStorage {
     pub handle: StaticStorage,
     pub save_game_key: String,
     pub config_key: String,
+    pub controls_key: String,
 }
 
 impl AppStorage {
     const SAVE_GAME_STORAGE_FORMAT: format::Bincode = format::Bincode;
-    const CONFIG_STORAGE_FORMAT: format::Json = format::Json;
+    const CONFIG_STORAGE_FORMAT: format::JsonPretty = format::JsonPretty;
+    const CONTROLS_STORAGE_FORMAT: format::JsonPretty = format::JsonPretty;
 
     fn save_game(&mut self, instance: &GameInstanceStorable) {
         let result = self.handle.store(
@@ -227,6 +229,47 @@ impl AppStorage {
             Ok(instance) => Some(instance),
         }
     }
+
+    fn save_controls(&mut self, controls: &Controls) {
+        let result =
+            self.handle
+                .store(&self.controls_key, &controls, Self::CONTROLS_STORAGE_FORMAT);
+        if let Err(e) = result {
+            use general_storage_static::{StoreError, StoreRawError};
+            match e {
+                StoreError::FormatError(e) => log::error!("Failed to format controls: {}", e),
+                StoreError::Raw(e) => match e {
+                    StoreRawError::IoError(e) => {
+                        log::error!("Error while writing controls: {}", e)
+                    }
+                },
+            }
+        }
+    }
+
+    fn load_controls(&self) -> Option<Controls> {
+        let result = self
+            .handle
+            .load::<_, Controls, _>(&self.controls_key, Self::CONTROLS_STORAGE_FORMAT);
+        match result {
+            Err(e) => {
+                use general_storage_static::{LoadError, LoadRawError};
+                match e {
+                    LoadError::FormatError(e) => {
+                        log::error!("Failed to parse controls file: {}", e)
+                    }
+                    LoadError::Raw(e) => match e {
+                        LoadRawError::IoError(e) => {
+                            log::error!("Error while reading controls: {}", e)
+                        }
+                        LoadRawError::NoSuchKey => (),
+                    },
+                }
+                None
+            }
+            Ok(instance) => Some(instance),
+        }
+    }
 }
 
 fn new_game(
@@ -268,7 +311,7 @@ pub struct GameLoopData {
 impl GameLoopData {
     pub fn new(
         game_config: GameConfig,
-        storage: AppStorage,
+        mut storage: AppStorage,
         initial_rng_seed: InitialRngSeed,
         audio_player: AppAudioPlayer,
         force_new_game: bool,
@@ -294,7 +337,13 @@ impl GameLoopData {
                 }
             }
         };
-        let controls = Controls::default();
+        let controls = if let Some(controls) = storage.load_controls() {
+            controls
+        } else {
+            let controls = Controls::default();
+            storage.save_controls(&controls);
+            controls
+        };
         let menu_background = MenuBackground::new(&mut Isaac64Rng::from_entropy());
         let mut audio_state = AudioState::new(audio_player);
         let config = storage.load_config().unwrap_or_default();
@@ -347,7 +396,7 @@ impl GameLoopData {
         self.storage.save_config(&self.config);
     }
 
-    fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    fn render(&self, cursor_colour: Rgba32, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
         instance.render(ctx, fb);
         if let Some(context_message) = self.context_message.as_ref() {
@@ -359,15 +408,14 @@ impl GameLoopData {
             instance.floor_text().render(&(), ctx, fb);
         }
         if let Some(cursor) = self.cursor {
-            let game_cursor = cursor / 3;
-            if game_cursor.is_valid(MAP_SIZE + Size::new_u16(1, 1)) {
-                let cursor = game_cursor * 3;
+            if cursor.is_valid(MAP_SIZE + Size::new_u16(1, 1)) {
+                let screen_cursor = cursor * 3;
                 for offset in Size::new_u16(3, 3).coord_iter_row_major() {
                     fb.set_cell_relative_to_ctx(
                         ctx,
-                        cursor + offset,
+                        screen_cursor + offset,
                         10,
-                        RenderCell::BLANK.with_background(Rgba32::new(255, 255, 0, 96)),
+                        RenderCell::BLANK.with_background(cursor_colour),
                     );
                 }
             }
@@ -378,8 +426,7 @@ impl GameLoopData {
         match event {
             Event::Input(Input::Mouse(mouse_input)) => match mouse_input {
                 MouseInput::MouseMove { button: _, coord } => {
-                    self.examine_message = examine::examine(self.game().inner_ref(), coord);
-                    self.cursor = Some(coord);
+                    self.cursor = Some(coord / 3);
                 }
                 _ => (),
             },
@@ -387,18 +434,24 @@ impl GameLoopData {
         }
     }
 
+    fn update_examine_text(&mut self) {
+        self.examine_message = self
+            .cursor
+            .and_then(|coord| examine::examine(self.game().inner_ref(), coord));
+    }
+
     fn update(&mut self, event: Event, running: witness::Running) -> GameLoopState {
         let instance = self.instance.as_mut().unwrap();
         let witness = match event {
-            Event::Input(Input::Keyboard(keyboard_input)) => {
-                if let Some(app_input) = self.controls.get(keyboard_input) {
+            Event::Input(input) => {
+                if let Some(app_input) = self.controls.get(input) {
                     let (witness, action_result) = match app_input {
-                        AppInput::Move(direction) => {
+                        AppInput::Direction(direction) => {
                             running.walk(&mut instance.game, direction, &self.game_config)
                         }
                         AppInput::Wait => running.wait(&mut instance.game, &self.game_config),
                         AppInput::Get => running.get(&instance.game),
-                        AppInput::Aim(slot) => running.fire_weapon(&instance.game, slot),
+                        AppInput::Slot(slot) => running.fire_weapon(&instance.game, slot),
                         AppInput::Examine => {
                             return GameLoopState::Examine(running);
                         }
@@ -419,6 +472,7 @@ impl GameLoopData {
             _ => Witness::Running(running),
         };
         self.examine_mouse(event);
+        self.update_examine_text();
         self.handle_game_events();
         GameLoopState::Playing(witness)
     }
@@ -478,12 +532,12 @@ impl Component for GameInstanceComponent {
     type State = GameLoopData;
 
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
-        state.render(ctx, fb);
+        state.render(CURSOR_COLOUR, ctx, fb);
     }
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
         let running = self.0.take().unwrap();
-        if event.is_escape() {
+        if event.is_escape_or_start() {
             GameLoopState::Paused(running)
         } else {
             state.update(event, running)
@@ -502,7 +556,7 @@ impl Component for GameExamineWithMouseComponent {
     type State = GameLoopData;
 
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
-        state.render(ctx, fb);
+        state.render(CURSOR_COLOUR, ctx, fb);
     }
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
@@ -517,15 +571,28 @@ impl Component for GameExamineWithMouseComponent {
 struct GameExamineComponent;
 
 impl Component for GameExamineComponent {
-    type Output = ();
+    type Output = Option<()>;
     type State = GameLoopData;
 
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
-        state.render(ctx, fb);
+        state.render(CURSOR_COLOUR.with_a(128), ctx, fb);
     }
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
+        if let Some(input) = event.input() {
+            state.controls.get_direction(input).map(|direction| {
+                let cursor = state
+                    .cursor
+                    .unwrap_or_else(|| state.game().inner_ref().player_coord());
+                state.cursor = Some(cursor + direction.coord());
+            });
+            if let Some(AppInput::Examine) = state.controls.get(input) {
+                return Some(());
+            }
+        }
         state.examine_mouse(event);
+        state.update_examine_text();
+        None
     }
 
     fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
@@ -534,7 +601,22 @@ impl Component for GameExamineComponent {
 }
 
 fn game_examine_component() -> CF<()> {
-    todo!()
+    on_state_then(|state: &mut GameLoopData| {
+        state.context_message = Some(StyledString {
+            string: "Examining (escape/start to return to game)".to_string(),
+            style: Style::plain_text().with_foreground(Rgba32::new_grey(100)),
+        });
+        let cursor = state
+            .cursor
+            .unwrap_or_else(|| state.game().inner_ref().player_coord());
+        state.cursor = Some(cursor);
+        boxed_cf(GameExamineComponent)
+            .catch_escape_or_start()
+            .map_val(|| ())
+            .then_side_effect(|state: &mut GameLoopData| {
+                state.context_message = None;
+            })
+    })
 }
 
 struct MenuBackgroundComponent;
@@ -563,7 +645,7 @@ fn menu_style<T: 'static>(menu: CF<T>) -> CF<T> {
         .fill(MENU_BACKGROUND)
         .centre()
         .overlay_tint(
-            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
+            render_state(|state: &GameLoopData, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
             chargrid::core::TintDim(63),
             10,
         )
@@ -735,10 +817,10 @@ fn popup(string: String) -> CF<()> {
 
 fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
     menu_style(upgrade_menu())
-        .catch_escape()
+        .menu_harness()
         .and_then(|result| {
             on_state_then(move |state: &mut GameLoopData| match result {
-                Err(Escape) => val_once(upgrade_witness.cancel()),
+                Err(Close) => val_once(upgrade_witness.cancel()),
                 Ok(upgrade) => {
                     let instance = state.instance.as_mut().unwrap();
                     if upgrade.level.cost() > instance.game.player().credit {
@@ -778,38 +860,32 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
         };
         state.context_message = Some(StyledString {
             string: format!(
-                "Choose a weapon slot: (press 1-{} or escape to cancel)",
+                "Choose a weapon slot: (press 1-{} or escape/start to cancel)",
                 num_weapon_slots
             ),
             style: Style::plain_text()
                 .with_bold(true)
                 .with_foreground(Rgba32::hex_rgb(0xFF0000)),
         });
-        on_input(move |input| {
+        on_input_state(move |input, state: &mut GameLoopData| {
             use player::RangedWeaponSlot::*;
-            match input {
-                Input::Keyboard(KeyboardInput::Char('1')) => Some(Ok(Slot1)),
-                Input::Keyboard(KeyboardInput::Char('2')) => Some(Ok(Slot2)),
-                Input::Keyboard(KeyboardInput::Char('3')) => {
-                    if num_weapon_slots == 3 {
-                        Some(Ok(Slot3))
-                    } else {
-                        None
-                    }
-                }
-                Input::Keyboard(keys::ESCAPE) => Some(Err(Escape)),
-                _ => None,
+            let slot = state.controls.get_slot(input);
+            if slot == Some(Slot3) && num_weapon_slots < 3 {
+                None
+            } else {
+                slot
             }
         })
+        .catch_escape_or_start()
         .overlay(
-            render_state(|state: &GameLoopData, ctx, fb| state.render(ctx, fb)),
+            render_state(|state: &GameLoopData, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
             10,
         )
         .and_then(|slot_or_err| {
             on_state_then(move |state: &mut GameLoopData| {
                 state.context_message = None;
                 match slot_or_err {
-                    Err(Escape) => val_once(witness.cancel()),
+                    Err(_escape_or_start) => val_once(witness.cancel()),
                     Ok(slot) => {
                         if state.player_has_weapon_in_slot(slot) {
                             yes_no(format!("Replace ranged weapon in slot {}?", slot.number()))
@@ -851,42 +927,28 @@ fn fire_weapon(witness: witness::FireWeapon) -> CF<Witness> {
     on_state_then(move |state: &mut GameLoopData| {
         state.context_message = Some(StyledString {
             string: format!(
-                "Fire weapon {} in which direction? (escape to cancel)",
+                "Fire weapon {} in which direction? (escape/start to cancel)",
                 witness.slot().number()
             ),
             style: Style::plain_text()
                 .with_bold(true)
                 .with_foreground(Rgba32::hex_rgb(0xFF0000)),
         });
-        on_input(move |input| match input {
-            Input::Keyboard(KeyboardInput::Up | KeyboardInput::Char('k' | 'w')) => {
-                Some(Ok(CardinalDirection::North))
-            }
-            Input::Keyboard(KeyboardInput::Left | KeyboardInput::Char('h' | 'a')) => {
-                Some(Ok(CardinalDirection::West))
-            }
-            Input::Keyboard(KeyboardInput::Down | KeyboardInput::Char('j' | 's')) => {
-                Some(Ok(CardinalDirection::South))
-            }
-            Input::Keyboard(KeyboardInput::Right | KeyboardInput::Char('l' | 'd')) => {
-                Some(Ok(CardinalDirection::East))
-            }
-            Input::Keyboard(keys::ESCAPE) => Some(Err(Escape)),
-            _ => None,
-        })
-        .overlay(GameExamineWithMouseComponent, 10)
-        .and_then(|direction_or_err| {
-            on_state(move |state: &mut GameLoopData| {
-                state.context_message = None;
-                match direction_or_err {
-                    Err(Escape) => witness.cancel(),
-                    Ok(direction) => {
-                        let (game, config) = state.game_mut_config();
-                        witness.commit(game, direction, config)
+        on_input_state(move |input, state: &mut GameLoopData| state.controls.get_direction(input))
+            .catch_escape_or_start()
+            .overlay(GameExamineWithMouseComponent, 10)
+            .and_then(|direction_or_err| {
+                on_state(move |state: &mut GameLoopData| {
+                    state.context_message = None;
+                    match direction_or_err {
+                        Err(_escape_or_start) => witness.cancel(),
+                        Ok(direction) => {
+                            let (game, config) = state.game_mut_config();
+                            witness.commit(game, direction, config)
+                        }
                     }
-                }
+                })
             })
-        })
     })
 }
 
@@ -1011,7 +1073,7 @@ fn pause_menu_loop(running: witness::Running) -> CF<PauseOutput> {
     use PauseMenuEntry::*;
     let text_width = 64;
     pause_menu()
-        .catch_escape()
+        .menu_harness()
         .repeat(
             running,
             move |running, entry_or_escape| match entry_or_escape {
@@ -1040,7 +1102,7 @@ fn pause_menu_loop(running: witness::Running) -> CF<PauseOutput> {
                     })
                     .break_(),
                 },
-                Err(Escape) => break_(PauseOutput::ContinueGame { running }),
+                Err(_escape_or_start) => break_(PauseOutput::ContinueGame { running }),
             },
         )
 }
@@ -1144,7 +1206,7 @@ fn options_menu() -> CF<()> {
     add_item(&mut builder, Back, "Back");
     let menu = builder.build();
     boxed_cf(OptionsMenuComponent { menu })
-        .catch_escape()
+        .catch_escape_or_start()
         .map(|_| ())
 }
 

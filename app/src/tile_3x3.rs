@@ -29,18 +29,6 @@ impl Component for StrStyle {
     }
 }
 
-pub const OFFSETS: [Coord; 9] = [
-    Coord::new(0, 0),
-    Coord::new(0, 1),
-    Coord::new(0, 2),
-    Coord::new(1, 0),
-    Coord::new(1, 1),
-    Coord::new(1, 2),
-    Coord::new(2, 0),
-    Coord::new(2, 1),
-    Coord::new(2, 2),
-];
-
 pub fn render_3x3_from_visibility(
     coord: Coord,
     visibility_cell: &VisibilityCell,

@@ -1,14 +1,14 @@
-use chargrid::input::{GamepadButton, KeyboardInput};
+use chargrid::input::{GamepadButton, Input, KeyboardInput};
 use direction::CardinalDirection;
-use maplit::hashmap;
+use maplit::btreemap;
 use orbital_decay_game::player::RangedWeaponSlot;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AppInput {
-    Move(CardinalDirection),
-    Aim(RangedWeaponSlot),
+    Direction(CardinalDirection),
+    Slot(RangedWeaponSlot),
     Wait,
     Examine,
     Get,
@@ -16,52 +16,67 @@ pub enum AppInput {
 
 #[derive(Serialize, Deserialize)]
 pub struct Controls {
-    keys: HashMap<KeyboardInput, AppInput>,
-    gamepad: HashMap<GamepadButton, AppInput>,
+    keys: BTreeMap<KeyboardInput, AppInput>,
+    gamepad: BTreeMap<GamepadButton, AppInput>,
 }
 
-impl Controls {
-    pub fn default() -> Self {
-        let keys = hashmap![
-            KeyboardInput::Left => AppInput::Move(CardinalDirection::West),
-            KeyboardInput::Right => AppInput::Move(CardinalDirection::East),
-            KeyboardInput::Up => AppInput::Move(CardinalDirection::North),
-            KeyboardInput::Down => AppInput::Move(CardinalDirection::South),
-            KeyboardInput::Char('a') => AppInput::Move(CardinalDirection::West),
-            KeyboardInput::Char('d') => AppInput::Move(CardinalDirection::East),
-            KeyboardInput::Char('w') => AppInput::Move(CardinalDirection::North),
-            KeyboardInput::Char('s') => AppInput::Move(CardinalDirection::South),
-            KeyboardInput::Char('h') => AppInput::Move(CardinalDirection::West),
-            KeyboardInput::Char('l') => AppInput::Move(CardinalDirection::East),
-            KeyboardInput::Char('k') => AppInput::Move(CardinalDirection::North),
-            KeyboardInput::Char('j') => AppInput::Move(CardinalDirection::South),
+impl Default for Controls {
+    fn default() -> Self {
+        let keys = btreemap![
+            KeyboardInput::Left => AppInput::Direction(CardinalDirection::West),
+            KeyboardInput::Right => AppInput::Direction(CardinalDirection::East),
+            KeyboardInput::Up => AppInput::Direction(CardinalDirection::North),
+            KeyboardInput::Down => AppInput::Direction(CardinalDirection::South),
+            KeyboardInput::Char('a') => AppInput::Direction(CardinalDirection::West),
+            KeyboardInput::Char('d') => AppInput::Direction(CardinalDirection::East),
+            KeyboardInput::Char('w') => AppInput::Direction(CardinalDirection::North),
+            KeyboardInput::Char('s') => AppInput::Direction(CardinalDirection::South),
+            KeyboardInput::Char('h') => AppInput::Direction(CardinalDirection::West),
+            KeyboardInput::Char('l') => AppInput::Direction(CardinalDirection::East),
+            KeyboardInput::Char('k') => AppInput::Direction(CardinalDirection::North),
+            KeyboardInput::Char('j') => AppInput::Direction(CardinalDirection::South),
             KeyboardInput::Char('x') => AppInput::Examine,
-            KeyboardInput::Char('1') => AppInput::Aim(RangedWeaponSlot::Slot1),
-            KeyboardInput::Char('2') => AppInput::Aim(RangedWeaponSlot::Slot2),
-            KeyboardInput::Char('3') => AppInput::Aim(RangedWeaponSlot::Slot3),
+            KeyboardInput::Char('1') => AppInput::Slot(RangedWeaponSlot::Slot1),
+            KeyboardInput::Char('2') => AppInput::Slot(RangedWeaponSlot::Slot2),
+            KeyboardInput::Char('3') => AppInput::Slot(RangedWeaponSlot::Slot3),
             KeyboardInput::Char('g') => AppInput::Get,
             KeyboardInput::Char(' ') => AppInput::Wait,
         ];
-        let gamepad = hashmap![
-            GamepadButton::DPadLeft => AppInput::Move(CardinalDirection::West),
-            GamepadButton::DPadRight => AppInput::Move(CardinalDirection::East),
-            GamepadButton::DPadUp => AppInput::Move(CardinalDirection::North),
-            GamepadButton::DPadDown => AppInput::Move(CardinalDirection::South),
+        let gamepad = btreemap![
+            GamepadButton::DPadLeft => AppInput::Direction(CardinalDirection::West),
+            GamepadButton::DPadRight => AppInput::Direction(CardinalDirection::East),
+            GamepadButton::DPadUp => AppInput::Direction(CardinalDirection::North),
+            GamepadButton::DPadDown => AppInput::Direction(CardinalDirection::South),
             GamepadButton::Select => AppInput::Wait,
             GamepadButton::North => AppInput::Get,
-            GamepadButton::West => AppInput::Aim(RangedWeaponSlot::Slot1),
-            GamepadButton::South => AppInput::Aim(RangedWeaponSlot::Slot2),
-            GamepadButton::East => AppInput::Aim(RangedWeaponSlot::Slot3),
+            GamepadButton::West => AppInput::Slot(RangedWeaponSlot::Slot1),
+            GamepadButton::South => AppInput::Slot(RangedWeaponSlot::Slot2),
+            GamepadButton::East => AppInput::Slot(RangedWeaponSlot::Slot3),
             GamepadButton::RightBumper => AppInput::Examine,
         ];
         Self { keys, gamepad }
     }
-
-    pub fn get(&self, keyboard_input: KeyboardInput) -> Option<AppInput> {
-        self.keys.get(&keyboard_input).cloned()
+}
+impl Controls {
+    pub fn get(&self, input: Input) -> Option<AppInput> {
+        match input {
+            Input::Keyboard(keyboard_input) => self.keys.get(&keyboard_input).cloned(),
+            Input::Gamepad(gamepad_input) => self.gamepad.get(&gamepad_input.button).cloned(),
+            Input::Mouse(_) => None,
+        }
     }
 
-    pub fn get_gamepad(&self, gamepad_input: GamepadButton) -> Option<AppInput> {
-        self.gamepad.get(&gamepad_input).cloned()
+    pub fn get_direction(&self, input: Input) -> Option<CardinalDirection> {
+        self.get(input).and_then(|app_input| match app_input {
+            AppInput::Direction(direction) => Some(direction),
+            _ => None,
+        })
+    }
+
+    pub fn get_slot(&self, input: Input) -> Option<RangedWeaponSlot> {
+        self.get(input).and_then(|app_input| match app_input {
+            AppInput::Slot(slot) => Some(slot),
+            _ => None,
+        })
     }
 }

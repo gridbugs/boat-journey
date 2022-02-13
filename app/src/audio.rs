@@ -96,7 +96,7 @@ impl AudioState {
         }
     }
 
-    pub fn play_once(&self, audio: Audio, volume: f32) {
+    pub fn _play_once(&self, audio: Audio, volume: f32) {
         log::info!("Playing audio {:?} at volume {:?}", audio, volume);
         let sound = self.audio_table.get(audio);
         let handle = self.audio_player.play(&sound);

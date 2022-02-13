@@ -6,6 +6,7 @@ use wasm_bindgen::prelude::*;
 
 const SAVE_KEY: &str = "save";
 const CONFIG_KEY: &str = "config";
+const CONTROLS_KEY: &str = "controls";
 
 #[wasm_bindgen(start)]
 pub fn run() -> Result<(), JsValue> {
@@ -21,6 +22,7 @@ pub fn run() -> Result<(), JsValue> {
             handle: storage,
             save_game_key: SAVE_KEY.to_string(),
             config_key: CONFIG_KEY.to_string(),
+            controls_key: CONTROLS_KEY.to_string(),
         },
         initial_rng_seed: InitialRngSeed::Random,
         audio_player,

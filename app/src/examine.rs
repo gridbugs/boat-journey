@@ -1,5 +1,5 @@
 use chargrid::{prelude::*, text::StyledString};
-use orbital_decay_game::{CellVisibility, Game, Layer, Tile, WarningLight};
+use orbital_decay_game::{CellVisibility, Game, Tile};
 
 #[derive(Clone, Copy, Debug)]
 enum MessageVerb {
@@ -8,10 +8,9 @@ enum MessageVerb {
 }
 
 pub fn examine(game: &Game, coord: Coord) -> Option<StyledString> {
-    let game_coord = coord / 3;
     let vis_count = game.visibility_grid().count();
     let mut entity_under_cursor = None;
-    if let Some(visibility_cell_under_cursor) = game.visibility_grid().get_cell(game_coord) {
+    if let Some(visibility_cell_under_cursor) = game.visibility_grid().get_cell(coord) {
         let verb = match visibility_cell_under_cursor.visibility(vis_count) {
             CellVisibility::CurrentlyVisibleWithLightColour(Some(_)) => Some(MessageVerb::See),
             CellVisibility::PreviouslyVisible => Some(MessageVerb::Remember),

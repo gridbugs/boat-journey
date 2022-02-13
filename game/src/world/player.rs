@@ -233,7 +233,7 @@ impl Weapon {
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RangedWeaponSlot {
     Slot1,
     Slot2,

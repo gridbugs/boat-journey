@@ -12,6 +12,7 @@ use orbital_decay_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
 const DEFAULT_SAVE_FILE: &str = "save";
 const DEFAULT_NEXT_TO_EXE_STORAGE_DIR: &str = "save";
 const DEFAULT_CONFIG_FILE: &str = "config.json";
+const DEFAULT_CONTROLS_FILE: &str = "controls.json";
 
 pub struct NativeCommon {
     pub storage: AppStorage,
@@ -29,6 +30,8 @@ impl NativeCommon {
                     .with_default(DEFAULT_SAVE_FILE.to_string());
                 config_file = opt_opt("PATH", 'c').name("config-file").desc("config file")
                     .with_default(DEFAULT_CONFIG_FILE.to_string());
+                controls_file = opt_opt("PATH", "controls-file").desc("controls file")
+                    .with_default(DEFAULT_CONTROLS_FILE.to_string());
                 storage_dir = opt_opt("PATH", 'd').name("storage-dir")
                     .desc("directory that will contain save file and config file")
                     .with_default(DEFAULT_NEXT_TO_EXE_STORAGE_DIR.to_string());
@@ -59,6 +62,7 @@ impl NativeCommon {
                     handle: file_storage,
                     save_game_key: save_file,
                     config_key: config_file,
+                    controls_key: controls_file,
                 };
                 let audio_player = if mute {
                     None
