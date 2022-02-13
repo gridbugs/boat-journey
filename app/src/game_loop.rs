@@ -14,7 +14,7 @@ use chargrid::{
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
-    witness::{self, Witness},
+    witness::{self, GameOver, GameOverType, Witness},
     ActionError, Config as GameConfig, ExternalEvent, Game, Music, MAP_SIZE,
 };
 use rand::{Rng, SeedableRng};
@@ -307,6 +307,7 @@ pub struct GameLoopData {
     context_message: Option<StyledString>,
     examine_message: Option<StyledString>,
     cursor: Option<Coord>,
+    duration: Duration,
 }
 
 impl GameLoopData {
@@ -368,6 +369,7 @@ impl GameLoopData {
                 context_message: None,
                 examine_message: None,
                 cursor: None,
+                duration: Duration::from_millis(0),
             },
             state,
         )
@@ -400,14 +402,6 @@ impl GameLoopData {
     fn render(&self, cursor_colour: Rgba32, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
         instance.render(ctx, fb);
-        if let Some(context_message) = self.context_message.as_ref() {
-            context_message.render(&(), ctx.add_y(1), fb);
-        }
-        if let Some(top_text) = self.examine_message.as_ref() {
-            top_text.clone().wrap_word().render(&(), ctx, fb);
-        } else {
-            instance.floor_text().render(&(), ctx, fb);
-        }
         if let Some(cursor) = self.cursor {
             if cursor.is_valid(MAP_SIZE + Size::new_u16(1, 1)) {
                 let screen_cursor = cursor * 3;
@@ -420,6 +414,19 @@ impl GameLoopData {
                     );
                 }
             }
+        }
+        self.render_text(ctx, fb);
+    }
+
+    fn render_text(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        let instance = self.instance.as_ref().unwrap();
+        if let Some(context_message) = self.context_message.as_ref() {
+            context_message.render(&(), ctx.add_y(1), fb);
+        }
+        if let Some(top_text) = self.examine_message.as_ref() {
+            top_text.clone().wrap_word().render(&(), ctx, fb);
+        } else {
+            instance.floor_text().render(&(), ctx, fb);
         }
     }
 
@@ -476,6 +483,22 @@ impl GameLoopData {
         self.update_examine_text();
         self.handle_game_events();
         GameLoopState::Playing(witness)
+    }
+
+    fn game_over_tick(&mut self, event: Event, game_over: GameOver) -> GameOver {
+        const NPC_TURN_PERIOD: Duration = Duration::from_millis(100);
+        let instance = self.instance.as_mut().unwrap();
+        match event {
+            Event::Tick(since_previous) => {
+                self.duration += since_previous;
+                if self.duration > NPC_TURN_PERIOD {
+                    self.duration -= NPC_TURN_PERIOD;
+                    instance.game.npc_turn();
+                }
+                game_over.tick(&mut instance.game, since_previous, &self.game_config)
+            }
+            _ => game_over,
+        }
     }
 
     fn handle_game_events(&mut self) {
@@ -616,8 +639,56 @@ fn game_examine_component() -> CF<()> {
             .map_val(|| ())
             .then_side_effect(|state: &mut State| {
                 state.context_message = None;
+                state.cursor = None;
             })
     })
+}
+
+struct GameOverComponent(Option<witness::GameOver>);
+
+struct TintAdrift;
+impl Tint for TintAdrift {
+    fn tint(&self, rgba32: Rgba32) -> Rgba32 {
+        let mean = rgba32
+            .to_rgb24()
+            .weighted_mean_u16(rgb_int::WeightsU16::new(1, 1, 1));
+        Rgba32::new_rgb(0, 0, mean).saturating_scalar_mul_div(3, 2)
+    }
+}
+
+struct TintDead;
+impl Tint for TintDead {
+    fn tint(&self, rgba32: Rgba32) -> Rgba32 {
+        let mean = rgba32
+            .to_rgb24()
+            .weighted_mean_u16(rgb_int::WeightsU16::new(1, 1, 1));
+        Rgba32::new_rgb(mean, 0, 0).saturating_scalar_mul_div(3, 2)
+    }
+}
+
+impl Component for GameOverComponent {
+    type Output = ();
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        let instance = state.instance.as_ref().unwrap();
+        match self.0.as_ref().unwrap().typ() {
+            GameOverType::Adrift => instance.render_omniscient(ctx_tint!(ctx, TintAdrift), fb),
+            GameOverType::Dead => instance.render_omniscient(ctx_tint!(ctx, TintDead), fb),
+        }
+        instance.render_message_log(ctx, fb);
+        instance.render_hud(ctx, fb);
+        state.render_text(ctx, fb);
+    }
+
+    fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
+        let game_over = self.0.take().unwrap();
+        self.0 = Some(state.game_over_tick(event, game_over));
+    }
+
+    fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
+        ctx.bounding_box.size()
+    }
 }
 
 struct MenuBackgroundComponent;
@@ -646,7 +717,7 @@ fn menu_style<T: 'static>(menu: CF<T>) -> CF<T> {
         .fill(MENU_BACKGROUND)
         .centre()
         .overlay_tint(
-            render_state(|state: &GameLoopData, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
+            render_state(|state: &State, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
             chargrid::core::TintDim(63),
             10,
         )
@@ -879,7 +950,7 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
         })
         .catch_escape_or_start()
         .overlay(
-            render_state(|state: &GameLoopData, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
+            render_state(|state: &State, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
             10,
         )
         .and_then(|slot_or_err| {
@@ -1212,12 +1283,9 @@ fn options_menu() -> CF<()> {
 }
 
 fn game_instance_component(running: witness::Running) -> CF<GameLoopState> {
-    boxed_cf(GameInstanceComponent::new(running)).some()
-}
-
-pub enum GameExitReason {
-    GameOver,
-    Quit,
+    boxed_cf(GameInstanceComponent::new(running))
+        .some()
+        .no_peek()
 }
 
 fn first_run_prologue() -> CF<()> {
@@ -1235,9 +1303,20 @@ fn first_run_prologue() -> CF<()> {
     })
 }
 
-pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
+fn game_over(game_over_witness: GameOver) -> CF<()> {
+    on_state_then(move |state: &mut State| {
+        state.examine_message = Some(StyledString {
+            string: "You drift in space forever! Press any key...".to_string(),
+            style: Style::plain_text().with_foreground(Rgba32::hex_rgb(0xFF0000)),
+        });
+        GameOverComponent(Some(game_over_witness))
+    })
+    .press_any_key()
+}
+
+pub fn game_loop_component(initial_state: GameLoopState) -> CF<()> {
     use GameLoopState::*;
-    first_run_prologue().and_then(|()| {
+    first_run_prologue().then(|| {
         loop_(initial_state, |state| match state {
             Playing(witness) => match witness {
                 Witness::Running(running) => game_instance_component(running).continue_(),
@@ -1255,7 +1334,9 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                 Witness::FireWeapon(fire_weapon_witness) => {
                     fire_weapon(fire_weapon_witness).map(Playing).continue_()
                 }
-                Witness::GameOver => break_(GameExitReason::GameOver),
+                Witness::GameOver(game_over_witness) => game_over(game_over_witness)
+                    .map_val(|| MainMenu)
+                    .continue_(),
             },
             Examine(running) => game_examine_component()
                 .map_val(|| Playing(running.into_witness()))
@@ -1265,13 +1346,13 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<GameExitReason> {
                     LoopControl::Continue(Playing(running.into_witness()))
                 }
                 PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
-                PauseOutput::Quit => LoopControl::Break(GameExitReason::Quit),
+                PauseOutput::Quit => LoopControl::Break(()),
             }),
             MainMenu => main_menu_loop().map(|main_menu_output| match main_menu_output {
                 MainMenuOutput::NewGame { new_running } => {
                     LoopControl::Continue(Playing(new_running.into_witness()))
                 }
-                MainMenuOutput::Quit => LoopControl::Break(GameExitReason::Quit),
+                MainMenuOutput::Quit => LoopControl::Break(()),
             }),
         })
         .bound_size(Size::new_u16(80, 60))

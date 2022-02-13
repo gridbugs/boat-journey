@@ -33,7 +33,7 @@ impl NativeCommon {
                 controls_file = opt_opt("PATH", "controls-file").desc("controls file")
                     .with_default(DEFAULT_CONTROLS_FILE.to_string());
                 storage_dir = opt_opt("PATH", 'd').name("storage-dir")
-                    .desc("directory that will contain save file and config file")
+                    .desc("directory that will contain state")
                     .with_default(DEFAULT_NEXT_TO_EXE_STORAGE_DIR.to_string());
                 delete_save = flag("delete-save").desc("delete save game file");
                 delete_config = flag("delete-config").desc("delete config file");

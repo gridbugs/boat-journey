@@ -31,24 +31,43 @@ impl RunningGame {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameOverType {
+    Adrift,
+    Dead,
+}
+
+#[derive(Debug)]
 struct Private;
 
+#[derive(Debug)]
 pub struct Running(Private);
+#[derive(Debug)]
 pub struct Upgrade(Private);
+#[derive(Debug)]
 pub struct GetRangedWeapon(Private);
+#[derive(Debug)]
 pub struct GetMeleeWeapon(Private);
+#[derive(Debug)]
 pub struct FireWeapon {
     private: Private,
     slot: player::RangedWeaponSlot,
 }
 
+#[derive(Debug)]
+pub struct GameOver {
+    private: Private,
+    typ: GameOverType,
+}
+
+#[derive(Debug)]
 pub enum Witness {
     Running(Running),
     Upgrade(Upgrade),
     GetRangedWeapon(GetRangedWeapon),
     GetMeleeWeapon(GetMeleeWeapon),
     FireWeapon(FireWeapon),
-    GameOver,
+    GameOver(GameOver),
 }
 
 impl Witness {
@@ -82,14 +101,8 @@ impl Running {
     }
 
     pub fn tick(self, game: &mut Game, since_last_tick: Duration, config: &Config) -> Witness {
-        use GameControlFlow::*;
         let Self(private) = self;
-        match game.inner_game.handle_tick(since_last_tick, config) {
-            None => Witness::running(private),
-            Some(Upgrade) => Witness::upgrade(private),
-            Some(GameOver) => Witness::GameOver,
-            Some(_) => todo!(),
-        }
+        game.witness_handle_tick(since_last_tick, config, private)
     }
 
     pub fn walk(
@@ -213,6 +226,20 @@ impl FireWeapon {
     }
 }
 
+impl GameOver {
+    pub fn typ(&self) -> GameOverType {
+        self.typ
+    }
+
+    pub fn tick(self, game: &mut Game, since_last_tick: Duration, config: &Config) -> GameOver {
+        let Self { private, .. } = self;
+        match game.witness_handle_tick(since_last_tick, config, private) {
+            Witness::GameOver(game_over) => game_over,
+            other => panic!("unexpected witness: {:?}", other),
+        }
+    }
+}
+
 impl Game {
     fn witness_handle_input(
         &mut self,
@@ -220,13 +247,52 @@ impl Game {
         config: &Config,
         private: Private,
     ) -> (Witness, Result<(), ActionError>) {
-        use GameControlFlow::*;
         match self.inner_game.handle_input(input, config) {
             Err(e) => (Witness::running(private), Err(e)),
             Ok(None) => (Witness::running(private), Ok(())),
-            Ok(Some(Upgrade)) => (Witness::upgrade(private), Ok(())),
-            Ok(Some(GameOver)) => (Witness::GameOver, Ok(())),
+            Ok(Some(GameControlFlow::Upgrade)) => (Witness::upgrade(private), Ok(())),
+            Ok(Some(GameControlFlow::GameOver)) => {
+                let game_over = if self.inner_game.is_adrift() {
+                    GameOver {
+                        typ: GameOverType::Adrift,
+                        private,
+                    }
+                } else {
+                    GameOver {
+                        typ: GameOverType::Dead,
+                        private,
+                    }
+                };
+                (Witness::GameOver(game_over), Ok(()))
+            }
             Ok(Some(_)) => todo!(),
+        }
+    }
+
+    fn witness_handle_tick(
+        &mut self,
+        since_last_tick: Duration,
+        config: &Config,
+        private: Private,
+    ) -> Witness {
+        match self.inner_game.handle_tick(since_last_tick, config) {
+            None => Witness::running(private),
+            Some(GameControlFlow::Upgrade) => Witness::upgrade(private),
+            Some(GameControlFlow::GameOver) => {
+                let game_over = if self.inner_game.is_adrift() {
+                    GameOver {
+                        typ: GameOverType::Adrift,
+                        private,
+                    }
+                } else {
+                    GameOver {
+                        typ: GameOverType::Dead,
+                        private,
+                    }
+                };
+                Witness::GameOver(game_over)
+            }
+            Some(_) => todo!(),
         }
     }
 

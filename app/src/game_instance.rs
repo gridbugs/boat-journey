@@ -49,6 +49,11 @@ impl GameInstance {
         self.render_hud(ctx, fb);
     }
 
+    pub fn render_omniscient(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        self.stars.render(ctx, fb);
+        game::render_game(&self.game.inner_ref(), ctx, fb);
+    }
+
     pub fn floor_text(&self) -> StyledString {
         let current_floor = self.game.inner_ref().current_level();
         let final_floor = orbital_decay_game::FINAL_LEVEL;
@@ -80,7 +85,7 @@ impl GameInstance {
         }
     }
 
-    fn render_message_log(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    pub fn render_message_log(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         ui::render_message_log(
             self.game.inner_ref().message_log(),
             ctx.add_offset(Coord { x: 1, y: 46 }),
@@ -88,7 +93,7 @@ impl GameInstance {
         );
     }
 
-    fn render_hud(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    pub fn render_hud(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let player = self.game.inner_ref().player();
         let player_info = self.game.inner_ref().player_info();
         ui::render_hud(player, player_info, ctx.add_xy(64, 4), fb);
