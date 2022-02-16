@@ -12,6 +12,7 @@ web = ["general_audio_static/web", "general_storage_static/web", "getrandom/js"]
 
 [dependencies]
 orbital_decay_game = { path = "../game" }
+audio_data = { path = "../audio-data" }
 log = "0.4"
 general_storage_static = { version = "0.2", features = ["bincode", "json"] }
 general_audio_static = "0.3"
