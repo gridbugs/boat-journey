@@ -510,6 +510,10 @@ impl GameLoopData {
                     self.audio_state
                         .loop_music(game_music_to_audio(music), self.config.music_volume);
                 }
+                ExternalEvent::SoundEffect(sound_effect) => {
+                    self.audio_state
+                        .play_once(Audio::SoundEffect(sound_effect), self.config.sfx_volume);
+                }
                 _ => (),
             }
         }
