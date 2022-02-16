@@ -48,6 +48,7 @@ pub enum Message {
     MapTerminal,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Config {
     pub omniscient: Option<Omniscient>,
     pub demo: bool,

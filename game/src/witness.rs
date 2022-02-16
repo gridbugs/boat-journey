@@ -53,6 +53,8 @@ pub struct FireWeapon {
     private: Private,
     slot: player::RangedWeaponSlot,
 }
+#[derive(Debug)]
+pub struct UnlockMap(Private);
 
 #[derive(Debug)]
 pub struct GameOver {
@@ -68,6 +70,7 @@ pub enum Witness {
     GetMeleeWeapon(GetMeleeWeapon),
     FireWeapon(FireWeapon),
     GameOver(GameOver),
+    UnlockMap(UnlockMap),
 }
 
 impl Witness {
@@ -76,6 +79,9 @@ impl Witness {
     }
     fn upgrade(private: Private) -> Self {
         Self::Upgrade(Upgrade(private))
+    }
+    fn unlock_map(private: Private) -> Self {
+        Self::UnlockMap(UnlockMap(private))
     }
 }
 
@@ -240,6 +246,20 @@ impl GameOver {
     }
 }
 
+impl UnlockMap {
+    pub fn commit(self, game: &mut Game, config: &Config) -> Witness {
+        let Self(private) = self;
+        let (witness, result) = game.witness_handle_input(Input::UnlockMap, config, private);
+        let _ = result.unwrap();
+        witness
+    }
+
+    pub fn cancel(self) -> Witness {
+        let Self(private) = self;
+        Witness::running(private)
+    }
+}
+
 impl Game {
     fn witness_handle_input(
         &mut self,
@@ -265,7 +285,9 @@ impl Game {
                 };
                 (Witness::GameOver(game_over), Ok(()))
             }
-            Ok(Some(_)) => todo!(),
+            Ok(Some(GameControlFlow::LevelChange)) => (Witness::running(private), Ok(())),
+            Ok(Some(GameControlFlow::UnlockMap)) => (Witness::unlock_map(private), Ok(())),
+            Ok(Some(other)) => panic!("unhandled control flow {:?}", other),
         }
     }
 
@@ -292,7 +314,9 @@ impl Game {
                 };
                 Witness::GameOver(game_over)
             }
-            Some(_) => todo!(),
+            Some(GameControlFlow::LevelChange) => Witness::running(private),
+            Some(GameControlFlow::UnlockMap) => Witness::unlock_map(private),
+            Some(other) => panic!("unhandled control flow {:?}", other),
         }
     }
 

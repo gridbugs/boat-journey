@@ -1312,6 +1312,24 @@ fn game_over(game_over_witness: GameOver) -> CF<()> {
         GameOverComponent(Some(game_over_witness))
     })
     .press_any_key()
+    .then_side_effect(|state: &mut State| {
+        state
+            .audio_state
+            .loop_music(Audio::Menu, state.config.music_volume);
+    })
+}
+
+fn unlock_map(witness: witness::UnlockMap) -> CF<Witness> {
+    yes_no("Spend $2 credit to unlock map?".to_string()).and_then(move |yes| {
+        on_state(move |state: &mut State| {
+            if yes {
+                let (game, config) = state.game_mut_config();
+                witness.commit(game, config)
+            } else {
+                witness.cancel()
+            }
+        })
+    })
 }
 
 pub fn game_loop_component(initial_state: GameLoopState) -> CF<()> {
@@ -1337,6 +1355,9 @@ pub fn game_loop_component(initial_state: GameLoopState) -> CF<()> {
                 Witness::GameOver(game_over_witness) => game_over(game_over_witness)
                     .map_val(|| MainMenu)
                     .continue_(),
+                Witness::UnlockMap(unlock_map_witness) => {
+                    unlock_map(unlock_map_witness).map(Playing).continue_()
+                }
             },
             Examine(running) => game_examine_component()
                 .map_val(|| Playing(running.into_witness()))
