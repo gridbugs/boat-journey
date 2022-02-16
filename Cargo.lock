@@ -958,6 +958,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c56672976b806b6fe8e41998c6d0503cd02479c6059c47451ce8addc7871271"
 dependencies = [
  "coord_2d",
+ "rand",
  "serde",
 ]
 

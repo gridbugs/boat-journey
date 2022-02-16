@@ -7,6 +7,7 @@ use chargrid::event_routine::*;
 use chargrid::input::*;
 use chargrid::render::{Rgb24, Style};
 use chargrid::text::*;
+use direction::Direction;
 use direction::{CardinalDirection, Direction};
 use general_audio_static::{AudioHandle, AudioPlayer};
 use general_storage_static::{format, StaticStorage};

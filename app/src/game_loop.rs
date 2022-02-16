@@ -11,6 +11,7 @@ use chargrid::{
     border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, pad_by::Padding,
     prelude::*, text::StyledString,
 };
+use direction::Direction;
 use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
@@ -19,6 +20,7 @@ use orbital_decay_game::{
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
+use rand_xorshift::XorShiftRng;
 use serde::{Deserialize, Serialize};
 
 fn game_music_to_audio(music: Music) -> Audio {
@@ -295,6 +297,11 @@ fn action_error_message(action_error: ActionError) -> StyledString {
     StyledString { string, style }
 }
 
+struct ScreenShake {
+    direction: Direction,
+    remaining: Duration,
+}
+
 pub struct GameLoopData {
     instance: Option<GameInstance>,
     controls: Controls,
@@ -308,6 +315,8 @@ pub struct GameLoopData {
     examine_message: Option<StyledString>,
     cursor: Option<Coord>,
     duration: Duration,
+    screen_shake: Option<ScreenShake>,
+    effect_rng: XorShiftRng,
 }
 
 impl GameLoopData {
@@ -370,6 +379,8 @@ impl GameLoopData {
                 examine_message: None,
                 cursor: None,
                 duration: Duration::from_millis(0),
+                screen_shake: None,
+                effect_rng: XorShiftRng::from_entropy(),
             },
             state,
         )
@@ -400,6 +411,11 @@ impl GameLoopData {
     }
 
     fn render(&self, cursor_colour: Rgba32, ctx: Ctx, fb: &mut FrameBuffer) {
+        let ctx = if let Some(ScreenShake { direction, .. }) = self.screen_shake.as_ref() {
+            ctx.add_offset(direction.coord())
+        } else {
+            ctx
+        };
         let instance = self.instance.as_ref().unwrap();
         instance.render(ctx, fb);
         if let Some(cursor) = self.cursor {
@@ -475,6 +491,12 @@ impl GameLoopData {
                 }
             }
             Event::Tick(since_previous) => {
+                if let Some(mut screen_shake) = self.screen_shake.take() {
+                    if let Some(remaining) = screen_shake.remaining.checked_sub(since_previous) {
+                        screen_shake.remaining = remaining;
+                        self.screen_shake = Some(screen_shake);
+                    }
+                }
                 running.tick(&mut instance.game, since_previous, &self.game_config)
             }
             _ => Witness::Running(running),
@@ -514,7 +536,14 @@ impl GameLoopData {
                     self.audio_state
                         .play_once(Audio::SoundEffect(sound_effect), self.config.sfx_volume);
                 }
-                _ => (),
+                ExternalEvent::Explosion(_coord) => {
+                    self.screen_shake = Some(ScreenShake {
+                        direction: self.effect_rng.gen(),
+                        remaining: Duration::from_millis(100),
+                    });
+                    self.audio_state
+                        .play_once(Audio::Explosion, self.config.sfx_volume);
+                }
             }
         }
     }
@@ -1309,8 +1338,12 @@ fn first_run_prologue() -> CF<()> {
 
 fn game_over(game_over_witness: GameOver) -> CF<()> {
     on_state_then(move |state: &mut State| {
+        let game_over_text = match game_over_witness.typ() {
+            GameOverType::Adrift => "You drift in space forever! Press any key...",
+            GameOverType::Dead => "You are dead! Press any key...",
+        };
         state.examine_message = Some(StyledString {
-            string: "You drift in space forever! Press any key...".to_string(),
+            string: game_over_text.to_string(),
             style: Style::plain_text().with_foreground(Rgba32::hex_rgb(0xFF0000)),
         });
         GameOverComponent(Some(game_over_witness))
