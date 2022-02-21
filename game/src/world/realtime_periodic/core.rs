@@ -6,7 +6,6 @@ use std::time::Duration;
 
 pub trait RealtimePeriodicState {
     type Event;
-    type Components;
     fn tick<R: Rng>(&mut self, rng: &mut R) -> TimeConsumingEvent<Self::Event>;
     fn animate_event<R: Rng>(
         event: Self::Event,

@@ -81,7 +81,6 @@ impl FadeState {
 
 impl RealtimePeriodicState for FadeState {
     type Event = FadeProgress;
-    type Components = RealtimeComponents;
     fn tick<R: Rng>(&mut self, _rng: &mut R) -> TimeConsumingEvent<Self::Event> {
         self.progress = match self.progress {
             FadeProgress::Complete => FadeProgress::Complete,
@@ -124,7 +123,6 @@ pub struct LightColourFadeState {
 
 impl RealtimePeriodicState for LightColourFadeState {
     type Event = LightColourFadeProgress;
-    type Components = RealtimeComponents;
     fn tick<R: Rng>(&mut self, rng: &mut R) -> TimeConsumingEvent<Self::Event> {
         let TimeConsumingEvent {
             event: fade_progress,

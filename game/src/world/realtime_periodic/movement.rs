@@ -1,9 +1,6 @@
 use crate::{
     world::{
-        realtime_periodic::{
-            core::{RealtimePeriodicState, TimeConsumingEvent},
-            data::RealtimeComponents,
-        },
+        realtime_periodic::core::{RealtimePeriodicState, TimeConsumingEvent},
         World,
     },
     ExternalEvent, Message,
@@ -82,7 +79,6 @@ impl MovementState {
 
 impl RealtimePeriodicState for MovementState {
     type Event = Option<Direction>;
-    type Components = RealtimeComponents;
     fn tick<R: Rng>(&mut self, _rng: &mut R) -> TimeConsumingEvent<Self::Event> {
         let event = match self.path {
             Path::Forever(ref mut path) => path.next(),

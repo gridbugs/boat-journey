@@ -4,7 +4,7 @@ use crate::{
         data::{ProjectileDamage, Tile},
         realtime_periodic::{
             core::{RealtimePeriodicState, ScheduledRealtimePeriodicState, TimeConsumingEvent},
-            data::{FadeProgress, FadeState, LightColourFadeState, RealtimeComponents},
+            data::{FadeProgress, FadeState, LightColourFadeState},
             movement,
         },
         World,
@@ -150,7 +150,6 @@ impl FadeOutState {
 
 impl RealtimePeriodicState for ParticleEmitterState {
     type Event = SpawnParticle;
-    type Components = RealtimeComponents;
     fn tick<R: Rng>(&mut self, rng: &mut R) -> TimeConsumingEvent<Self::Event> {
         let until_next_event = self.emit_particle_every_period;
         let (fade_state, light_colour_fade_state) = match self.fade_out_state.as_mut() {

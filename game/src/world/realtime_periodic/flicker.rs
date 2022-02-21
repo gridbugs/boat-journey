@@ -1,9 +1,6 @@
 use crate::{
     world::{
-        realtime_periodic::{
-            core::{RealtimePeriodicState, TimeConsumingEvent},
-            data::RealtimeComponents,
-        },
+        realtime_periodic::core::{RealtimePeriodicState, TimeConsumingEvent},
         Tile, World,
     },
     ExternalEvent, Message,
@@ -47,7 +44,6 @@ pub struct FlickerEvent {
 
 impl RealtimePeriodicState for FlickerState {
     type Event = FlickerEvent;
-    type Components = RealtimeComponents;
     fn tick<R: Rng>(&mut self, rng: &mut R) -> TimeConsumingEvent<Self::Event> {
         let colour_hint = self.0.colour_hint.map(|r| r.choose(rng));
         let light_colour = self.0.light_colour.map(|r| r.choose(rng));
