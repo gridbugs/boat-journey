@@ -4,6 +4,7 @@ use crate::{
         data::{DoorState, MeleeWeapon, OnCollision, ProjectileDamage, RangedWeapon, Tile},
         explosion, player,
         player::WeaponName,
+        realtime,
         realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
         ActionError, ExternalEvent, World,
     },
@@ -193,6 +194,15 @@ impl World {
                             .build(),
                             until_next_event: Duration::from_millis(0),
                         },
+                    );
+                    self.realtime_components_.movement.insert(
+                        victim,
+                        realtime::movement::spec::Movement {
+                            path: direction.coord(),
+                            repeat: realtime::movement::spec::Repeat::Steps(KNOCKBACK),
+                            cardinal_step_duration: Duration::from_millis(50),
+                        }
+                        .build(),
                     );
                 }
                 _ => (),
@@ -433,15 +443,18 @@ impl World {
                         self.components.remove_entity(projectile_entity);
                         self.entity_allocator.free(projectile_entity);
                         self.realtime_components.remove_entity(projectile_entity);
+                        self.realtime_components_.remove_entity(projectile_entity);
                     }
                     OnCollision::Remove => {
                         self.spatial_table.remove(projectile_entity);
                         self.components.remove_entity(projectile_entity);
                         self.entity_allocator.free(projectile_entity);
                         self.realtime_components.remove_entity(projectile_entity);
+                        self.realtime_components_.remove_entity(projectile_entity);
                     }
                     OnCollision::RemoveRealtime => {
                         self.realtime_components.remove_entity(projectile_entity);
+                        self.realtime_components_.remove_entity(projectile_entity);
                         self.components.realtime.remove(projectile_entity);
                         self.components.blocks_gameplay.remove(projectile_entity);
                     }
@@ -449,6 +462,7 @@ impl World {
             }
         }
         self.realtime_components.movement.remove(projectile_entity);
+        self.realtime_components_.movement.remove(projectile_entity);
     }
 
     pub fn projectile_move<R: Rng>(
@@ -528,6 +542,7 @@ impl World {
         } else {
             self.components.remove_entity(projectile_entity);
             self.realtime_components.remove_entity(projectile_entity);
+            self.realtime_components_.remove_entity(projectile_entity);
             self.spatial_table.remove(projectile_entity);
         }
     }
@@ -660,6 +675,15 @@ impl World {
                             .build(),
                             until_next_event: Duration::from_millis(0),
                         },
+                    );
+                    self.realtime_components_.movement.insert(
+                        entity_to_damage,
+                        realtime::movement::spec::Movement {
+                            path: projectile_movement_direction.coord(),
+                            repeat: realtime::movement::spec::Repeat::Steps(KNOCKBACK),
+                            cardinal_step_duration: Duration::from_millis(100),
+                        }
+                        .build(),
                     );
                 }
                 if remaining_pen > 0 {

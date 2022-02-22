@@ -32,7 +32,7 @@ impl Args {
 fn main() {
     use meap::Parser;
     let Args { size, mut rng } = Args::parser().with_help_default().parse_env_or_exit();
-    let spec = Spec { size };
+    let spec = Spec { size, small: false };
     let terrain = generate(spec, &mut rng);
     println!("    abcdefghijklmnopqrstuvwxyz\n");
     for (i, row) in terrain.rows().enumerate() {

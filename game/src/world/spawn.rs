@@ -8,6 +8,7 @@ use crate::{
         },
         explosion,
         player::{self, WeaponAbility},
+        realtime,
         realtime_periodic::{
             core::ScheduledRealtimePeriodicState,
             data::{period_per_frame, FadeState, LightColourFadeState},
@@ -241,6 +242,15 @@ impl World {
                 until_next_event: Duration::from_millis(0),
             },
         );
+        self.realtime_components_.movement.insert(
+            entity,
+            realtime::movement::spec::Movement {
+                path: target - start,
+                cardinal_step_duration: Duration::from_millis(50),
+                repeat: realtime::movement::spec::Repeat::Once,
+            }
+            .build(),
+        );
         let particle_emitter = if let Some(light_colour) = weapon.light_colour {
             use particle::spec::*;
             if weapon.bright {
@@ -378,6 +388,15 @@ impl World {
                 .build(),
                 until_next_event: Duration::from_millis(0),
             },
+        );
+        self.realtime_components_.movement.insert(
+            entity,
+            realtime::movement::spec::Movement {
+                path: target - start,
+                cardinal_step_duration: Duration::from_millis(16),
+                repeat: realtime::movement::spec::Repeat::Once,
+            }
+            .build(),
         );
         self.realtime_components.particle_emitter.insert(
             entity,

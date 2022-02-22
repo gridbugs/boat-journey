@@ -1,4 +1,5 @@
 use crate::world::{
+    realtime,
     realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
     ExternalEvent, World,
 };
@@ -59,6 +60,15 @@ fn apply_indirect_hit<R: Rng>(
             until_next_event: Duration::from_millis(0),
         },
     );
+    world.realtime_components_.movement.insert(
+        character_entity,
+        realtime::movement::spec::Movement {
+            path: explosion_to_character.delta(),
+            repeat: realtime::movement::spec::Repeat::Steps(push_back as usize),
+            cardinal_step_duration: Duration::from_millis(100),
+        }
+        .build(),
+    );
     world.damage_character(character_entity, damage, rng, external_events, message_log);
 }
 
@@ -97,6 +107,15 @@ fn apply_direct_hit<R: Rng>(
                 .build(),
                 until_next_event: Duration::from_millis(0),
             },
+        );
+        world.realtime_components_.movement.insert(
+            character_entity,
+            realtime::movement::spec::Movement {
+                path: travel_vector,
+                repeat: realtime::movement::spec::Repeat::Steps(push_back as usize),
+                cardinal_step_duration: Duration::from_millis(100),
+            }
+            .build(),
         );
     }
     world.damage_character(character_entity, damage, rng, external_events, message_log);

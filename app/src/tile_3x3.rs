@@ -379,33 +379,67 @@ pub fn wall_front(ctx: Ctx, fb: &mut FrameBuffer) {
     }
 }
 
+const WALL_TEXT_DEPTH: i8 = 5;
+
 pub fn wall_front_0(ctx: Ctx, fb: &mut FrameBuffer) {
     wall_front(ctx, fb);
     let blood = Style::new().with_bold(true).with_foreground(colours::BLOOD);
     let str_style = StrStyle::new(blood);
-    str_style.render("DON", ctx.add_offset(Coord::new(0, 1)).add_depth(20), fb);
-    str_style.render("DEA", ctx.add_offset(Coord::new(0, 2)).add_depth(20), fb);
+    str_style.render(
+        "DON",
+        ctx.add_offset(Coord::new(0, 1)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
+    str_style.render(
+        "DEA",
+        ctx.add_offset(Coord::new(0, 2)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
 }
 pub fn wall_front_1(ctx: Ctx, fb: &mut FrameBuffer) {
     wall_front(ctx, fb);
     let blood = Style::new().with_bold(true).with_foreground(colours::BLOOD);
     let str_style = StrStyle::new(blood);
-    str_style.render("'T ", ctx.add_offset(Coord::new(0, 1)).add_depth(20), fb);
-    str_style.render("D I", ctx.add_offset(Coord::new(0, 2)).add_depth(20), fb);
+    str_style.render(
+        "'T ",
+        ctx.add_offset(Coord::new(0, 1)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
+    str_style.render(
+        "D I",
+        ctx.add_offset(Coord::new(0, 2)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
 }
 pub fn wall_front_2(ctx: Ctx, fb: &mut FrameBuffer) {
     wall_front(ctx, fb);
     let blood = Style::new().with_bold(true).with_foreground(colours::BLOOD);
     let str_style = StrStyle::new(blood);
-    str_style.render("OPE", ctx.add_offset(Coord::new(0, 1)).add_depth(20), fb);
-    str_style.render("NSI", ctx.add_offset(Coord::new(0, 2)).add_depth(20), fb);
+    str_style.render(
+        "OPE",
+        ctx.add_offset(Coord::new(0, 1)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
+    str_style.render(
+        "NSI",
+        ctx.add_offset(Coord::new(0, 2)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
 }
 pub fn wall_front_3(ctx: Ctx, fb: &mut FrameBuffer) {
     wall_front(ctx, fb);
     let blood = Style::new().with_bold(true).with_foreground(colours::BLOOD);
     let str_style = StrStyle::new(blood);
-    str_style.render("N! ", ctx.add_offset(Coord::new(0, 1)).add_depth(20), fb);
-    str_style.render("DE!", ctx.add_offset(Coord::new(0, 2)).add_depth(20), fb);
+    str_style.render(
+        "N! ",
+        ctx.add_offset(Coord::new(0, 1)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
+    str_style.render(
+        "DE!",
+        ctx.add_offset(Coord::new(0, 2)).add_depth(WALL_TEXT_DEPTH),
+        fb,
+    );
 }
 
 pub fn player(ctx: Ctx, fb: &mut FrameBuffer) {

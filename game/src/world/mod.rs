@@ -1,7 +1,7 @@
 use crate::{visibility::Light, ExternalEvent, Message};
 use entity_table::{Entity, EntityAllocator};
 use grid_2d::{Coord, Size};
-use rand::Rng;
+use rand_isaac::Isaac64Rng;
 use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +26,11 @@ pub use realtime_periodic::animation::{
 };
 use realtime_periodic::data::RealtimeComponents;
 
+mod realtime;
+pub use realtime::animation::{
+    AnimationContext as AnimationContext_, FRAME_DURATION as ANIMATION_FRAME_DURATION_,
+};
+
 mod query;
 
 mod explosion;
@@ -43,6 +48,7 @@ pub struct World {
     pub entity_allocator: EntityAllocator,
     pub components: Components,
     pub realtime_components: RealtimeComponents,
+    pub realtime_components_: realtime::data::RealtimeComponents,
     pub spatial_table: SpatialTable,
     pub air: Air,
 }
@@ -52,12 +58,14 @@ impl World {
         let entity_allocator = EntityAllocator::default();
         let components = Components::default();
         let realtime_components = RealtimeComponents::default();
+        let realtime_components_ = realtime::data::RealtimeComponents::default();
         let spatial_table = SpatialTable::new(size);
         let air = Air::new(size);
         Self {
             entity_allocator,
             components,
             realtime_components,
+            realtime_components_,
             spatial_table,
             level,
             air,
@@ -243,14 +251,16 @@ impl World {
     pub fn is_gameplay_blocked(&self) -> bool {
         !self.components.blocks_gameplay.is_empty()
     }
-    pub fn animation_tick<R: Rng>(
+    pub fn animation_tick(
         &mut self,
         animation_context: &mut AnimationContext,
+        animation_context_: &mut AnimationContext_,
         external_events: &mut Vec<ExternalEvent>,
         message_log: &mut Vec<Message>,
-        rng: &mut R,
+        rng: &mut Isaac64Rng,
     ) {
-        animation_context.tick(self, external_events, message_log, rng)
+        animation_context.tick(self, external_events, message_log, rng);
+        animation_context_.tick(self, external_events, message_log, rng);
     }
     pub fn commit_to_next_action(&mut self, entity: Entity, next_action: NpcAction) {
         self.components.next_action.insert(entity, next_action);

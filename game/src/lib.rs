@@ -18,7 +18,7 @@ pub use entity_table::Entity;
 pub use terrain::FINAL_LEVEL;
 use terrain::{SpaceStationSpec, Terrain, TerrainState};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
-use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
+use world::{make_player, AnimationContext, AnimationContext_, World, ANIMATION_FRAME_DURATION};
 pub use world::{
     player, ActionError, CharacterInfo, Enemy, EntityData, HitPoints, Item, Layer, MeleeWeapon,
     NpcAction, PlayerDied, RangedWeapon, Tile, ToRenderEntity, ToRenderEntityRealtime,
@@ -144,6 +144,7 @@ pub struct Game {
     shadowcast_context: ShadowcastContext<u8>,
     behaviour_context: BehaviourContext,
     animation_context: AnimationContext,
+    animation_context_: AnimationContext_,
     agents: ComponentTable<Agent>,
     agents_to_remove: Vec<Entity>,
     since_last_frame: Duration,
@@ -228,6 +229,7 @@ impl Game {
             shadowcast_context: ShadowcastContext::default(),
             behaviour_context: BehaviourContext::new(world.size()),
             animation_context: AnimationContext::default(),
+            animation_context_: AnimationContext_::default(),
             agents,
             agents_to_remove: Vec::new(),
             world,
@@ -394,6 +396,7 @@ impl Game {
     ) -> Option<GameControlFlow> {
         self.world.animation_tick(
             &mut self.animation_context,
+            &mut self.animation_context_,
             &mut self.events,
             &mut self.message_log,
             &mut self.animation_rng,
