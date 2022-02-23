@@ -184,6 +184,26 @@ impl World {
                 until_next_event: Duration::from_millis(0),
             },
         );
+        self.realtime_components_.flicker.insert(
+            entity,
+            {
+                use realtime::flicker::spec::*;
+                Flicker {
+                    colour_hint: None,
+                    light_colour: Some(UniformInclusiveRange {
+                        low: Rgb24::new(0, 0, 0),
+                        high: colour,
+                    }),
+                    tile: None,
+                    until_next_event: UniformInclusiveRange {
+                        low: Duration::from_millis(17),
+                        high: Duration::from_millis(51),
+                    },
+                }
+            }
+            .build(),
+        );
+
         entity
     }
 

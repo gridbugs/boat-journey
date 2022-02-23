@@ -5,6 +5,7 @@ use rand_isaac::Isaac64Rng;
 pub mod animation;
 pub mod data;
 pub mod fade;
+pub mod flicker;
 pub mod light_colour_fade;
 pub mod movement;
 pub mod particle;
