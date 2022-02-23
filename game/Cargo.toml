@@ -16,9 +16,9 @@ rgb_int = { version = "0.1", features = ["serialize", "rand"] }
 entity_table = { version = "0.2", features = ["serialize"] }
 entity_table_realtime = { version = "0.1", features = ["serialize"] }
 spatial_table = { version = "0.3", features = ["serialize"] }
-vector = { path = "../vector" }
-rational = { path = "../rational" }
-rand_range = { path = "../rand-range" }
+vector = { path = "../util/vector" }
+rational = { path = "../util/rational" }
+rand_range = { path = "../util/rand-range" }
 procgen = { path = "../procgen" }
 shadowcast = { version = "0.8", features = ["serialize"] }
 grid_search_cardinal = { version = "0.3", features = ["serialize"] }
