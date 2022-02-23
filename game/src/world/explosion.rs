@@ -181,7 +181,7 @@ pub fn explode<R: Rng>(
     message_log: &mut Vec<Message>,
     rng: &mut R,
 ) {
-    world.spawn_explosion_emitter(coord, &explosion.particle_emitter);
+    world.spawn_explosion_emitter(coord, &explosion.particle_emitter, rng);
     apply_mechanics(
         world,
         coord,

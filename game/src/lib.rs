@@ -508,6 +508,7 @@ impl Game {
                     self.player_coord() + (direction.coord() * 100),
                     slot,
                     &mut self.events,
+                    &mut self.rng,
                 );
                 Ok(None)
             }
@@ -555,6 +556,7 @@ impl Game {
             self.player_coord() + (direction.coord() * 100),
             slot,
             &mut self.events,
+            &mut self.rng,
         );
         self.resolve_realtime();
     }

@@ -378,12 +378,13 @@ impl World {
         }
     }
 
-    pub fn character_fire_bullet(
+    pub fn character_fire_bullet<R: Rng>(
         &mut self,
         character: Entity,
         target: Coord,
         slot: player::RangedWeaponSlot,
         external_events: &mut Vec<ExternalEvent>,
+        rng: &mut R,
     ) {
         let character_coord = self.spatial_table.coord_of(character).unwrap();
         if character_coord == target {
@@ -414,7 +415,7 @@ impl World {
             if let Some(sound_effect) = sound_effect {
                 external_events.push(ExternalEvent::SoundEffect(sound_effect));
             }
-            self.spawn_bullet(character_coord, target, &weapon);
+            self.spawn_bullet(character_coord, target, &weapon, rng);
             self.spawn_flash(character_coord);
         }
     }
