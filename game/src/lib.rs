@@ -18,7 +18,7 @@ pub use entity_table::Entity;
 pub use terrain::FINAL_LEVEL;
 use terrain::{SpaceStationSpec, Terrain, TerrainState};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
-use world::{make_player, AnimationContext_, World, ANIMATION_FRAME_DURATION_};
+use world::{make_player, AnimationContext, World, ANIMATION_FRAME_DURATION};
 pub use world::{
     player, ActionError, CharacterInfo, Enemy, EntityData, HitPoints, Item, Layer, MeleeWeapon,
     NpcAction, PlayerDied, RangedWeapon, Tile, ToRenderEntity, ToRenderEntityRealtime,
@@ -143,7 +143,7 @@ pub struct Game {
     events: Vec<ExternalEvent>,
     shadowcast_context: ShadowcastContext<u8>,
     behaviour_context: BehaviourContext,
-    animation_context_: AnimationContext_,
+    animation_context: AnimationContext,
     agents: ComponentTable<Agent>,
     agents_to_remove: Vec<Entity>,
     since_last_frame: Duration,
@@ -227,7 +227,7 @@ impl Game {
             events,
             shadowcast_context: ShadowcastContext::default(),
             behaviour_context: BehaviourContext::new(world.size()),
-            animation_context_: AnimationContext_::default(),
+            animation_context: AnimationContext::default(),
             agents,
             agents_to_remove: Vec::new(),
             world,
@@ -378,7 +378,7 @@ impl Game {
         }
         self.since_last_frame += since_last_tick;
         while let Some(remaining_since_last_frame) =
-            self.since_last_frame.checked_sub(ANIMATION_FRAME_DURATION_)
+            self.since_last_frame.checked_sub(ANIMATION_FRAME_DURATION)
         {
             self.since_last_frame = remaining_since_last_frame;
             if let Some(game_control_flow) = self.handle_tick_inner(since_last_tick, config) {
@@ -393,7 +393,7 @@ impl Game {
         config: &Config,
     ) -> Option<GameControlFlow> {
         self.world.animation_tick(
-            &mut self.animation_context_,
+            &mut self.animation_context,
             &mut self.events,
             &mut self.message_log,
             &mut self.animation_rng,

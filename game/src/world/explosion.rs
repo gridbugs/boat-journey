@@ -44,7 +44,7 @@ fn apply_indirect_hit<R: Rng>(
     let push_back = 2;
     let damage = 2;
     world.components.realtime.insert(character_entity, ());
-    world.realtime_components_.movement.insert(
+    world.realtime_components.movement.insert(
         character_entity,
         realtime::movement::spec::Movement {
             path: explosion_to_character.delta(),
@@ -80,7 +80,7 @@ fn apply_direct_hit<R: Rng>(
     } else {
         let travel_vector = -solid_neighbour_vector;
         world.components.realtime.insert(character_entity, ());
-        world.realtime_components_.movement.insert(
+        world.realtime_components.movement.insert(
             character_entity,
             realtime::movement::spec::Movement {
                 path: travel_vector,

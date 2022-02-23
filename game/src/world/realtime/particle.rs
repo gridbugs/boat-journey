@@ -238,7 +238,7 @@ impl<'a> RealtimeComponentApplyEvent<Context<'a>> for ParticleEmitterState {
         if let Some(movement) = spawn_particle.movement_state.take() {
             context
                 .world
-                .realtime_components_
+                .realtime_components
                 .movement
                 .insert_with_schedule(
                     particle_entity,
@@ -264,7 +264,7 @@ impl<'a> RealtimeComponentApplyEvent<Context<'a>> for ParticleEmitterState {
         if let Some(fade_state) = spawn_particle.fade_state {
             context
                 .world
-                .realtime_components_
+                .realtime_components
                 .fade
                 .insert(particle_entity, fade_state);
         }
@@ -290,14 +290,14 @@ impl<'a> RealtimeComponentApplyEvent<Context<'a>> for ParticleEmitterState {
         if let Some(light_colour_fade) = spawn_particle.light_colour_fade_state.take() {
             context
                 .world
-                .realtime_components_
+                .realtime_components
                 .light_colour_fade
                 .insert(particle_entity, light_colour_fade);
         }
         if let Some(particle_emitter) = spawn_particle.particle_emitter.take() {
             context
                 .world
-                .realtime_components_
+                .realtime_components
                 .particle_emitter
                 .insert(particle_entity, *particle_emitter);
         }

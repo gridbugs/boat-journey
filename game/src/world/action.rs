@@ -181,7 +181,7 @@ impl World {
             match ability {
                 WeaponAbility::KnockBack => {
                     self.components.realtime.insert(victim, ());
-                    self.realtime_components_.movement.insert(
+                    self.realtime_components.movement.insert(
                         victim,
                         realtime::movement::spec::Movement {
                             path: direction.coord(),
@@ -429,23 +429,23 @@ impl World {
                         self.spatial_table.remove(projectile_entity);
                         self.components.remove_entity(projectile_entity);
                         self.entity_allocator.free(projectile_entity);
-                        self.realtime_components_.remove_entity(projectile_entity);
+                        self.realtime_components.remove_entity(projectile_entity);
                     }
                     OnCollision::Remove => {
                         self.spatial_table.remove(projectile_entity);
                         self.components.remove_entity(projectile_entity);
                         self.entity_allocator.free(projectile_entity);
-                        self.realtime_components_.remove_entity(projectile_entity);
+                        self.realtime_components.remove_entity(projectile_entity);
                     }
                     OnCollision::RemoveRealtime => {
-                        self.realtime_components_.remove_entity(projectile_entity);
+                        self.realtime_components.remove_entity(projectile_entity);
                         self.components.realtime.remove(projectile_entity);
                         self.components.blocks_gameplay.remove(projectile_entity);
                     }
                 }
             }
         }
-        self.realtime_components_.movement.remove(projectile_entity);
+        self.realtime_components.movement.remove(projectile_entity);
     }
 
     pub fn projectile_move<R: Rng>(
@@ -524,7 +524,7 @@ impl World {
             }
         } else {
             self.components.remove_entity(projectile_entity);
-            self.realtime_components_.remove_entity(projectile_entity);
+            self.realtime_components.remove_entity(projectile_entity);
             self.spatial_table.remove(projectile_entity);
         }
     }
@@ -646,7 +646,7 @@ impl World {
                 }
                 if projectile_damage.push_back {
                     self.components.realtime.insert(entity_to_damage, ());
-                    self.realtime_components_.movement.insert(
+                    self.realtime_components.movement.insert(
                         entity_to_damage,
                         realtime::movement::spec::Movement {
                             path: projectile_movement_direction.coord(),

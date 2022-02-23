@@ -133,7 +133,7 @@ impl World {
             },
         );
         self.components.realtime.insert(entity, ());
-        self.realtime_components_.fade.insert(
+        self.realtime_components.fade.insert(
             entity,
             realtime::fade::FadeState::new(Duration::from_millis(100)),
         );
@@ -163,7 +163,7 @@ impl World {
         self.components
             .on_collision
             .insert(entity, OnCollision::Remove);
-        self.realtime_components_.movement.insert(
+        self.realtime_components.movement.insert(
             entity,
             realtime::movement::spec::Movement {
                 path: target - start,
@@ -246,7 +246,7 @@ impl World {
             }
         }
         .build(rng);
-        self.realtime_components_
+        self.realtime_components
             .particle_emitter
             .insert(entity, particle_emitter_);
         self.components.collides_with.insert(
@@ -291,12 +291,12 @@ impl World {
         self.spatial_table
             .update(emitter_entity, Location { coord, layer: None })
             .unwrap();
-        self.realtime_components_.fade.insert(
+        self.realtime_components.fade.insert(
             emitter_entity,
             realtime::fade::FadeState::new(spec.duration),
         );
         self.components.realtime.insert(emitter_entity, ());
-        self.realtime_components_
+        self.realtime_components
             .particle_emitter
             .insert(emitter_entity, {
                 use realtime::particle::spec::*;
@@ -357,7 +357,7 @@ impl World {
                 },
             },
         );
-        self.realtime_components_.light_colour_fade.insert(
+        self.realtime_components.light_colour_fade.insert(
             emitter_entity,
             realtime::light_colour_fade::LightColourFadeState {
                 fade_state: realtime::fade::FadeState::new(spec.fade_duration),

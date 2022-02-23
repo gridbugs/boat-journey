@@ -19,6 +19,6 @@ pub struct Context<'a> {
 impl<'a> ContextContainsRealtimeComponents for Context<'a> {
     type Components = data::RealtimeComponents;
     fn components_mut(&mut self) -> &mut Self::Components {
-        &mut self.world.realtime_components_
+        &mut self.world.realtime_components
     }
 }

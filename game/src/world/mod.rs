@@ -21,9 +21,7 @@ pub use data::{
 use data::{Components, Npc};
 
 mod realtime;
-pub use realtime::animation::{
-    AnimationContext as AnimationContext_, FRAME_DURATION as ANIMATION_FRAME_DURATION_,
-};
+pub use realtime::animation::{AnimationContext, FRAME_DURATION as ANIMATION_FRAME_DURATION};
 
 mod query;
 
@@ -41,7 +39,7 @@ pub struct World {
     pub level: u32,
     pub entity_allocator: EntityAllocator,
     pub components: Components,
-    pub realtime_components_: realtime::data::RealtimeComponents,
+    pub realtime_components: realtime::data::RealtimeComponents,
     pub spatial_table: SpatialTable,
     pub air: Air,
 }
@@ -50,13 +48,13 @@ impl World {
     pub fn new(size: Size, level: u32) -> Self {
         let entity_allocator = EntityAllocator::default();
         let components = Components::default();
-        let realtime_components_ = realtime::data::RealtimeComponents::default();
+        let realtime_components = realtime::data::RealtimeComponents::default();
         let spatial_table = SpatialTable::new(size);
         let air = Air::new(size);
         Self {
             entity_allocator,
             components,
-            realtime_components_,
+            realtime_components,
             spatial_table,
             level,
             air,
@@ -68,7 +66,7 @@ impl World {
     pub fn to_render_entity(&self, entity: Entity) -> Option<ToRenderEntity> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
-        let realtime_fade_component = &self.realtime_components_.fade;
+        let realtime_fade_component = &self.realtime_components.fade;
         let colour_hint_component = &self.components.colour_hint;
         let blood_component = &self.components.blood;
         let ignore_lighting_component = &self.components.ignore_lighting;
@@ -106,7 +104,7 @@ impl World {
     pub fn to_render_entities<'a>(&'a self) -> impl 'a + Iterator<Item = ToRenderEntity> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
-        let realtime_fade_component = &self.realtime_components_.fade;
+        let realtime_fade_component = &self.realtime_components.fade;
         let colour_hint_component = &self.components.colour_hint;
         let blood_component = &self.components.blood;
         let ignore_lighting_component = &self.components.ignore_lighting;
@@ -148,7 +146,7 @@ impl World {
     ) -> impl 'a + Iterator<Item = ToRenderEntityRealtime> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
-        let realtime_fade_component = &self.realtime_components_.fade;
+        let realtime_fade_component = &self.realtime_components.fade;
         let colour_hint_component = &self.components.colour_hint;
         let particle_component = &self.components.particle;
         let realtime_component = &self.components.realtime;
@@ -238,12 +236,12 @@ impl World {
     }
     pub fn animation_tick(
         &mut self,
-        animation_context_: &mut AnimationContext_,
+        animation_context: &mut AnimationContext,
         external_events: &mut Vec<ExternalEvent>,
         message_log: &mut Vec<Message>,
         rng: &mut Isaac64Rng,
     ) {
-        animation_context_.tick(self, external_events, message_log, rng);
+        animation_context.tick(self, external_events, message_log, rng);
     }
     pub fn commit_to_next_action(&mut self, entity: Entity, next_action: NpcAction) {
         self.components.next_action.insert(entity, next_action);
