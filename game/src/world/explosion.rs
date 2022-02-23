@@ -1,8 +1,4 @@
-use crate::world::{
-    realtime,
-    realtime_periodic::{core::ScheduledRealtimePeriodicState, movement},
-    ExternalEvent, World,
-};
+use crate::world::{realtime, ExternalEvent, World};
 use crate::Message;
 use direction::Direction;
 use entity_table::Entity;
@@ -48,18 +44,6 @@ fn apply_indirect_hit<R: Rng>(
     let push_back = 2;
     let damage = 2;
     world.components.realtime.insert(character_entity, ());
-    world.realtime_components.movement.insert(
-        character_entity,
-        ScheduledRealtimePeriodicState {
-            state: movement::spec::Movement {
-                path: explosion_to_character.delta(),
-                repeat: movement::spec::Repeat::Steps(push_back as usize),
-                cardinal_step_duration: Duration::from_millis(100),
-            }
-            .build(),
-            until_next_event: Duration::from_millis(0),
-        },
-    );
     world.realtime_components_.movement.insert(
         character_entity,
         realtime::movement::spec::Movement {
@@ -96,18 +80,6 @@ fn apply_direct_hit<R: Rng>(
     } else {
         let travel_vector = -solid_neighbour_vector;
         world.components.realtime.insert(character_entity, ());
-        world.realtime_components.movement.insert(
-            character_entity,
-            ScheduledRealtimePeriodicState {
-                state: movement::spec::Movement {
-                    path: travel_vector,
-                    repeat: movement::spec::Repeat::Steps(push_back as usize),
-                    cardinal_step_duration: Duration::from_millis(100),
-                }
-                .build(),
-                until_next_event: Duration::from_millis(0),
-            },
-        );
         world.realtime_components_.movement.insert(
             character_entity,
             realtime::movement::spec::Movement {

@@ -20,12 +20,6 @@ pub use data::{
 };
 use data::{Components, Npc};
 
-mod realtime_periodic;
-pub use realtime_periodic::animation::{
-    Context as AnimationContext, FRAME_DURATION as ANIMATION_FRAME_DURATION,
-};
-use realtime_periodic::data::RealtimeComponents;
-
 mod realtime;
 pub use realtime::animation::{
     AnimationContext as AnimationContext_, FRAME_DURATION as ANIMATION_FRAME_DURATION_,
@@ -47,7 +41,6 @@ pub struct World {
     pub level: u32,
     pub entity_allocator: EntityAllocator,
     pub components: Components,
-    pub realtime_components: RealtimeComponents,
     pub realtime_components_: realtime::data::RealtimeComponents,
     pub spatial_table: SpatialTable,
     pub air: Air,
@@ -57,14 +50,12 @@ impl World {
     pub fn new(size: Size, level: u32) -> Self {
         let entity_allocator = EntityAllocator::default();
         let components = Components::default();
-        let realtime_components = RealtimeComponents::default();
         let realtime_components_ = realtime::data::RealtimeComponents::default();
         let spatial_table = SpatialTable::new(size);
         let air = Air::new(size);
         Self {
             entity_allocator,
             components,
-            realtime_components,
             realtime_components_,
             spatial_table,
             level,
@@ -77,7 +68,7 @@ impl World {
     pub fn to_render_entity(&self, entity: Entity) -> Option<ToRenderEntity> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
-        let realtime_fade_component = &self.realtime_components.fade;
+        let realtime_fade_component = &self.realtime_components_.fade;
         let colour_hint_component = &self.components.colour_hint;
         let blood_component = &self.components.blood;
         let ignore_lighting_component = &self.components.ignore_lighting;
@@ -85,9 +76,7 @@ impl World {
         let armour = &self.components.armour;
         let next_action = &self.components.next_action;
         let skeleton_respawn = &self.components.skeleton_respawn;
-        let fade = realtime_fade_component
-            .get(entity)
-            .and_then(|f| f.state.fading());
+        let fade = realtime_fade_component.get(entity).and_then(|f| f.fading());
         let colour_hint = colour_hint_component.get(entity).cloned();
         let blood = blood_component.contains(entity);
         let ignore_lighting = ignore_lighting_component.contains(entity);
@@ -117,7 +106,7 @@ impl World {
     pub fn to_render_entities<'a>(&'a self) -> impl 'a + Iterator<Item = ToRenderEntity> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
-        let realtime_fade_component = &self.realtime_components.fade;
+        let realtime_fade_component = &self.realtime_components_.fade;
         let colour_hint_component = &self.components.colour_hint;
         let blood_component = &self.components.blood;
         let ignore_lighting_component = &self.components.ignore_lighting;
@@ -127,9 +116,7 @@ impl World {
         let skeleton_respawn = &self.components.skeleton_respawn;
         tile_component.iter().filter_map(move |(entity, &tile)| {
             if let Some(location) = spatial_table.location_of(entity) {
-                let fade = realtime_fade_component
-                    .get(entity)
-                    .and_then(|f| f.state.fading());
+                let fade = realtime_fade_component.get(entity).and_then(|f| f.fading());
                 let colour_hint = colour_hint_component.get(entity).cloned();
                 let blood = blood_component.contains(entity);
                 let ignore_lighting = ignore_lighting_component.contains(entity);
@@ -161,15 +148,13 @@ impl World {
     ) -> impl 'a + Iterator<Item = ToRenderEntityRealtime> {
         let tile_component = &self.components.tile;
         let spatial_table = &self.spatial_table;
-        let realtime_fade_component = &self.realtime_components.fade;
+        let realtime_fade_component = &self.realtime_components_.fade;
         let colour_hint_component = &self.components.colour_hint;
         let particle_component = &self.components.particle;
         let realtime_component = &self.components.realtime;
         realtime_component.iter().filter_map(move |(entity, &())| {
             if let Some(location) = spatial_table.location_of(entity) {
-                let fade = realtime_fade_component
-                    .get(entity)
-                    .and_then(|f| f.state.fading());
+                let fade = realtime_fade_component.get(entity).and_then(|f| f.fading());
                 let tile = tile_component.get(entity).cloned();
                 let colour_hint = colour_hint_component.get(entity).cloned();
                 let particle = particle_component.contains(entity);
@@ -253,13 +238,11 @@ impl World {
     }
     pub fn animation_tick(
         &mut self,
-        animation_context: &mut AnimationContext,
         animation_context_: &mut AnimationContext_,
         external_events: &mut Vec<ExternalEvent>,
         message_log: &mut Vec<Message>,
         rng: &mut Isaac64Rng,
     ) {
-        animation_context.tick(self, external_events, message_log, rng);
         animation_context_.tick(self, external_events, message_log, rng);
     }
     pub fn commit_to_next_action(&mut self, entity: Entity, next_action: NpcAction) {

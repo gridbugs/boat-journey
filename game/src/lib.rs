@@ -18,7 +18,7 @@ pub use entity_table::Entity;
 pub use terrain::FINAL_LEVEL;
 use terrain::{SpaceStationSpec, Terrain, TerrainState};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};
-use world::{make_player, AnimationContext, AnimationContext_, World, ANIMATION_FRAME_DURATION};
+use world::{make_player, AnimationContext_, World, ANIMATION_FRAME_DURATION_};
 pub use world::{
     player, ActionError, CharacterInfo, Enemy, EntityData, HitPoints, Item, Layer, MeleeWeapon,
     NpcAction, PlayerDied, RangedWeapon, Tile, ToRenderEntity, ToRenderEntityRealtime,
@@ -143,7 +143,6 @@ pub struct Game {
     events: Vec<ExternalEvent>,
     shadowcast_context: ShadowcastContext<u8>,
     behaviour_context: BehaviourContext,
-    animation_context: AnimationContext,
     animation_context_: AnimationContext_,
     agents: ComponentTable<Agent>,
     agents_to_remove: Vec<Entity>,
@@ -228,7 +227,6 @@ impl Game {
             events,
             shadowcast_context: ShadowcastContext::default(),
             behaviour_context: BehaviourContext::new(world.size()),
-            animation_context: AnimationContext::default(),
             animation_context_: AnimationContext_::default(),
             agents,
             agents_to_remove: Vec::new(),
@@ -380,7 +378,7 @@ impl Game {
         }
         self.since_last_frame += since_last_tick;
         while let Some(remaining_since_last_frame) =
-            self.since_last_frame.checked_sub(ANIMATION_FRAME_DURATION)
+            self.since_last_frame.checked_sub(ANIMATION_FRAME_DURATION_)
         {
             self.since_last_frame = remaining_since_last_frame;
             if let Some(game_control_flow) = self.handle_tick_inner(since_last_tick, config) {
@@ -395,7 +393,6 @@ impl Game {
         config: &Config,
     ) -> Option<GameControlFlow> {
         self.world.animation_tick(
-            &mut self.animation_context,
             &mut self.animation_context_,
             &mut self.events,
             &mut self.message_log,

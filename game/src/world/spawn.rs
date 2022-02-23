@@ -8,13 +8,7 @@ use crate::{
         },
         explosion,
         player::{self, WeaponAbility},
-        realtime,
-        realtime_periodic::{
-            core::ScheduledRealtimePeriodicState,
-            data::{period_per_frame, FadeState, LightColourFadeState},
-            movement, particle,
-        },
-        World,
+        realtime, World,
     },
 };
 use direction::CardinalDirections;
@@ -139,13 +133,6 @@ impl World {
             },
         );
         self.components.realtime.insert(entity, ());
-        self.realtime_components.fade.insert(
-            entity,
-            ScheduledRealtimePeriodicState {
-                state: FadeState::new(Duration::from_millis(100)),
-                until_next_event: Duration::from_millis(0),
-            },
-        );
         self.realtime_components_.fade.insert(
             entity,
             realtime::fade::FadeState::new(Duration::from_millis(100)),
@@ -176,18 +163,6 @@ impl World {
         self.components
             .on_collision
             .insert(entity, OnCollision::Remove);
-        self.realtime_components.movement.insert(
-            entity,
-            ScheduledRealtimePeriodicState {
-                state: movement::spec::Movement {
-                    path: target - start,
-                    cardinal_step_duration: Duration::from_millis(50),
-                    repeat: movement::spec::Repeat::Once,
-                }
-                .build(),
-                until_next_event: Duration::from_millis(0),
-            },
-        );
         self.realtime_components_.movement.insert(
             entity,
             realtime::movement::spec::Movement {
@@ -197,80 +172,6 @@ impl World {
             }
             .build(),
         );
-        let particle_emitter = if let Some(light_colour) = weapon.light_colour {
-            use particle::spec::*;
-            if weapon.bright {
-                ParticleEmitter {
-                    emit_particle_every_period: Duration::from_millis(8),
-                    fade_out_duration: None,
-                    particle: Particle {
-                        tile: None,
-                        movement: None,
-                        fade_duration: Some(Duration::from_millis(1000)),
-                        possible_light: Some(Possible {
-                            chance: Rational {
-                                numerator: 1,
-                                denominator: 1,
-                            },
-                            value: Light {
-                                colour: light_colour,
-                                vision_distance: Circle::new_squared(50),
-                                diminish: Rational {
-                                    numerator: 10,
-                                    denominator: 1,
-                                },
-                            },
-                        }),
-                        ..Default::default()
-                    },
-                }
-            } else {
-                ParticleEmitter {
-                    emit_particle_every_period: Duration::from_millis(1),
-                    fade_out_duration: None,
-                    particle: Particle {
-                        tile: None,
-                        movement: None,
-                        fade_duration: Some(Duration::from_millis(100)),
-                        possible_light: Some(Possible {
-                            chance: Rational {
-                                numerator: 1,
-                                denominator: 1,
-                            },
-                            value: Light {
-                                colour: light_colour,
-                                vision_distance: Circle::new_squared(7),
-                                diminish: Rational {
-                                    numerator: 100,
-                                    denominator: 1,
-                                },
-                            },
-                        }),
-                        ..Default::default()
-                    },
-                }
-            }
-        } else {
-            use particle::spec::*;
-            ParticleEmitter {
-                emit_particle_every_period: Duration::from_micros(2000),
-                fade_out_duration: None,
-                particle: Particle {
-                    tile: None,
-                    movement: Some(Movement {
-                        angle_range: Radians::uniform_range_all(),
-                        cardinal_period_range: UniformInclusiveRange {
-                            low: Duration::from_millis(200),
-                            high: Duration::from_millis(500),
-                        },
-                    }),
-                    fade_duration: Some(Duration::from_millis(1000)),
-                    possible_light: None,
-                    ..Default::default()
-                },
-            }
-        }
-        .build();
         let particle_emitter_ = if let Some(light_colour) = weapon.light_colour {
             use realtime::particle::spec::*;
             if weapon.bright {
@@ -345,13 +246,6 @@ impl World {
             }
         }
         .build(rng);
-        self.realtime_components.particle_emitter.insert(
-            entity,
-            ScheduledRealtimePeriodicState {
-                state: particle_emitter,
-                until_next_event: Duration::from_millis(0),
-            },
-        );
         self.realtime_components_
             .particle_emitter
             .insert(entity, particle_emitter_);
@@ -397,76 +291,19 @@ impl World {
         self.spatial_table
             .update(emitter_entity, Location { coord, layer: None })
             .unwrap();
-        self.realtime_components.fade.insert(
-            emitter_entity,
-            ScheduledRealtimePeriodicState {
-                state: FadeState::new(spec.duration),
-                until_next_event: Duration::from_millis(0),
-            },
-        );
         self.realtime_components_.fade.insert(
             emitter_entity,
             realtime::fade::FadeState::new(spec.duration),
         );
         self.components.realtime.insert(emitter_entity, ());
-        self.realtime_components.particle_emitter.insert(
-            emitter_entity,
-            ScheduledRealtimePeriodicState {
-                state: {
-                    use particle::spec::*;
-                    ParticleEmitter {
-                        emit_particle_every_period: period_per_frame(spec.num_particles_per_frame),
-                        fade_out_duration: Some(spec.duration),
-                        particle: Particle {
-                            tile: None,
-                            movement: Some(Movement {
-                                angle_range: Radians::uniform_range_all(),
-                                cardinal_period_range: UniformInclusiveRange {
-                                    low: spec.min_step,
-                                    high: spec.max_step,
-                                },
-                            }),
-                            fade_duration: Some(spec.fade_duration),
-                            colour_hint: Some(UniformInclusiveRange {
-                                low: Rgb24::new(255, 17, 0),
-                                high: Rgb24::new(255, 255, 63),
-                            }),
-                            possible_particle_emitter: Some(Possible {
-                                chance: Rational {
-                                    numerator: 1,
-                                    denominator: 20,
-                                },
-                                value: Box::new(ParticleEmitter {
-                                    emit_particle_every_period: spec.min_step,
-                                    fade_out_duration: None,
-                                    particle: Particle {
-                                        tile: None,
-                                        movement: Some(Movement {
-                                            angle_range: Radians::uniform_range_all(),
-                                            cardinal_period_range: UniformInclusiveRange {
-                                                low: Duration::from_millis(200),
-                                                high: Duration::from_millis(500),
-                                            },
-                                        }),
-                                        fade_duration: Some(Duration::from_millis(1000)),
-                                        ..Default::default()
-                                    },
-                                }),
-                            }),
-                            ..Default::default()
-                        },
-                    }
-                    .build()
-                },
-                until_next_event: Duration::from_millis(0),
-            },
-        );
         self.realtime_components_
             .particle_emitter
             .insert(emitter_entity, {
                 use realtime::particle::spec::*;
                 ParticleEmitter {
-                    emit_particle_every_period: period_per_frame(spec.num_particles_per_frame),
+                    emit_particle_every_period: realtime::data::period_per_frame(
+                        spec.num_particles_per_frame,
+                    ),
                     fade_out_duration: Some(spec.duration),
                     particle: Particle {
                         tile: None,
@@ -518,17 +355,6 @@ impl World {
                     numerator: 1,
                     denominator: 100,
                 },
-            },
-        );
-        self.realtime_components.light_colour_fade.insert(
-            emitter_entity,
-            ScheduledRealtimePeriodicState {
-                state: LightColourFadeState {
-                    fade_state: FadeState::new(spec.fade_duration),
-                    from: Rgb24::new(255, 187, 63),
-                    to: Rgb24::new(0, 0, 0),
-                },
-                until_next_event: Duration::from_millis(0),
             },
         );
         self.realtime_components_.light_colour_fade.insert(
