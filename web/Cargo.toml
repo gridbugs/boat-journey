@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 orbital_decay_app = { path = "../app", features = ["web", "print_log"]}
-chargrid_web = { git = "https://github.com/gridbugs/chargrid" }
+chargrid_web = "0.3"
 general_storage_static = { version = "0.2", features = ["web"] }
 general_audio_static = { version = "0.3", features = ["web"] }
 wasm-bindgen = "0.2"

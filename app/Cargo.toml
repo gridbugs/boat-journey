@@ -25,4 +25,4 @@ direction = { version = "0.18", features = ["serialize", "rand"] }
 rgb_int = "0.1"
 maplit = "1.0"
 getrandom = "0.2"
-chargrid = { git = "https://github.com/gridbugs/chargrid", features = ["serialize", "gamepad"] }
+chargrid = { version = "0.6", features = ["serialize", "gamepad"] }
