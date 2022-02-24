@@ -27,6 +27,10 @@ impl MenuBackground {
         }
     }
 
+    pub fn render_stars(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        self.stars.render(ctx, fb);
+    }
+
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         self.stars.render(ctx, fb);
         let ctx = ctx.add_offset(Coord { x: 38, y: 5 });

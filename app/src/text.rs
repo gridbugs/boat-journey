@@ -97,7 +97,7 @@ pub fn help(width: u32) -> CF<()> {
     ])
 }
 
-fn epilogue1(width: u32) -> CF<()> {
+pub fn epilogue1(width: u32) -> CF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -142,7 +142,7 @@ fn epilogue1(width: u32) -> CF<()> {
     )
 }
 
-fn epilogue2(width: u32) -> CF<()> {
+pub fn epilogue2(width: u32) -> CF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);

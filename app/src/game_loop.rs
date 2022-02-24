@@ -44,7 +44,7 @@ impl Default for Config {
         Self {
             music_volume: 0.2,
             sfx_volume: 0.5,
-            won: true,
+            won: false,
             first_run: true,
         }
     }
@@ -410,6 +410,14 @@ impl GameLoopData {
         self.storage.save_config(&self.config);
     }
 
+    fn render_stars(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        if let Some(instance) = self.instance.as_ref() {
+            instance.stars.render(ctx, fb);
+        } else {
+            self.menu_background.render_stars(ctx, fb);
+        }
+    }
+
     fn render(&self, cursor_colour: Rgba32, ctx: Ctx, fb: &mut FrameBuffer) {
         let ctx = if let Some(ScreenShake { direction, .. }) = self.screen_shake.as_ref() {
             ctx.add_offset(direction.coord())
@@ -670,7 +678,7 @@ fn game_examine_component() -> CF<()> {
         boxed_cf(GameExamineComponent)
             .catch_escape_or_start()
             .map_val(|| ())
-            .then_side_effect(|state: &mut State| {
+            .side_effect(|state: &mut State| {
                 state.context_message = None;
                 state.cursor = None;
             })
@@ -1227,7 +1235,7 @@ fn pause(running: witness::Running) -> CF<PauseOutput> {
             .set_music_volume_multiplier(PAUSE_MUSIC_VOLUME_MULTIPLIER);
         menu_style(pause_menu_loop(running))
     })
-    .then_side_effect(|state: &mut State| {
+    .side_effect(|state: &mut State| {
         // turn the music back up
         state.audio_state.set_music_volume_multiplier(1.);
     })
@@ -1326,10 +1334,10 @@ fn first_run_prologue() -> CF<()> {
         if state.config.first_run {
             state.config.first_run = false;
             state.save_config();
-            text::prologue(MAIN_MENU_TEXT_WIDTH)
-                .centre()
-                .bound_width(42)
-                .overlay(MenuBackgroundComponent, 10)
+            text::prologue(MAIN_MENU_TEXT_WIDTH).centre().overlay(
+                render_state(|state: &State, ctx, fb| state.render_stars(ctx, fb)),
+                10,
+            )
         } else {
             unit().some()
         }
@@ -1349,7 +1357,7 @@ fn game_over(game_over_witness: GameOver) -> CF<()> {
         GameOverComponent(Some(game_over_witness))
     })
     .press_any_key()
-    .then_side_effect(|state: &mut State| {
+    .side_effect(|state: &mut State| {
         state
             .audio_state
             .loop_music(Audio::Menu, state.config.music_volume);
@@ -1357,62 +1365,96 @@ fn game_over(game_over_witness: GameOver) -> CF<()> {
 }
 
 fn unlock_map(witness: witness::UnlockMap) -> CF<Witness> {
-    yes_no("Spend $2 credit to unlock map?".to_string()).and_then(move |yes| {
-        on_state(move |state: &mut State| {
-            if yes {
-                let (game, config) = state.game_mut_config();
-                witness.commit(game, config)
-            } else {
-                witness.cancel()
-            }
-        })
+    on_state_then(move |state: &mut State| {
+        let instance = state.instance.as_mut().unwrap();
+        if instance.game.player().credit >= 2 {
+            yes_no("Spend $2 credit to unlock map?".to_string()).and_then(move |yes| {
+                on_state(move |state: &mut State| {
+                    if yes {
+                        let (game, config) = state.game_mut_config();
+                        witness.commit(game, config)
+                    } else {
+                        witness.cancel()
+                    }
+                })
+            })
+        } else {
+            popup("You can't afford that!".to_string()).map_val(|| witness.cancel())
+        }
     })
+}
+
+fn win() -> CF<()> {
+    on_state_then(move |state: &mut State| {
+        state.clear_saved_game();
+        state.config.won = true;
+        state.save_config();
+        state
+            .audio_state
+            .loop_music(Audio::EndTextHappy, state.config.music_volume);
+        text::epilogue1(MAIN_MENU_TEXT_WIDTH)
+    })
+    .then_side_effect(|state: &mut State| {
+        state
+            .audio_state
+            .loop_music(Audio::EndTextSad, state.config.music_volume);
+        text::epilogue2(MAIN_MENU_TEXT_WIDTH)
+    })
+    .centre()
+    .overlay(
+        render_state(|state: &State, ctx, fb| state.render_stars(ctx, fb)),
+        10,
+    )
 }
 
 pub fn game_loop_component(initial_state: GameLoopState) -> CF<()> {
     use GameLoopState::*;
-    first_run_prologue().then(|| {
-        loop_(initial_state, |state| match state {
-            Playing(witness) => match witness {
-                Witness::Running(running) => game_instance_component(running).continue_(),
-                Witness::Upgrade(upgrade) => {
-                    try_upgrade_component(upgrade).map(Playing).continue_()
-                }
-                Witness::GetRangedWeapon(get_ranged_weapon) => {
-                    try_get_ranged_weapon(get_ranged_weapon)
-                        .map(Playing)
-                        .continue_()
-                }
-                Witness::GetMeleeWeapon(get_melee_weapon) => try_get_melee_weapon(get_melee_weapon)
-                    .map(Playing)
+    first_run_prologue()
+        .then(|| {
+            loop_(initial_state, |state| match state {
+                Playing(witness) => match witness {
+                    Witness::Running(running) => game_instance_component(running).continue_(),
+                    Witness::Upgrade(upgrade) => {
+                        try_upgrade_component(upgrade).map(Playing).continue_()
+                    }
+                    Witness::GetRangedWeapon(get_ranged_weapon) => {
+                        try_get_ranged_weapon(get_ranged_weapon)
+                            .map(Playing)
+                            .continue_()
+                    }
+                    Witness::GetMeleeWeapon(get_melee_weapon) => {
+                        try_get_melee_weapon(get_melee_weapon)
+                            .map(Playing)
+                            .continue_()
+                    }
+                    Witness::FireWeapon(fire_weapon_witness) => {
+                        fire_weapon(fire_weapon_witness).map(Playing).continue_()
+                    }
+                    Witness::GameOver(game_over_witness) => game_over(game_over_witness)
+                        .map_val(|| MainMenu)
+                        .continue_(),
+                    Witness::UnlockMap(unlock_map_witness) => {
+                        unlock_map(unlock_map_witness).map(Playing).continue_()
+                    }
+                    Witness::Win => win().map_val(|| MainMenu).continue_(),
+                },
+                Examine(running) => game_examine_component()
+                    .map_val(|| Playing(running.into_witness()))
                     .continue_(),
-                Witness::FireWeapon(fire_weapon_witness) => {
-                    fire_weapon(fire_weapon_witness).map(Playing).continue_()
-                }
-                Witness::GameOver(game_over_witness) => game_over(game_over_witness)
-                    .map_val(|| MainMenu)
-                    .continue_(),
-                Witness::UnlockMap(unlock_map_witness) => {
-                    unlock_map(unlock_map_witness).map(Playing).continue_()
-                }
-            },
-            Examine(running) => game_examine_component()
-                .map_val(|| Playing(running.into_witness()))
-                .continue_(),
-            Paused(running) => pause(running).map(|pause_output| match pause_output {
-                PauseOutput::ContinueGame { running } => {
-                    LoopControl::Continue(Playing(running.into_witness()))
-                }
-                PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
-                PauseOutput::Quit => LoopControl::Break(()),
-            }),
-            MainMenu => main_menu_loop().map(|main_menu_output| match main_menu_output {
-                MainMenuOutput::NewGame { new_running } => {
-                    LoopControl::Continue(Playing(new_running.into_witness()))
-                }
-                MainMenuOutput::Quit => LoopControl::Break(()),
-            }),
+                Paused(running) => pause(running).map(|pause_output| match pause_output {
+                    PauseOutput::ContinueGame { running } => {
+                        LoopControl::Continue(Playing(running.into_witness()))
+                    }
+                    PauseOutput::MainMenu => LoopControl::Continue(MainMenu),
+                    PauseOutput::Quit => LoopControl::Break(()),
+                }),
+                MainMenu => main_menu_loop().map(|main_menu_output| match main_menu_output {
+                    MainMenuOutput::NewGame { new_running } => {
+                        LoopControl::Continue(Playing(new_running.into_witness()))
+                    }
+                    MainMenuOutput::Quit => LoopControl::Break(()),
+                }),
+            })
         })
         .bound_size(Size::new_u16(80, 60))
-    })
 }

@@ -41,7 +41,7 @@ pub fn app(
     let config = Config {
         omniscient: if omniscient { Config::OMNISCIENT } else { None },
         demo: false,
-        debug: true,
+        debug: false,
     };
     let (game_loop_data, initial_state) =
         game_loop::GameLoopData::new(config, storage, initial_rng_seed, audio_player, new_game);

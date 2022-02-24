@@ -71,6 +71,7 @@ pub enum Witness {
     FireWeapon(FireWeapon),
     GameOver(GameOver),
     UnlockMap(UnlockMap),
+    Win,
 }
 
 impl Witness {
@@ -316,7 +317,7 @@ impl Game {
             }
             Some(GameControlFlow::LevelChange) => Witness::running(private),
             Some(GameControlFlow::UnlockMap) => Witness::unlock_map(private),
-            Some(other) => panic!("unhandled control flow {:?}", other),
+            Some(GameControlFlow::Win) => Witness::Win,
         }
     }
 

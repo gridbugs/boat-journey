@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 pub struct GameInstance {
     pub game: Game,
-    stars: Stars,
+    pub stars: Stars,
     pub current_music: Option<Music>,
 }
 
