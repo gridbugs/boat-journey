@@ -1,18 +1,18 @@
-use crate::{colours, game_loop::CF};
+use crate::{colours, game_loop::AppCF};
 use chargrid::{
     prelude::*,
     text::{StyledString, Text},
 };
 
-fn text_component(width: u32, text: Vec<StyledString>) -> CF<()> {
+fn text_component(width: u32, text: Vec<StyledString>) -> AppCF<()> {
     Text::new(text)
         .wrap_word()
-        .boxed_cf()
+        .cf()
         .set_width(width)
         .press_any_key()
 }
 
-pub fn prologue(width: u32) -> CF<()> {
+pub fn prologue(width: u32) -> AppCF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -46,7 +46,7 @@ pub fn prologue(width: u32) -> CF<()> {
     ])
 }
 
-pub fn help(width: u32) -> CF<()> {
+pub fn help(width: u32) -> AppCF<()> {
     let normal = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(false);
@@ -97,7 +97,7 @@ pub fn help(width: u32) -> CF<()> {
     ])
 }
 
-pub fn epilogue1(width: u32) -> CF<()> {
+pub fn epilogue1(width: u32) -> AppCF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -142,7 +142,7 @@ pub fn epilogue1(width: u32) -> CF<()> {
     )
 }
 
-pub fn epilogue2(width: u32) -> CF<()> {
+pub fn epilogue2(width: u32) -> AppCF<()> {
     let bold = Style::new()
         .with_foreground(colours::STRIPE)
         .with_bold(true);
@@ -187,6 +187,6 @@ pub fn epilogue2(width: u32) -> CF<()> {
     ])
 }
 
-pub fn epilogue(width: u32) -> CF<()> {
+pub fn epilogue(width: u32) -> AppCF<()> {
     epilogue1(width).and_then(move |()| epilogue2(width))
 }

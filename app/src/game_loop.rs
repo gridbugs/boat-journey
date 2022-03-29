@@ -8,8 +8,8 @@ use crate::{
     text, ui,
 };
 use chargrid::{
-    border::BorderStyle, control_flow::boxed::*, input::*, menu, menu::Menu, pad_by::Padding,
-    prelude::*, text::StyledString,
+    border::BorderStyle, control_flow::*, input::*, menu, menu::Menu, pad_by::Padding, prelude::*,
+    text::StyledString,
 };
 use direction::Direction;
 use general_storage_static::{format, StaticStorage};
@@ -51,7 +51,7 @@ impl Default for Config {
 }
 
 /// An interactive, renderable process yielding a value of type `T`
-pub type CF<T> = BoxedCF<Option<T>, GameLoopData>;
+pub type AppCF<T> = CF<Option<T>, GameLoopData>;
 pub type State = GameLoopData;
 
 const CURSOR_COLOUR: Rgba32 = Rgba32::new(255, 255, 0, 64);
@@ -665,7 +665,7 @@ impl Component for GameExamineComponent {
     }
 }
 
-fn game_examine_component() -> CF<()> {
+fn game_examine_component() -> AppCF<()> {
     on_state_then(|state: &mut State| {
         state.context_message = Some(StyledString {
             string: "Examining (escape/start to return to game)".to_string(),
@@ -675,7 +675,7 @@ fn game_examine_component() -> CF<()> {
             .cursor
             .unwrap_or_else(|| state.game().inner_ref().player_coord());
         state.cursor = Some(cursor);
-        boxed_cf(GameExamineComponent)
+        cf(GameExamineComponent)
             .catch_escape_or_start()
             .map_val(|| ())
             .side_effect(|state: &mut State| {
@@ -753,7 +753,7 @@ impl Component for MenuBackgroundComponent {
     }
 }
 
-fn menu_style<T: 'static>(menu: CF<T>) -> CF<T> {
+fn menu_style<T: 'static>(menu: AppCF<T>) -> AppCF<T> {
     menu.border(BorderStyle::default())
         .fill(MENU_BACKGROUND)
         .centre()
@@ -857,7 +857,7 @@ impl Component for UpgradeMenuDecorated {
     }
 }
 
-fn upgrade_menu() -> CF<player::Upgrade> {
+fn upgrade_menu() -> AppCF<player::Upgrade> {
     on_state_then(|state: &mut State| {
         let instance = state.instance.as_ref().unwrap();
         let upgrades = instance.game.inner_ref().available_upgrades();
@@ -873,7 +873,7 @@ fn upgrade_menu() -> CF<player::Upgrade> {
     })
 }
 
-fn yes_no_menu() -> CF<bool> {
+fn yes_no_menu() -> AppCF<bool> {
     use menu::builder::*;
     menu_builder()
         .vi_keys()
@@ -893,19 +893,17 @@ fn yes_no_menu() -> CF<bool> {
             .add_hotkey_char('n')
             .add_hotkey_char('N'),
         )
-        .build_boxed_cf()
+        .build_cf()
 }
 
-fn yes_no(message: String) -> CF<bool> {
+fn yes_no(message: String) -> AppCF<bool> {
     menu_style(
         yes_no_menu().with_title(
-            boxed_cf(
-                StyledString {
-                    string: message,
-                    style: Style::plain_text(),
-                }
-                .wrap_word(),
-            )
+            cf(StyledString {
+                string: message,
+                style: Style::plain_text(),
+            }
+            .wrap_word())
             .ignore_state()
             .bound_width(40),
             1,
@@ -913,7 +911,7 @@ fn yes_no(message: String) -> CF<bool> {
     )
 }
 
-fn popup(string: String) -> CF<()> {
+fn popup(string: String) -> AppCF<()> {
     menu_style(
         StyledString {
             string,
@@ -922,13 +920,13 @@ fn popup(string: String) -> CF<()> {
                 .with_underline(false)
                 .with_foreground(colours::STRIPE),
         }
-        .boxed_cf()
+        .cf()
         .pad_by(Padding::all(1))
         .press_any_key(),
     )
 }
 
-fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
+fn upgrade_component(upgrade_witness: witness::Upgrade) -> AppCF<Witness> {
     menu_style(upgrade_menu())
         .menu_harness()
         .and_then(|result| {
@@ -952,7 +950,7 @@ fn upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
         })
 }
 
-fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
+fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> AppCF<Witness> {
     on_state_then(move |state: &mut State| {
         let instance = state.instance.as_ref().unwrap();
         let upgrades = instance.game.inner_ref().available_upgrades();
@@ -964,7 +962,7 @@ fn try_upgrade_component(upgrade_witness: witness::Upgrade) -> CF<Witness> {
     })
 }
 
-fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
+fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> AppCF<Witness> {
     on_state_then(move |state: &mut State| {
         let num_weapon_slots = if state.player_has_third_weapon_slot() {
             3
@@ -1023,7 +1021,7 @@ fn try_get_ranged_weapon(witness: witness::GetRangedWeapon) -> CF<Witness> {
     })
 }
 
-fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> CF<Witness> {
+fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> AppCF<Witness> {
     yes_no("Replace current melee weapon?".to_string()).and_then(move |yes| {
         on_state(move |state: &mut State| {
             if yes {
@@ -1036,7 +1034,7 @@ fn try_get_melee_weapon(witness: witness::GetMeleeWeapon) -> CF<Witness> {
     })
 }
 
-fn fire_weapon(witness: witness::FireWeapon) -> CF<Witness> {
+fn fire_weapon(witness: witness::FireWeapon) -> AppCF<Witness> {
     on_state_then(move |state: &mut State| {
         state.context_message = Some(StyledString {
             string: format!(
@@ -1075,10 +1073,10 @@ enum MainMenuEntry {
     Quit,
 }
 
-fn title_decorate<T: 'static>(cf: CF<T>) -> CF<T> {
+fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
     let decoration = {
         let style = Style::default().with_foreground(colours::WALL_FRONT);
-        chargrid::boxed_many![
+        chargrid::many![
             styled_string("Orbital Decay".to_string(), style.with_bold(true))
                 .add_offset(Coord { x: 14, y: 24 }),
             styled_string(
@@ -1097,7 +1095,7 @@ fn title_decorate<T: 'static>(cf: CF<T>) -> CF<T> {
         .overlay(decoration, 10)
 }
 
-fn main_menu() -> CF<MainMenuEntry> {
+fn main_menu() -> AppCF<MainMenuEntry> {
     on_state_then(|state: &mut State| {
         use menu::builder::*;
         use MainMenuEntry::*;
@@ -1126,7 +1124,7 @@ enum MainMenuOutput {
 
 const MAIN_MENU_TEXT_WIDTH: u32 = 40;
 
-fn main_menu_loop() -> CF<MainMenuOutput> {
+fn main_menu_loop() -> AppCF<MainMenuOutput> {
     use MainMenuEntry::*;
     title_decorate(main_menu())
         .repeat_unit(move |entry| match entry {
@@ -1157,7 +1155,7 @@ enum PauseMenuEntry {
     Clear,
 }
 
-fn pause_menu() -> CF<PauseMenuEntry> {
+fn pause_menu() -> AppCF<PauseMenuEntry> {
     on_state_then(|state: &mut State| {
         use menu::builder::*;
         use PauseMenuEntry::*;
@@ -1182,7 +1180,7 @@ fn pause_menu() -> CF<PauseMenuEntry> {
     })
 }
 
-fn pause_menu_loop(running: witness::Running) -> CF<PauseOutput> {
+fn pause_menu_loop(running: witness::Running) -> AppCF<PauseOutput> {
     use PauseMenuEntry::*;
     let text_width = 64;
     pause_menu()
@@ -1226,7 +1224,7 @@ enum PauseOutput {
     Quit,
 }
 
-fn pause(running: witness::Running) -> CF<PauseOutput> {
+fn pause(running: witness::Running) -> AppCF<PauseOutput> {
     const PAUSE_MUSIC_VOLUME_MULTIPLIER: f32 = 0.25;
     on_state_then(move |state: &mut State| {
         // turn down the music in the pause menu
@@ -1305,7 +1303,7 @@ impl Component for OptionsMenuComponent {
         self.menu.size(&(), ctx) + Size::new(9, 0)
     }
 }
-fn options_menu() -> CF<()> {
+fn options_menu() -> AppCF<()> {
     use menu::builder::*;
     use OptionsMenuEntry::*;
     let mut builder = menu_builder().vi_keys();
@@ -1318,18 +1316,16 @@ fn options_menu() -> CF<()> {
     builder.add_space_mut();
     add_item(&mut builder, Back, "Back");
     let menu = builder.build();
-    boxed_cf(OptionsMenuComponent { menu })
+    cf(OptionsMenuComponent { menu })
         .catch_escape_or_start()
         .map(|_| ())
 }
 
-fn game_instance_component(running: witness::Running) -> CF<GameLoopState> {
-    boxed_cf(GameInstanceComponent::new(running))
-        .some()
-        .no_peek()
+fn game_instance_component(running: witness::Running) -> AppCF<GameLoopState> {
+    cf(GameInstanceComponent::new(running)).some().no_peek()
 }
 
-fn first_run_prologue() -> CF<()> {
+fn first_run_prologue() -> AppCF<()> {
     on_state_then(|state: &mut State| {
         if state.config.first_run {
             state.config.first_run = false;
@@ -1344,7 +1340,7 @@ fn first_run_prologue() -> CF<()> {
     })
 }
 
-fn game_over(game_over_witness: GameOver) -> CF<()> {
+fn game_over(game_over_witness: GameOver) -> AppCF<()> {
     on_state_then(move |state: &mut State| {
         let game_over_text = match game_over_witness.typ() {
             GameOverType::Adrift => "You drift in space forever! Press any key...",
@@ -1364,7 +1360,7 @@ fn game_over(game_over_witness: GameOver) -> CF<()> {
     })
 }
 
-fn unlock_map(witness: witness::UnlockMap) -> CF<Witness> {
+fn unlock_map(witness: witness::UnlockMap) -> AppCF<Witness> {
     on_state_then(move |state: &mut State| {
         let instance = state.instance.as_mut().unwrap();
         if instance.game.player().credit >= 2 {
@@ -1384,7 +1380,7 @@ fn unlock_map(witness: witness::UnlockMap) -> CF<Witness> {
     })
 }
 
-fn win() -> CF<()> {
+fn win() -> AppCF<()> {
     on_state_then(move |state: &mut State| {
         state.clear_saved_game();
         state.config.won = true;
@@ -1407,7 +1403,7 @@ fn win() -> CF<()> {
     )
 }
 
-pub fn game_loop_component(initial_state: GameLoopState) -> CF<()> {
+pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
     use GameLoopState::*;
     first_run_prologue()
         .then(|| {
