@@ -5,19 +5,7 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-gridbugs = { version = "0.2", features = [
-    "coord_2d_serialize",
-    "grid_2d_serialize",
-    "direction_serialize",
-    "line_2d_serialize",
-    "rgb_int_serialize",
-    "rgb_int_rand",
-    "entity_table_serialize",
-    "entity_table_realtime_serialize",
-    "spatial_table_serialize",
-    "shadowcast_serialize",
-    "grid_search_cardinal_serialize",
-] }
+gridbugs = { version = "0.2", features = [ "backend_serialize", "rgb_int_rand" ] }
 log = "0.4"
 serde = { version = "1.0", features = ["serde_derive"] }
 rand = "0.8"
