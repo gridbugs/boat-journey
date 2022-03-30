@@ -1,7 +1,8 @@
-use crate::world::{data::Tile, World};
-use entity_table::Entity;
-use grid_2d::Coord;
-use line_2d::LineSegment;
+use crate::{
+    world::{data::Tile, World},
+    Entity,
+};
+use gridbugs::{coord_2d::Coord, line_2d::LineSegment};
 
 impl World {
     pub fn is_solid_feature_at_coord(&self, coord: Coord) -> bool {

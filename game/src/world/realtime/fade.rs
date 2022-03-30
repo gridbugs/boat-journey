@@ -1,5 +1,5 @@
 use crate::world::realtime::Context;
-use entity_table_realtime::{Entity, RealtimeComponent, RealtimeComponentApplyEvent};
+use gridbugs::entity_table_realtime::{Entity, RealtimeComponent, RealtimeComponentApplyEvent};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

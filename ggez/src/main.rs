@@ -1,4 +1,4 @@
-use chargrid_ggez::*;
+use gridbugs::chargrid_ggez::*;
 use orbital_decay_app::{app, AppArgs};
 use orbital_decay_native::{meap, NativeCommon};
 

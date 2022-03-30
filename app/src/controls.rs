@@ -1,5 +1,7 @@
-use chargrid::input::{GamepadButton, Input, KeyboardInput};
-use direction::CardinalDirection;
+use gridbugs::{
+    chargrid::input::{GamepadButton, Input, KeyboardInput},
+    direction::CardinalDirection,
+};
 use maplit::btreemap;
 use orbital_decay_game::player::RangedWeaponSlot;
 use serde::{Deserialize, Serialize};

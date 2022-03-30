@@ -1,11 +1,11 @@
-use general_audio_static::{StaticAudioPlayer, StaticHandle, StaticSound};
+use gridbugs::audio::{Audio as Sound, AudioHandle, AudioPlayer};
 
 use maplit::hashmap;
 use orbital_decay_game::SoundEffect;
 use std::collections::HashMap;
 
-pub type AppAudioPlayer = Option<StaticAudioPlayer>;
-pub type AppHandle = Option<StaticHandle>;
+pub type AppAudioPlayer = Option<AudioPlayer>;
+pub type AppHandle = Option<AudioHandle>;
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub enum Audio {
@@ -20,7 +20,7 @@ pub enum Audio {
 }
 
 pub struct AudioTable {
-    map: Option<HashMap<Audio, StaticSound>>,
+    map: Option<HashMap<Audio, Sound>>,
 }
 
 impl AudioTable {
@@ -50,7 +50,7 @@ impl AudioTable {
         });
         Self { map }
     }
-    pub fn get(&self, audio: Audio) -> Option<&StaticSound> {
+    pub fn get(&self, audio: Audio) -> Option<&Sound> {
         self.map.as_ref().map(|map| map.get(&audio).unwrap())
     }
 }

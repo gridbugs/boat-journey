@@ -1,4 +1,4 @@
-use chargrid::core::Rgba32;
+use gridbugs::rgb_int::Rgba32;
 
 pub const WALL_TOP: Rgba32 = Rgba32::new_rgb(0x49, 0x2E, 0x00);
 pub const WALL_FRONT: Rgba32 = Rgba32::new_rgb(0xD0, 0x8C, 0x15);

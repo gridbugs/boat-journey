@@ -1,5 +1,5 @@
 use crate::colours;
-use chargrid::prelude::*;
+use gridbugs::chargrid::prelude::*;
 use orbital_decay_game::{CellVisibility, VisibilityGrid};
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;

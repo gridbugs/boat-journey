@@ -1,20 +1,24 @@
-use crate::visibility::Visibility;
-use crate::world::{Disposition, NpcAction, World};
-use entity_table::Entity;
-use grid_2d::{Coord, Grid, Size};
-use grid_search_cardinal::{
-    best::{BestSearch, Context as BestSearchContext, Depth},
-    distance_map::{
-        Distance, DistanceMap, PopulateContext as DistanceMapPopulateContext,
-        SearchContext as DistanceMapSearchContext,
-    },
-    point_to_point::{expand, Context as PointToPointSearchContext, NoPath},
-    CanEnter, Path, Step,
+use crate::{
+    visibility::Visibility,
+    world::{Disposition, NpcAction, World},
+    Entity,
 };
-use line_2d::LineSegment;
+use gridbugs::{
+    grid_2d::{Coord, Grid, Size},
+    grid_search_cardinal::{
+        best::{BestSearch, Context as BestSearchContext, Depth},
+        distance_map::{
+            Distance, DistanceMap, PopulateContext as DistanceMapPopulateContext,
+            SearchContext as DistanceMapSearchContext,
+        },
+        point_to_point::{expand, Context as PointToPointSearchContext, NoPath},
+        CanEnter, Path, Step,
+    },
+    line_2d::LineSegment,
+    shadowcast::{vision_distance, Context as ShadowcastContext, VisionDistance},
+};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use shadowcast::{vision_distance, Context as ShadowcastContext, VisionDistance};
 
 const FLEE_DISTANCE: Distance = 5;
 
@@ -184,7 +188,7 @@ impl<'a, R: Rng> BestSearch for Wander<'a, R> {
                             self.world,
                             vision_distance::Circle::new_squared(40),
                         );
-                        if can_see_character && self.rng.gen_range(0..4) > 0 {
+                        if can_see_character && self.rng.gen_range(0u8..4) > 0 {
                             return false;
                         }
                     }

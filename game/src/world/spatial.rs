@@ -1,3 +1,4 @@
+use gridbugs::spatial_table;
 spatial_table::declare_layers_module! {
     layers {
         floor: Floor,

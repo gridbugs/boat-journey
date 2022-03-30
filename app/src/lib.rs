@@ -1,4 +1,4 @@
-use chargrid::{control_flow::*, core::*};
+use gridbugs::chargrid::{control_flow::*, core::*};
 use orbital_decay_game::Config;
 
 mod audio;

@@ -1,4 +1,4 @@
-use chargrid::{prelude::*, text::StyledString};
+use gridbugs::chargrid::{prelude::*, text::StyledString};
 use orbital_decay_game::{CellVisibility, Game, Tile};
 
 #[derive(Clone, Copy, Debug)]

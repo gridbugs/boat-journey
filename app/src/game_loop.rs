@@ -7,12 +7,14 @@ use crate::{
     menu_background::MenuBackground,
     text, ui,
 };
-use chargrid::{
-    border::BorderStyle, control_flow::*, input::*, menu, menu::Menu, pad_by::Padding, prelude::*,
-    text::StyledString,
+use gridbugs::{
+    chargrid::{
+        border::BorderStyle, control_flow::*, input::*, menu, menu::Menu, pad_by::Padding,
+        prelude::*, text::StyledString,
+    },
+    direction::Direction,
+    storage::{format, Storage},
 };
-use direction::Direction;
-use general_storage_static::{format, StaticStorage};
 use orbital_decay_game::{
     player,
     witness::{self, GameOver, GameOverType, Witness},
@@ -127,7 +129,7 @@ impl RngSeedSource {
 }
 
 pub struct AppStorage {
-    pub handle: StaticStorage,
+    pub handle: Storage,
     pub save_game_key: String,
     pub config_key: String,
     pub controls_key: String,
@@ -145,7 +147,7 @@ impl AppStorage {
             Self::SAVE_GAME_STORAGE_FORMAT,
         );
         if let Err(e) = result {
-            use general_storage_static::{StoreError, StoreRawError};
+            use gridbugs::storage::{StoreError, StoreRawError};
             match e {
                 StoreError::FormatError(e) => log::error!("Failed to format save file: {}", e),
                 StoreError::Raw(e) => match e {
@@ -164,7 +166,7 @@ impl AppStorage {
         );
         match result {
             Err(e) => {
-                use general_storage_static::{LoadError, LoadRawError};
+                use gridbugs::storage::{LoadError, LoadRawError};
                 match e {
                     LoadError::FormatError(e) => log::error!("Failed to parse save file: {}", e),
                     LoadError::Raw(e) => match e {
@@ -183,7 +185,7 @@ impl AppStorage {
     fn clear_game(&mut self) {
         if self.handle.exists(&self.save_game_key) {
             if let Err(e) = self.handle.remove(&self.save_game_key) {
-                use general_storage_static::RemoveError;
+                use gridbugs::storage::RemoveError;
                 match e {
                     RemoveError::IoError(e) => {
                         log::error!("Error while removing data: {}", e)
@@ -199,7 +201,7 @@ impl AppStorage {
             .handle
             .store(&self.config_key, &config, Self::CONFIG_STORAGE_FORMAT);
         if let Err(e) = result {
-            use general_storage_static::{StoreError, StoreRawError};
+            use gridbugs::storage::{StoreError, StoreRawError};
             match e {
                 StoreError::FormatError(e) => log::error!("Failed to format config: {}", e),
                 StoreError::Raw(e) => match e {
@@ -217,7 +219,7 @@ impl AppStorage {
             .load::<_, Config, _>(&self.config_key, Self::CONFIG_STORAGE_FORMAT);
         match result {
             Err(e) => {
-                use general_storage_static::{LoadError, LoadRawError};
+                use gridbugs::storage::{LoadError, LoadRawError};
                 match e {
                     LoadError::FormatError(e) => log::error!("Failed to parse config file: {}", e),
                     LoadError::Raw(e) => match e {
@@ -238,7 +240,7 @@ impl AppStorage {
             self.handle
                 .store(&self.controls_key, &controls, Self::CONTROLS_STORAGE_FORMAT);
         if let Err(e) = result {
-            use general_storage_static::{StoreError, StoreRawError};
+            use gridbugs::storage::{StoreError, StoreRawError};
             match e {
                 StoreError::FormatError(e) => log::error!("Failed to format controls: {}", e),
                 StoreError::Raw(e) => match e {
@@ -256,7 +258,7 @@ impl AppStorage {
             .load::<_, Controls, _>(&self.controls_key, Self::CONTROLS_STORAGE_FORMAT);
         match result {
             Err(e) => {
-                use general_storage_static::{LoadError, LoadRawError};
+                use gridbugs::storage::{LoadError, LoadRawError};
                 match e {
                     LoadError::FormatError(e) => {
                         log::error!("Failed to parse controls file: {}", e)
@@ -692,7 +694,7 @@ impl Tint for TintAdrift {
     fn tint(&self, rgba32: Rgba32) -> Rgba32 {
         let mean = rgba32
             .to_rgb24()
-            .weighted_mean_u16(rgb_int::WeightsU16::new(1, 1, 1));
+            .weighted_mean_u16(gridbugs::rgb_int::WeightsU16::new(1, 1, 1));
         Rgba32::new_rgb(0, 0, mean).saturating_scalar_mul_div(3, 2)
     }
 }
@@ -702,7 +704,7 @@ impl Tint for TintDead {
     fn tint(&self, rgba32: Rgba32) -> Rgba32 {
         let mean = rgba32
             .to_rgb24()
-            .weighted_mean_u16(rgb_int::WeightsU16::new(1, 1, 1));
+            .weighted_mean_u16(gridbugs::rgb_int::WeightsU16::new(1, 1, 1));
         Rgba32::new_rgb(mean, 0, 0).saturating_scalar_mul_div(3, 2)
     }
 }
@@ -759,7 +761,7 @@ fn menu_style<T: 'static>(menu: AppCF<T>) -> AppCF<T> {
         .centre()
         .overlay_tint(
             render_state(|state: &State, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
-            chargrid::core::TintDim(63),
+            gridbugs::chargrid::core::TintDim(63),
             10,
         )
 }
@@ -1076,7 +1078,7 @@ enum MainMenuEntry {
 fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
     let decoration = {
         let style = Style::default().with_foreground(colours::WALL_FRONT);
-        chargrid::many![
+        gridbugs::chargrid::many![
             styled_string("Orbital Decay".to_string(), style.with_bold(true))
                 .add_offset(Coord { x: 14, y: 24 }),
             styled_string(

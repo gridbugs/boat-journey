@@ -1,5 +1,5 @@
 use crate::colours;
-use chargrid::{
+use gridbugs::chargrid::{
     prelude::*,
     text::{StyledString, Text},
 };

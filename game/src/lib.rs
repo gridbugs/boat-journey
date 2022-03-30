@@ -1,9 +1,12 @@
-pub use direction::CardinalDirection;
-pub use grid_2d::{Coord, Grid, Size};
+pub use gridbugs::{
+    direction::CardinalDirection,
+    entity_table::ComponentTable,
+    grid_2d::{Coord, Grid, Size},
+    shadowcast::Context as ShadowcastContext,
+};
 use rand::{seq::SliceRandom, Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
-use shadowcast::Context as ShadowcastContext;
 use std::time::Duration;
 
 mod behaviour;
@@ -13,8 +16,7 @@ pub mod witness;
 mod world;
 
 use behaviour::{Agent, BehaviourContext};
-use entity_table::ComponentTable;
-pub use entity_table::Entity;
+pub use gridbugs::entity_table::Entity;
 pub use terrain::FINAL_LEVEL;
 use terrain::{SpaceStationSpec, Terrain, TerrainState};
 pub use visibility::{CellVisibility, EntityTile, Omniscient, VisibilityCell, VisibilityGrid};

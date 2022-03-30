@@ -5,14 +5,16 @@ use crate::{
     world::{Layer, Location, MeleeWeapon, RangedWeapon},
     Tile, World,
 };
-use direction::Directions;
-use entity_table::{ComponentTable, Entity};
-use grid_2d::{Coord, Size};
+use gridbugs::{
+    coord_2d::{Coord, Size},
+    direction::{Axis, Directions},
+    entity_table::{ComponentTable, Entity},
+    rgb_int::Rgb24,
+    shadowcast::vision_distance::Circle,
+};
 use rand::{seq::SliceRandom, Rng};
 use rational::Rational;
-use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
-use shadowcast::vision_distance::Circle;
 use std::collections::HashSet;
 
 const AREA_SIZE: Size = Size::new_u16(27, 20);
@@ -87,7 +89,7 @@ pub fn from_str(s: &str, player_data: EntityData) -> Terrain {
                 }
                 '%' => {
                     world.spawn_floor(coord);
-                    world.spawn_window(coord, direction::Axis::X);
+                    world.spawn_window(coord, Axis::X);
                 }
                 '>' => {
                     world.spawn_stairs(coord);

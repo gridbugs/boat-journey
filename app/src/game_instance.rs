@@ -1,5 +1,5 @@
 use crate::{game, stars::Stars, ui};
-use chargrid::{prelude::*, text::StyledString};
+use gridbugs::chargrid::{prelude::*, text::StyledString};
 use orbital_decay_game::{
     witness::{self, Game, RunningGame},
     Config, Music,

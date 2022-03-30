@@ -1,14 +1,13 @@
-use crate::world::{realtime, ExternalEvent, World};
-use crate::Message;
-use direction::Direction;
-use entity_table::Entity;
-use grid_2d::Coord;
-use line_2d::LineSegment;
+use crate::{
+    world::{realtime, ExternalEvent, World},
+    Entity, Message,
+};
+use gridbugs::{coord_2d::Coord, direction::Direction, line_2d::LineSegment};
 use rand::Rng;
 use std::time::Duration;
 
 pub mod spec {
-    pub use grid_2d::Coord;
+    pub use gridbugs::coord_2d::Coord;
     use serde::{Deserialize, Serialize};
     pub use std::time::Duration;
 

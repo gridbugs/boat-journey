@@ -4,10 +4,10 @@ pub use crate::world::{
     player::{self, Player},
     spatial::{Layer, Location},
 };
-use direction::CardinalDirection;
-use entity_table::declare_entity_module;
-use grid_2d::coord_2d::Axis;
-use rgb_int::Rgb24;
+use gridbugs::{
+    coord_2d::Axis, direction::CardinalDirection, entity_table::declare_entity_module,
+    rgb_int::Rgb24,
+};
 use serde::{Deserialize, Serialize};
 
 declare_entity_module! {

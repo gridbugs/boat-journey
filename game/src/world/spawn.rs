@@ -10,15 +10,16 @@ use crate::{
         player::{self, WeaponAbility},
         realtime, World,
     },
+    Entity,
 };
-use direction::CardinalDirections;
-use entity_table::Entity;
-use grid_2d::coord_2d::Axis;
-use grid_2d::Coord;
+use gridbugs::{
+    coord_2d::{Axis, Coord},
+    direction::CardinalDirections,
+    rgb_int::Rgb24,
+    shadowcast::vision_distance::Circle,
+};
 use rand::Rng;
 use rational::Rational;
-use rgb_int::Rgb24;
-use shadowcast::vision_distance::Circle;
 use std::time::Duration;
 
 pub fn make_player() -> EntityData {

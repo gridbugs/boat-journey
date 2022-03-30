@@ -8,9 +8,11 @@ use crate::{
     },
     Message, SoundEffect,
 };
-use direction::{CardinalDirection, Direction};
-use entity_table::{ComponentTable, Entity};
-use grid_2d::Coord;
+use gridbugs::{
+    coord_2d::Coord,
+    direction::{CardinalDirection, Direction},
+    entity_table::{ComponentTable, Entity},
+};
 use rand::Rng;
 use std::time::Duration;
 

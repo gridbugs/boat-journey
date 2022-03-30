@@ -2,7 +2,7 @@ use crate::{
     world::{realtime::Context, World},
     ExternalEvent, Message,
 };
-use entity_table::Entity;
+use gridbugs::{entity_table::Entity, entity_table_realtime};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;

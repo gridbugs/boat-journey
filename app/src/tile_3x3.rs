@@ -1,6 +1,8 @@
 use crate::colours;
-use chargrid::core::prelude::*;
-use grid_2d::coord_2d::{Axis, Coord, Size};
+use gridbugs::{
+    chargrid::core::prelude::*,
+    coord_2d::{Axis, Coord, Size},
+};
 use orbital_decay_game::{EntityTile, Game, Tile, ToRenderEntity, VisibilityCell};
 
 struct StrStyle(Style);

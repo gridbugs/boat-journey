@@ -1,8 +1,10 @@
 use crate::{visibility::Light, ExternalEvent, Message};
-use entity_table::{Entity, EntityAllocator};
-use grid_2d::{Coord, Size};
+use gridbugs::{
+    coord_2d::{Coord, Size},
+    entity_table::{Entity, EntityAllocator},
+    rgb_int::Rgb24,
+};
 use rand_isaac::Isaac64Rng;
-use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 
 mod air;

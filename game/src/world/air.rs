@@ -1,7 +1,9 @@
 use crate::world::{Components, SpatialTable};
 use crate::Entity;
-use direction::{CardinalDirection, CardinalDirections};
-use grid_2d::{Coord, Grid, Size};
+use gridbugs::{
+    direction::{CardinalDirection, CardinalDirections},
+    grid_2d::{Coord, Grid, Size},
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashSet, VecDeque};
 

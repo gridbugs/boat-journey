@@ -1,5 +1,5 @@
 use crate::{world::World, ExternalEvent, Message};
-use entity_table_realtime::ContextContainsRealtimeComponents;
+use gridbugs::entity_table_realtime::ContextContainsRealtimeComponents;
 use rand_isaac::Isaac64Rng;
 
 pub mod animation;

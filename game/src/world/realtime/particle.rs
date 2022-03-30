@@ -9,21 +9,21 @@ use crate::{
         },
     },
 };
-use entity_table_realtime::{
+use gridbugs::entity_table_realtime::{
     Entity, RealtimeComponent, RealtimeComponentApplyEvent, ScheduledRealtimeComponent,
 };
+pub use gridbugs::rgb_int::Rgb24;
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
-pub use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use vector::Radial;
 
 pub mod spec {
     pub use crate::{visibility::Light, world::Tile};
+    pub use gridbugs::rgb_int::Rgb24;
     pub use rand_range::{UniformInclusiveRange, UniformLeftInclusiveRange};
     pub use rational::Rational;
-    pub use rgb_int::Rgb24;
     use serde::{Deserialize, Serialize};
     pub use std::time::Duration;
     pub use vector::Radians;

@@ -1,4 +1,4 @@
-use chargrid_wgpu::*;
+use gridbugs::chargrid_wgpu::*;
 use orbital_decay_app::{app, AppArgs};
 use orbital_decay_native::{meap, NativeCommon};
 

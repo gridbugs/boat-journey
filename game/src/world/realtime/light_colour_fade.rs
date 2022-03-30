@@ -2,8 +2,10 @@ use crate::world::realtime::{
     fade::{FadeProgress, FadeState},
     Context,
 };
-use entity_table_realtime::{Entity, RealtimeComponent, RealtimeComponentApplyEvent};
-use rgb_int::Rgb24;
+use gridbugs::{
+    entity_table_realtime::{Entity, RealtimeComponent, RealtimeComponentApplyEvent},
+    rgb_int::Rgb24,
+};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

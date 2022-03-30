@@ -1,6 +1,8 @@
-use chargrid_web::{Context, Size};
-use general_audio_static::{backend::WebAudioPlayer, StaticAudioPlayer};
-use general_storage_static::{backend::LocalStorage, StaticStorage};
+use gridbugs::{
+    audio::{AudioPlayer, WebAudioPlayer},
+    chargrid_web::{Context, Size},
+    storage::{LocalStorage, Storage},
+};
 use orbital_decay_app::{app, AppArgs, AppStorage, InitialRngSeed};
 use wasm_bindgen::prelude::*;
 
@@ -12,10 +14,8 @@ const CONTROLS_KEY: &str = "controls";
 pub fn run() -> Result<(), JsValue> {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
     console_error_panic_hook::set_once();
-    let audio_player = Some(StaticAudioPlayer::new(WebAudioPlayer::new_with_mime(
-        "video/ogg",
-    )));
-    let storage = StaticStorage::new(LocalStorage::new());
+    let audio_player = Some(AudioPlayer::new(WebAudioPlayer::new_with_mime("video/ogg")));
+    let storage = Storage::new(LocalStorage::new());
     let context = Context::new(Size::new(80, 60), "content");
     let args = AppArgs {
         storage: AppStorage {

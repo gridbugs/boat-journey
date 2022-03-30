@@ -1,12 +1,14 @@
 use crate::world::realtime::Context;
-use direction::Direction;
-use entity_table_realtime::{Entity, RealtimeComponent, RealtimeComponentApplyEvent};
-use line_2d::{InfiniteStepIter, StepIter};
+use gridbugs::{
+    direction::Direction,
+    entity_table_realtime::{Entity, RealtimeComponent, RealtimeComponentApplyEvent},
+    line_2d::{InfiniteStepIter, StepIter},
+};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 pub mod spec {
-    pub use grid_2d::Coord;
+    pub use gridbugs::coord_2d::Coord;
     pub use std::time::Duration;
 
     pub enum Repeat {

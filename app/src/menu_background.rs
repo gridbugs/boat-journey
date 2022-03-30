@@ -1,5 +1,5 @@
 use crate::{game, stars::Stars};
-use chargrid::prelude::*;
+use gridbugs::chargrid::prelude::*;
 use orbital_decay_game::{Config, Game, Omniscient};
 use rand::Rng;
 use std::time::Duration;

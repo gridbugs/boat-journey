@@ -1,5 +1,5 @@
 use crate::{player, ActionError, Config, ExternalEvent, GameControlFlow, Input};
-use direction::CardinalDirection;
+use gridbugs::direction::CardinalDirection;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;

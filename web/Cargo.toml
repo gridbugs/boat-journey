@@ -8,10 +8,12 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+gridbugs = { version = "0.2", features = [
+    "chargrid_web_gamepad",
+    "storage_backend_web",
+    "audio_backend_web",
+] }
 orbital_decay_app = { path = "../app", features = ["web", "print_log"]}
-chargrid_web = "0.3"
-general_storage_static = { version = "0.2", features = ["web"] }
-general_audio_static = { version = "0.3", features = ["web"] }
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
 wasm-logger = "0.2"

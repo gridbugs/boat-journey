@@ -1,5 +1,5 @@
 use crate::tile_3x3;
-use chargrid::{
+use gridbugs::chargrid::{
     core::rgb_int::{rgb24, Rgb24},
     prelude::*,
 };

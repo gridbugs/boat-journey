@@ -1,10 +1,6 @@
-use general_audio_static::{
-    backend::{Error as NativeAudioError, NativeAudioPlayer},
-    StaticAudioPlayer,
-};
-use general_storage_static::{
-    backend::{FileStorage, IfDirectoryMissing},
-    StaticStorage,
+use gridbugs::{
+    audio::{AudioPlayer, NativeAudioError, NativeAudioPlayer},
+    storage::{FileStorage, IfDirectoryMissing, Storage},
 };
 pub use meap;
 use orbital_decay_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
@@ -42,7 +38,7 @@ impl NativeCommon {
                 mute = flag('m').name("mute").desc("mute audio");
             } in {{
                 let initial_rng_seed = rng_seed.map(InitialRngSeed::U64).unwrap_or(InitialRngSeed::Random);
-                let mut file_storage = StaticStorage::new(
+                let mut file_storage = Storage::new(
                     FileStorage::next_to_exe(storage_dir, IfDirectoryMissing::Create)
                     .expect("failed to open directory"),
                 );
@@ -68,7 +64,7 @@ impl NativeCommon {
                     None
                 } else {
                     match NativeAudioPlayer::try_new_default_device() {
-                        Ok(audio_player) => Some(StaticAudioPlayer::new(audio_player)),
+                        Ok(audio_player) => Some(AudioPlayer::new(audio_player)),
                         Err(NativeAudioError::FailedToCreateOutputStream) => {
                             log::warn!("no output audio device - continuing without audio");
                             None
