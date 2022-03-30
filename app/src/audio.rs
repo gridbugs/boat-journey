@@ -1,13 +1,10 @@
-use general_audio_static::{
-    AudioHandle, AudioPlayer, StaticAudioPlayer, StaticHandle, StaticSound,
-};
+use general_audio_static::{StaticAudioPlayer, StaticHandle, StaticSound};
 
 use maplit::hashmap;
 use orbital_decay_game::SoundEffect;
 use std::collections::HashMap;
 
 pub type AppAudioPlayer = Option<StaticAudioPlayer>;
-pub type AppSound = Option<StaticSound>;
 pub type AppHandle = Option<StaticHandle>;
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
@@ -23,13 +20,14 @@ pub enum Audio {
 }
 
 pub struct AudioTable {
-    map: HashMap<Audio, AppSound>,
+    map: Option<HashMap<Audio, StaticSound>>,
 }
 
 impl AudioTable {
     pub fn new(audio_player: &AppAudioPlayer) -> Self {
         use audio_data::*;
-        let map = hashmap![
+        let map = audio_player.as_ref().map(|audio_player| {
+        hashmap![
             Audio::Gameplay0 => audio_player.load_sound(GAMEPLAY0),
             Audio::Gameplay1 => audio_player.load_sound(GAMEPLAY1),
             Audio::Gameplay2=> audio_player.load_sound(GAMEPLAY2),
@@ -48,18 +46,19 @@ impl AudioTable {
             Audio::SoundEffect(SoundEffect::DoorOpen) => audio_player.load_sound(DOOR_OPEN),
             Audio::SoundEffect(SoundEffect::Heal) => audio_player.load_sound(HEAL),
             Audio::SoundEffect(SoundEffect::Die) => audio_player.load_sound(DIE),
-        ];
+        ]
+        });
         Self { map }
     }
-    pub fn get(&self, audio: Audio) -> &AppSound {
-        self.map.get(&audio).unwrap()
+    pub fn get(&self, audio: Audio) -> Option<&StaticSound> {
+        self.map.as_ref().map(|map| map.get(&audio).unwrap())
     }
 }
 
 pub struct AudioState {
     audio_player: AppAudioPlayer,
     audio_table: AudioTable,
-    music_handle: Option<AppHandle>,
+    music_handle: AppHandle,
     music_volume: f32,
     music_volume_multiplier: f32,
 }
@@ -78,19 +77,25 @@ impl AudioState {
 
     pub fn play_once(&self, audio: Audio, volume: f32) {
         log::info!("Playing audio {:?} at volume {:?}", audio, volume);
-        let sound = self.audio_table.get(audio);
-        let handle = self.audio_player.play(&sound);
-        handle.set_volume(volume);
-        handle.background();
+        if let Some(sound) = self.audio_table.get(audio) {
+            if let Some(audio_player) = self.audio_player.as_ref() {
+                let handle = audio_player.play(&sound);
+                handle.set_volume(volume);
+                handle.background();
+            }
+        }
     }
 
     pub fn loop_music(&mut self, audio: Audio, volume: f32) {
         log::info!("Looping audio {:?} at volume {:?}", audio, volume);
-        let sound = self.audio_table.get(audio);
-        let handle = self.audio_player.play_loop(&sound);
-        handle.set_volume(volume * self.music_volume_multiplier);
-        self.music_handle = Some(handle);
-        self.music_volume = volume;
+        if let Some(sound) = self.audio_table.get(audio) {
+            if let Some(audio_player) = self.audio_player.as_ref() {
+                let handle = audio_player.play_loop(&sound);
+                handle.set_volume(volume * self.music_volume_multiplier);
+                self.music_handle = Some(handle);
+                self.music_volume = volume;
+            }
+        }
     }
 
     pub fn set_music_volume(&mut self, volume: f32) {
