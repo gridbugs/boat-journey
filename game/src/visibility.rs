@@ -7,7 +7,6 @@ use gridbugs::{
     rgb_int::Rgb24,
     shadowcast::{vision_distance, Context as ShadowcastContext, DirectionBitmap, InputGrid},
 };
-use rational::Rational;
 use serde::{Deserialize, Serialize};
 
 const AMBIENT_COL: Rgb24 = Rgb24::new_grey(31);
@@ -19,7 +18,8 @@ pub const VISION_DISTANCE: vision_distance::Circle =
 pub struct Light {
     pub colour: Rgb24,
     pub vision_distance: vision_distance::Circle,
-    pub diminish: Rational,
+    pub diminish_numerator: u32,
+    pub diminish_denominator: u32,
 }
 
 pub struct Visibility;
@@ -235,8 +235,8 @@ impl VisibilityGrid {
                         && !(visible_directions & cell.visible_directions).is_empty()
                     {
                         let distance_squared = (light_coord - cell_coord).magnitude2();
-                        let inverse_light_intensity = (distance_squared * light.diminish.numerator)
-                            / light.diminish.denominator;
+                        let inverse_light_intensity = (distance_squared * light.diminish_numerator)
+                            / light.diminish_denominator;
                         let light_colour = light.colour.scalar_div(inverse_light_intensity.max(1));
                         cell.light_colour = cell
                             .light_colour

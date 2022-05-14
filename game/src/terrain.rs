@@ -13,7 +13,6 @@ use gridbugs::{
     shadowcast::vision_distance::Circle,
 };
 use rand::{seq::SliceRandom, Rng};
-use rational::Rational;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -491,10 +490,8 @@ fn space_station_last_level<R: Rng>(
     let fuel_light = Light {
         colour: Rgb24::new(0, 0, 255),
         vision_distance: Circle::new_squared(120),
-        diminish: Rational {
-            numerator: 1,
-            denominator: 8,
-        },
+        diminish_numerator: 1,
+        diminish_denominator: 8,
     };
     world.components.light.insert(
         world

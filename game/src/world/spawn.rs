@@ -19,7 +19,6 @@ use gridbugs::{
     shadowcast::vision_distance::Circle,
 };
 use rand::Rng;
-use rational::Rational;
 use std::time::Duration;
 
 pub fn make_player() -> EntityData {
@@ -30,10 +29,8 @@ pub fn make_player() -> EntityData {
         light: Some(Light {
             colour: Rgb24::new_grey(200),
             vision_distance: Circle::new_squared(70),
-            diminish: Rational {
-                numerator: 1,
-                denominator: 8,
-            },
+            diminish_numerator: 1,
+            diminish_denominator: 8,
         }),
         hit_points: Some(HitPoints::new_full(10)),
         oxygen: Some(Oxygen::new_full(20)),
@@ -108,10 +105,8 @@ impl World {
             Light {
                 colour,
                 vision_distance: Circle::new_squared(200),
-                diminish: Rational {
-                    numerator: 1,
-                    denominator: 10,
-                },
+                diminish_numerator: 1,
+                diminish_denominator: 10,
             },
         );
         entity
@@ -127,10 +122,8 @@ impl World {
             Light {
                 colour: Rgb24::new_grey(100),
                 vision_distance: Circle::new_squared(90),
-                diminish: Rational {
-                    numerator: 1,
-                    denominator: 20,
-                },
+                diminish_numerator: 1,
+                diminish_denominator: 20,
             },
         );
         self.components.realtime.insert(entity, ());
@@ -191,10 +184,8 @@ impl World {
                             value: Light {
                                 colour: light_colour,
                                 vision_distance: Circle::new_squared(50),
-                                diminish: Rational {
-                                    numerator: 10,
-                                    denominator: 1,
-                                },
+                                diminish_numerator: 10,
+                                diminish_denominator: 1,
                             },
                         }),
                         ..Default::default()
@@ -216,10 +207,8 @@ impl World {
                             value: Light {
                                 colour: light_colour,
                                 vision_distance: Circle::new_squared(7),
-                                diminish: Rational {
-                                    numerator: 100,
-                                    denominator: 1,
-                                },
+                                diminish_numerator: 100,
+                                diminish_denominator: 1,
                             },
                         }),
                         ..Default::default()
@@ -352,10 +341,8 @@ impl World {
             Light {
                 colour: Rgb24::new(255, 187, 63),
                 vision_distance: Circle::new_squared(420),
-                diminish: Rational {
-                    numerator: 1,
-                    denominator: 100,
-                },
+                diminish_numerator: 1,
+                diminish_denominator: 100,
             },
         );
         self.realtime_components.light_colour_fade.insert(
