@@ -28,6 +28,7 @@
             clang
             pkg-config
             openssl
+            cmake
 
             # Rust Compiler
             (rust-bin.stable.latest.default.override {
@@ -38,11 +39,12 @@
             cargo-watch
 
             # Graphics and Audio Dependencies
-            alsaLib
+            alsa-lib
             libao
             openal
             libpulseaudio
             udev
+            fontconfig
             xorg.libX11
             xorg.libXcursor
             xorg.libXrandr

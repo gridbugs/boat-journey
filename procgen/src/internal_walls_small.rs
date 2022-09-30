@@ -126,8 +126,8 @@ fn find_internal_wall_candidates<A: StaticAxis>(
         }
         let position = wall.top_left.get_static::<A::Other>() as u32;
         let range = match wall.inside {
-            Side::Low => ((position.saturating_sub(min_distance_from_wall))..=(position - 1)),
-            Side::High => ((position + 1)..=(position + min_distance_from_wall)),
+            Side::Low => (position.saturating_sub(min_distance_from_wall))..=(position - 1),
+            Side::High => (position + 1)..=(position + min_distance_from_wall),
         };
         for index in range {
             candidates.remove(&index);
