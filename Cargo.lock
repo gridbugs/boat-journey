@@ -1905,9 +1905,9 @@ dependencies = [
 
 [[package]]
 name = "gridbugs"
-version = "0.2.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7820ddb5db8f118bc5d5e82e8c2597abe9afcfa5103569d23981231aede3f886"
+checksum = "4530de66623678c1a5fd480c84ef82cc7b7f74a8aa9eef2b5e3d49a6309b7a29"
 dependencies = [
  "chargrid",
  "chargrid_ansi_terminal",
@@ -1926,6 +1926,7 @@ dependencies = [
  "rgb_int",
  "shadowcast",
  "spatial_table",
+ "visible_area_detection",
 ]
 
 [[package]]
@@ -3754,9 +3755,9 @@ dependencies = [
 
 [[package]]
 name = "spatial_table"
-version = "0.3.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca64b88bf5f14d374aad66df00f73e27262cf4ee8793acbc468302e1b52a7781"
+checksum = "f888a034a6e7f071b7e1efa233aa923d2c08bd534450f4c578c6ef795a14eb28"
 dependencies = [
  "entity_table",
  "grid_2d",
@@ -4097,6 +4098,19 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "visible_area_detection"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "456a54a68e13d269ab61e05071229db9120e6cfe2120343264634e8374226140"
+dependencies = [
+ "direction",
+ "grid_2d",
+ "rgb_int",
+ "serde",
+ "shadowcast",
+]
 
 [[package]]
 name = "waker-fn"
