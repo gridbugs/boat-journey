@@ -29,14 +29,13 @@
             pkg-config
             openssl
             cmake
-
-            # Rust Compiler
             (rust-bin.stable.latest.default.override {
               extensions = [ "rust-src" "rust-analysis" ];
               targets = [ "wasm32-unknown-unknown" ];
             })
             rust-analyzer
             cargo-watch
+            zip
 
             # Graphics and Audio Dependencies
             alsa-lib
@@ -53,9 +52,13 @@
             vulkan-tools
             libGL
             bzip2
+            zlib
+            libpng
+            expat
+            brotli
 
             # JS/Wasm Deps
-            nodejs-16_x
+            nodejs
             wasm-pack
           ];
 

@@ -1,4 +1,4 @@
-# component\_experiment
+# Orbital Decay Web
 
 ## Install
 ```
@@ -8,7 +8,7 @@ $ npm install
 
 ## Run Development Server
 ```
-$ npm run serve
+$ NODE_OPTIONS=--openssl-legacy-provider npm run serve
 ```
 
 ## Build
@@ -16,10 +16,10 @@ Artifacts will be placed in "./dist":
 
 ### Development (faster to build)
 ```
-$ npm run build
+$ NODE_OPTIONS=--openssl-legacy-provider npm run build
 ```
 
 ### Production (faster to execute)
 ```
-$ npm run build-production
+$ NODE_OPTIONS=--openssl-legacy-provider npm run build-production
 ```
