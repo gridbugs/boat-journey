@@ -5,8 +5,6 @@ echo $MODE
 echo $APP_NAME
 echo $DMG_NAME
 
-cargo build --release --manifest-path=wgpu/Cargo.toml
-
 TMP=$(mktemp -d)
 DMG_DIR=$TMP/$APP_NAME
 APP_BIN_DIR=$DMG_DIR/$APP_NAME.app/Contents/MacOS
