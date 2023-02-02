@@ -5,3 +5,5 @@
 Cargo.lock
 .direnv
 .envrc
+*.zip
+*.dmg
