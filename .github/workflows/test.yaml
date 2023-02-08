@@ -11,10 +11,10 @@ jobs:
         rust: [stable]
     steps:
     - if: matrix.os == 'ubuntu-latest'
-      name: 'install ubuntu dependencies'
+      name: 'Install dependencies (ubuntu)'
       run: |
-          sudo apt update
-          sudo apt install libudev-dev libasound2-dev
+        sudo apt update
+        sudo apt install libudev-dev libasound2-dev
     - uses: hecrj/setup-rust-action@v1
       with:
         rust-version: ${{ matrix.rust }}
