@@ -1,5 +1,8 @@
-name: ci
-on: [push]
+name: release
+on: 
+  push:
+    tags:
+    - '*'
 env:
   CARGO_TERM_COLOR: always
 jobs:
@@ -37,8 +40,6 @@ jobs:
           strip -v target/release/orbital_decay_ansi_terminal
       - name: 'Make archives'
         run: MODE=release ARCHIVE_NAME=orbital-decay-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
-      - uses: actions/upload-artifact@v3
+      - uses: ncipollo/release-action@v1
         with:
-          path: |
-            *.zip
-            *.tar.gz
+          artifacts: "*.tar.gz,*.zip"

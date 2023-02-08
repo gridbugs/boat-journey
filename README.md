@@ -2,9 +2,8 @@
 
 [![dependency status](https://deps.rs/repo/github/gridbugs/orbital-decay/status.svg)](https://deps.rs/repo/github/gridbugs/orbital-decay)
 [![test status](https://github.com/gridbugs/orbital-decay/actions/workflows/test.yml/badge.svg)](https://github.com/gridbugs/orbital-decay/actions/workflows/test.yml)
-[![ci status](https://github.com/gridbugs/orbital-decay/actions/workflows/ci.yml/badge.svg)](https://github.com/gridbugs/orbital-decay/actions/workflows/ci.yml)
 
-A  a turn-based tactical roguelike with a focus on ranged combat.
+A a turn-based tactical roguelike with a focus on ranged combat.
 
 ![screenshot](/images/screenshot1.png)
 
