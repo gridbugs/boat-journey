@@ -1,0 +1,44 @@
+name: ci
+on: [push]
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  release-unix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    steps:
+      - if: matrix.os == 'ubuntu-latest'
+        name: 'Install dependencies (ubuntu)'
+        run: |
+          sudo apt update
+          sudo apt install libudev-dev libasound2-dev
+      - if: matrix.os == 'ubuntu-latest'
+        name: 'Set system name (ubuntu)'
+        run: echo SYSTEM_NAME=linux >> $GITHUB_ENV
+      - if: matrix.os == 'macOS-latest'
+        name: 'Set system name (macOS)'
+        run: echo SYSTEM_NAME=macos >> $GITHUB_ENV
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
+      - uses: actions/checkout@v3
+      - name: 'Build graphical version'
+        run: cargo build --manifest-path=wgpu/Cargo.toml --release
+      - name: 'Build graphical version (compatibility)'
+        run: cargo build --manifest-path=ggez/Cargo.toml --release
+      - name: 'Build ansi-terminal version'
+        run: cargo build --manifest-path=ansi-terminal/Cargo.toml --release
+      - name: 'Strip binaries'
+        run: |
+          strip -v target/release/orbital_decay_wgpu
+          strip -v target/release/orbital_decay_ggez
+          strip -v target/release/orbital_decay_ansi_terminal
+      - name: 'Make archives'
+        run: MODE=release ARCHIVE_NAME=orbital-decay-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          path: |
+            *.zip
+            *.tar.gz
