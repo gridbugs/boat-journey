@@ -2,6 +2,7 @@
 
 [![Appveyor Status](https://ci.appveyor.com/api/projects/status/gitlab/gridbugs/orbital-decay?branch=main&svg=true)](https://ci.appveyor.com/project/stevebob/orbital-decay)
 [![dependency status](https://deps.rs/repo/gitlab/stevebob/orbital-decay/status.svg)](https://deps.rs/repo/gitlab/stevebob/orbital-decay)
+[![test status](https://github.com/gridbugs/orbital-decay/actions/workflows/test.yml/badge.svg)](https://github.com/gridbugs/orbital-decay/actions/workflows/test.yml)
 
 A  a turn-based tactical roguelike with a focus on ranged combat.
 
