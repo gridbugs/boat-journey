@@ -15,7 +15,17 @@ jobs:
         rust-version: stable
         targets: aarch64-apple-darwin
     - uses: actions/checkout@v3
-    - run: cargo test --target=aarch64-apple-darwin
+    - run: cargo build --target=aarch64-apple-darwin
+
+  test-web:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: stable
+        targets: wasm32-unknown-unknown
+    - uses: actions/checkout@v3
+    - run: cargo build --target=wasm32-unknown-unknown --manifest-path=web/Cargo.toml
 
   test-x86_64:
     runs-on: ${{ matrix.os }}
