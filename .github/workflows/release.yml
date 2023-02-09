@@ -5,8 +5,35 @@ on:
     - '*'
 env:
   CARGO_TERM_COLOR: always
+
 jobs:
-  release-unix:
+
+  release-macos-aarch64:
+    runs-on: macOS-latest
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
+          targets: aarch64-apple-darwin
+      - uses: actions/checkout@v3
+      - name: 'Build graphical version'
+        run: cargo build --target=aarch64-apple-darwin --manifest-path=wgpu/Cargo.toml --release
+      - name: 'Build graphical version (compatibility)'
+        run: cargo build --target=aarch64-apple-darwin --manifest-path=ggez/Cargo.toml --release
+      - name: 'Build ansi-terminal version'
+        run: cargo build --target=aarch64-apple-darwin --manifest-path=ansi-terminal/Cargo.toml --release
+      - name: 'Strip binaries'
+        run: |
+          strip -v target/aarch64-apple-darwin/release/orbital_decay_wgpu
+          strip -v target/aarch64-apple-darwin/release/orbital_decay_ggez
+          strip -v target/aarch64-apple-darwin/release/orbital_decay_ansi_terminal
+      - name: 'Make archives'
+        run: MODE=aarch64-apple-darwin/release ARCHIVE_NAME=orbital-decay-macos-aarch64-${{ github.ref_name }} scripts/make_archives_unix.sh
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*.tar.gz,*.zip"
+
+  release-unix-x86_64:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
