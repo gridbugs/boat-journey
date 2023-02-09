@@ -14,3 +14,9 @@ For example:
 ```
 WINIT_X11_SCALE_FACTOR=1 ./orbital-decay-graphical
 ```
+
+## MacOS
+
+In order to run binaries on MacOS, you may need to navigate to this directory
+in Finder and right click -> Open on the binaries, then choose Open at the
+prompt.
