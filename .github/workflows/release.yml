@@ -62,7 +62,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macOS-latest]
+        os: [ubuntu-latest, macOS-latest]
     steps:
     - if: matrix.os == 'ubuntu-latest'
       name: 'Install dependencies (ubuntu)'
