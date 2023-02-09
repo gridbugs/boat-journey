@@ -30,7 +30,7 @@ jobs:
       - name: 'Make archives'
         run: MODE=aarch64-apple-darwin/release ARCHIVE_NAME=orbital-decay-macos-aarch64-${{ github.ref_name }} scripts/make_archives_unix.sh
       - name: 'Make app and disk image'
-        run: MODE=aarch64-apple-darwin/release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-${{ github.ref_name }}-aarch64.dmg scripts/make_dmg_macos.sh
+        run: MODE=aarch64-apple-darwin/release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-aarch64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
@@ -72,7 +72,7 @@ jobs:
         run: MODE=release ARCHIVE_NAME=orbital-decay-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
       - if: matrix.os == 'macOS-latest'
         name: 'Make macos app and disk image'
-        run: MODE=release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-${{ github.ref_name }}-x86_64.dmg scripts/make_dmg_macos.sh
+        run: MODE=release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
