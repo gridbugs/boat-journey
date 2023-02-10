@@ -8,6 +8,28 @@ env:
 
 jobs:
 
+  release-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: stable
+        targets: x86_64-pc-windows-gnu
+    - uses: actions/checkout@v3
+    - run: cargo build --manifest-path=wgpu/Cargo.toml --target=x86_64-pc-windows-gnu --release
+    - run: cargo build --manifest-path=ggez/Cargo.toml --target=x86_64-pc-windows-gnu --release
+    - run: echo OUTPUT_DIR=orbital-decay-windows-x86_64-${{ github.ref_name }} >> $env:GITHUB_ENV
+    - run: mkdir x
+    - run: mkdir x\$env:OUTPUT_DIR
+    - run: copy-item extras\windows\* x\$env:OUTPUT_DIR
+    - run: copy-item target\x86_64-pc-windows-gnu\release\orbital_decay_wgpu.exe x\$env:OUTPUT_DIR\orbital-decay.exe
+    - run: copy-item target\x86_64-pc-windows-gnu\release\orbital_decay_ggez.exe x\$env:OUTPUT_DIR\orbital-decay-compatibility.exe
+    - run: Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('x', $env:OUTPUT_DIR + '.zip');
+    - uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        artifacts: "*.zip"
+
   release-web:
     runs-on: ubuntu-latest
     steps:
@@ -63,39 +85,39 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
-    steps:
-    - if: matrix.os == 'ubuntu-latest'
-      name: 'Install dependencies (ubuntu)'
-      run: |
-        sudo apt update
-        sudo apt install libudev-dev libasound2-dev
-    - if: matrix.os == 'ubuntu-latest'
-      name: 'Set system name (ubuntu)'
-      run: echo SYSTEM_NAME=linux >> $GITHUB_ENV
-    - if: matrix.os == 'macOS-latest'
-      name: 'Set system name (macOS)'
-      run: echo SYSTEM_NAME=macos >> $GITHUB_ENV
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: stable
-    - uses: actions/checkout@v3
-    - name: 'Build graphical version'
-      run: cargo build --manifest-path=wgpu/Cargo.toml --release
-    - name: 'Build graphical version (compatibility)'
-      run: cargo build --manifest-path=ggez/Cargo.toml --release
-    - name: 'Build ansi-terminal version'
-      run: cargo build --manifest-path=ansi-terminal/Cargo.toml --release
-    - name: 'Strip binaries'
-      run: |
-        strip -v target/release/orbital_decay_wgpu
-        strip -v target/release/orbital_decay_ggez
-        strip -v target/release/orbital_decay_ansi_terminal
-    - name: 'Make archives'
-      run: MODE=release ARCHIVE_NAME=orbital-decay-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
-    - if: matrix.os == 'macOS-latest'
-      name: 'Make macos app and disk image'
-      run: MODE=release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-macos-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
-    - uses: ncipollo/release-action@v1
-      with:
-        allowUpdates: true
-        artifacts: "*.tar.gz,*.zip,*.dmg"
+      steps:
+      - if: matrix.os == 'ubuntu-latest'
+        name: 'Install dependencies (ubuntu)'
+        run: |
+          sudo apt update
+          sudo apt install libudev-dev libasound2-dev
+      - if: matrix.os == 'ubuntu-latest'
+        name: 'Set system name (ubuntu)'
+        run: echo SYSTEM_NAME=linux >> $GITHUB_ENV
+      - if: matrix.os == 'macOS-latest'
+        name: 'Set system name (macOS)'
+        run: echo SYSTEM_NAME=macos >> $GITHUB_ENV
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
+      - uses: actions/checkout@v3
+      - name: 'Build graphical version'
+        run: cargo build --manifest-path=wgpu/Cargo.toml --release
+      - name: 'Build graphical version (compatibility)'
+        run: cargo build --manifest-path=ggez/Cargo.toml --release
+      - name: 'Build ansi-terminal version'
+        run: cargo build --manifest-path=ansi-terminal/Cargo.toml --release
+      - name: 'Strip binaries'
+        run: |
+          strip -v target/release/orbital_decay_wgpu
+          strip -v target/release/orbital_decay_ggez
+          strip -v target/release/orbital_decay_ansi_terminal
+      - name: 'Make archives'
+        run: MODE=release ARCHIVE_NAME=orbital-decay-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
+      - if: matrix.os == 'macOS-latest'
+        name: 'Make macos app and disk image'
+        run: MODE=release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-macos-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "*.tar.gz,*.zip,*.dmg"
