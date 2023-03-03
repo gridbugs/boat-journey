@@ -8,7 +8,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gridbugs = { version = "0.7", features = [
+gridbugs = { version = "0.9", features = [
     "chargrid_web_gamepad",
     "storage_backend_web",
     "audio_backend_web",

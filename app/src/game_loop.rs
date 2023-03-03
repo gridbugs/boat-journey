@@ -900,7 +900,7 @@ fn yes_no_menu() -> AppCF<bool> {
 
 fn yes_no(message: String) -> AppCF<bool> {
     menu_style(
-        yes_no_menu().with_title(
+        yes_no_menu().with_title_horizontal(
             cf(StyledString {
                 string: message,
                 style: Style::plain_text(),
