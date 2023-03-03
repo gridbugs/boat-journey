@@ -41,7 +41,7 @@ jobs:
       run: |
         pushd web
         npm install
-        npm run build-production
+        NODE_OPTIONS=--openssl-legacy-provider npm run build-production
         ARCHIVE_NAME=orbital-decay-web-${{ github.ref_name }}
         mv dist $ARCHIVE_NAME
         zip -r $ARCHIVE_NAME.zip $ARCHIVE_NAME
