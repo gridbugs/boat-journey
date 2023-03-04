@@ -3,7 +3,7 @@ use gridbugs::{
     direction::CardinalDirection,
 };
 use maplit::btreemap;
-use orbital_decay_game::player::RangedWeaponSlot;
+use template2023_game::player::RangedWeaponSlot;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 

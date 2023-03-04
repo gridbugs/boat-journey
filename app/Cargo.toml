@@ -1,5 +1,5 @@
 [package]
-name = "orbital_decay_app"
+name = "template2023_app"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
@@ -22,7 +22,7 @@ gridbugs = { version = "0.9", features = [
     "chargrid_serialize",
     "chargrid_gamepad",
 ] }
-orbital_decay_game = { path = "../game" }
+template2023_game = { path = "../game" }
 audio_data = { path = "../audio-data" }
 log = "0.4"
 serde = { version = "1.0", features = ["serde_derive"] }

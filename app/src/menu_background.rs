@@ -1,6 +1,6 @@
 use crate::{game, stars::Stars};
 use gridbugs::chargrid::prelude::*;
-use orbital_decay_game::{Config, Game, Omniscient};
+use template2023_game::{Config, Game, Omniscient};
 use rand::Rng;
 use std::time::Duration;
 

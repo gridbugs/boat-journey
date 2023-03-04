@@ -3,7 +3,7 @@ use gridbugs::{
     chargrid::core::prelude::*,
     coord_2d::{Axis, Coord, Size},
 };
-use orbital_decay_game::{EntityTile, Game, Tile, ToRenderEntity, VisibilityCell};
+use template2023_game::{EntityTile, Game, Tile, ToRenderEntity, VisibilityCell};
 
 struct StrStyle(Style);
 impl StrStyle {

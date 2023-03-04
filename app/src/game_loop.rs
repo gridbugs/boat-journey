@@ -15,7 +15,7 @@ use gridbugs::{
     direction::Direction,
     storage::{format, Storage},
 };
-use orbital_decay_game::{
+use template2023_game::{
     player,
     witness::{self, GameOver, GameOverType, Witness},
     ActionError, Config as GameConfig, ExternalEvent, Game, Music, MAP_SIZE,
@@ -1079,7 +1079,7 @@ fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
     let decoration = {
         let style = Style::default().with_foreground(colours::WALL_FRONT);
         gridbugs::chargrid::many![
-            styled_string("Orbital Decay".to_string(), style.with_bold(true))
+            styled_string("Template2023".to_string(), style.with_bold(true))
                 .add_offset(Coord { x: 14, y: 24 }),
             styled_string(
                 "Programming and art by Stephen Sherratt".to_string(),

@@ -3,7 +3,7 @@ use gridbugs::{
     chargrid_web::{Context, Size},
     storage::{LocalStorage, Storage},
 };
-use orbital_decay_app::{app, AppArgs, AppStorage, InitialRngSeed};
+use template2023_app::{app, AppArgs, AppStorage, InitialRngSeed};
 use wasm_bindgen::prelude::*;
 
 const SAVE_KEY: &str = "save";

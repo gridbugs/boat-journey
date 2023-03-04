@@ -3,7 +3,7 @@ use gridbugs::chargrid::{
     core::rgb_int::{rgb24, Rgb24},
     prelude::*,
 };
-use orbital_decay_game::{CellVisibility, Game, Layer, WarningLight};
+use template2023_game::{CellVisibility, Game, Layer, WarningLight};
 
 const GAME_MAX_DEPTH: i8 = 63;
 

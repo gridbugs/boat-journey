@@ -3,7 +3,7 @@ use gridbugs::chargrid::{
     prelude::*,
     text::{StyledString, Text},
 };
-use orbital_decay_game::{
+use template2023_game::{
     player::{self, Player, Weapon, WeaponAbility, WeaponName},
     CharacterInfo, Enemy, MeleeWeapon, Message, RangedWeapon,
 };

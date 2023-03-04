@@ -1,6 +1,6 @@
 use crate::{game, stars::Stars, ui};
 use gridbugs::chargrid::{prelude::*, text::StyledString};
-use orbital_decay_game::{
+use template2023_game::{
     witness::{self, Game, RunningGame},
     Config, Music,
 };
@@ -56,7 +56,7 @@ impl GameInstance {
 
     pub fn floor_text(&self) -> StyledString {
         let current_floor = self.game.inner_ref().current_level();
-        let final_floor = orbital_decay_game::FINAL_LEVEL;
+        let final_floor = template2023_game::FINAL_LEVEL;
         if current_floor == 0 {
             StyledString {
                 style: Style::new()

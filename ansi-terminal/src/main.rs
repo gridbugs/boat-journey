@@ -1,6 +1,6 @@
 use gridbugs::chargrid_ansi_terminal::{col_encode, Context};
-use orbital_decay_app::{app, AppArgs, InitialRngSeed};
-use orbital_decay_native::NativeCommon;
+use template2023_app::{app, AppArgs, InitialRngSeed};
+use template2023_native::NativeCommon;
 use rand::Rng;
 
 enum ColEncodeChoice {

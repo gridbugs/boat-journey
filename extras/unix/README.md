@@ -1,9 +1,9 @@
-# Orbital Decay
+# Template2023
 
 ## Package Contents
 
-- orbital-decay-graphical: Graphical version of the game, rendering with metal on macos and vulkan on linux
-- orbital-decay-terminal: Terminal version of the game, rendering as text in an ansi terminal
+- template2023-graphical: Graphical version of the game, rendering with metal on macos and vulkan on linux
+- template2023-terminal: Terminal version of the game, rendering as text in an ansi terminal
 
 ## HIDPI
 
@@ -12,7 +12,7 @@ The `WINIT_X11_SCALE_FACTOR` environment variable overrides the HIDPI scaling fa
 
 For example:
 ```
-WINIT_X11_SCALE_FACTOR=1 ./orbital-decay-graphical
+WINIT_X11_SCALE_FACTOR=1 ./template2023-graphical
 ```
 
 ## MacOS

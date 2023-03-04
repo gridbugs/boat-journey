@@ -1,8 +1,8 @@
-# Orbital Decay
+# Template2023
 
 ## Package Contents
 
-- OrbitalDecay.app: Graphical version of the game
+- Template2023.app: Graphical version of the game
 
 ## Notes
 

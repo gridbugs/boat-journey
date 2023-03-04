@@ -1,8 +1,8 @@
 pub const GAMEPLAY0: &[u8] = include_bytes!("./Level 1.ogg");
 pub const GAMEPLAY1: &[u8] = include_bytes!("./Level 2.ogg");
 pub const GAMEPLAY2: &[u8] = include_bytes!("./Level 3.ogg");
-pub const END_TEXT_HAPPY: &[u8] = include_bytes!("./Orbital Decay.ogg");
-pub const END_TEXT_SAD: &[u8] = include_bytes!("./Sad Orbital Decay.ogg");
+pub const END_TEXT_HAPPY: &[u8] = include_bytes!("./Template2023.ogg");
+pub const END_TEXT_SAD: &[u8] = include_bytes!("./Sad Template2023.ogg");
 pub const MENU: &[u8] = include_bytes!("./Menu.ogg");
 pub const EXPLOSION: &[u8] = include_bytes!("./Explosion.ogg");
 pub const SHOTGUN: &[u8] = include_bytes!("./Shotgun.ogg");

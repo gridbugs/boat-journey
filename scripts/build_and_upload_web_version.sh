@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 BRANCH=$1
-NAME=orbital-decay
+NAME=template2023
 
 pushd web
 

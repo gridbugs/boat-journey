@@ -1,11 +1,9 @@
-# Orbital Decay
+# Gridbugs Template 2023
 
-[![dependency status](https://deps.rs/repo/github/gridbugs/orbital-decay/status.svg)](https://deps.rs/repo/github/gridbugs/orbital-decay)
-[![test status](https://github.com/gridbugs/orbital-decay/actions/workflows/test.yml/badge.svg)](https://github.com/gridbugs/orbital-decay/actions/workflows/test.yml)
+[![dependency status](https://deps.rs/repo/github/gridbugs/gridbugs-template-2023/status.svg)](https://deps.rs/repo/github/gridbugs/gridbugs-template-2023)
+[![test status](https://github.com/gridbugs/gridbugs-template-2023/actions/workflows/test.yml/badge.svg)](https://github.com/gridbugs/gridbugs-template-2023/actions/workflows/test.yml)
 
-A a turn-based tactical roguelike with a focus on ranged combat.
-
-![screenshot](/images/screenshot1.png)
+Starting point for programs made with the gridbugs library
 
 ## HIDPI
 

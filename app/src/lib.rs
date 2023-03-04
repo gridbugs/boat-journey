@@ -1,5 +1,5 @@
 use gridbugs::chargrid::{control_flow::*, core::*};
-use orbital_decay_game::Config;
+use template2023_game::Config;
 
 mod audio;
 mod colours;

@@ -1,5 +1,5 @@
 [package]
-name = "orbital_decay_native"
+name = "template2023_native"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
@@ -11,5 +11,5 @@ gridbugs = { version = "0.9", features = [
     "audio_format_native_vorbis",
 ] }
 log = "0.4"
-orbital_decay_app = { path = "../app", features = ["native"] }
+template2023_app = { path = "../app", features = ["native"] }
 meap = "0.5"

@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
 use gridbugs::chargrid_ggez::*;
-use orbital_decay_app::{app, AppArgs};
-use orbital_decay_native::{meap, NativeCommon};
+use template2023_app::{app, AppArgs};
+use template2023_native::{meap, NativeCommon};
 
 const CELL_SIZE: f64 = 12.;
 
@@ -22,7 +22,7 @@ fn main() {
             normal: include_bytes!("./fonts/PxPlus_IBM_CGAthin-with-quadrant-blocks.ttf").to_vec(),
             bold: include_bytes!("./fonts/PxPlus_IBM_CGA-with-quadrant-blocks.ttf").to_vec(),
         },
-        title: "Orbital Decay".to_string(),
+        title: "Template2023".to_string(),
         window_dimensions_px: Dimensions {
             width: 960.,
             height: 720.,

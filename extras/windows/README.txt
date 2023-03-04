@@ -1,6 +1,6 @@
-# Orbital Decay
+# Template2023
 
 ## Package Contents
 
-- orbital-decay.exe: Graphical version of the game
-- orbital-decay-compatibility.exe: Graphical version of the game (slower but possibly more compatible)
+- template2023.exe: Graphical version of the game
+- template2023-compatibility.exe: Graphical version of the game (slower but possibly more compatible)

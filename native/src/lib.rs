@@ -3,7 +3,7 @@ use gridbugs::{
     storage::{FileStorage, IfDirectoryMissing, Storage},
 };
 pub use meap;
-use orbital_decay_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
+use template2023_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
 
 const DEFAULT_SAVE_FILE: &str = "save";
 const DEFAULT_NEXT_TO_EXE_STORAGE_DIR: &str = "save";

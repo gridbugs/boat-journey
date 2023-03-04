@@ -1,7 +1,7 @@
 use gridbugs::audio::{Audio as Sound, AudioHandle, AudioPlayer};
 
 use maplit::hashmap;
-use orbital_decay_game::SoundEffect;
+use template2023_game::SoundEffect;
 use std::collections::HashMap;
 
 pub type AppAudioPlayer = Option<AudioPlayer>;

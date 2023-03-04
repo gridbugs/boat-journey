@@ -1,6 +1,6 @@
 use crate::colours;
 use gridbugs::chargrid::prelude::*;
-use orbital_decay_game::{CellVisibility, VisibilityGrid};
+use template2023_game::{CellVisibility, VisibilityGrid};
 use rand::{Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
 use serde::{Deserialize, Serialize};

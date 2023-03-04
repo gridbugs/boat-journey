@@ -1,5 +1,5 @@
 [package]
-name = "orbital_decay_web"
+name = "template2023_web"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
@@ -13,7 +13,7 @@ gridbugs = { version = "0.9", features = [
     "storage_backend_web",
     "audio_backend_web",
 ] }
-orbital_decay_app = { path = "../app", features = ["web", "print_log"]}
+template2023_app = { path = "../app", features = ["web", "print_log"]}
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
 wasm-logger = "0.2"

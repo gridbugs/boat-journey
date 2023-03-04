@@ -1,5 +1,5 @@
 [package]
-name = "orbital_decay_wgpu"
+name = "template2023_wgpu"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
@@ -7,5 +7,5 @@ edition = "2021"
 [dependencies]
 gridbugs = { version = "0.9", features = [ "chargrid_wgpu_gamepad" ] }
 env_logger = "0.10"
-orbital_decay_app = { path = "../app", features = ["print_stdout"] }
-orbital_decay_native = { path = "../native" }
+template2023_app = { path = "../app", features = ["print_stdout"] }
+template2023_native = { path = "../native" }
