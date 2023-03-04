@@ -22,8 +22,8 @@ jobs:
     - run: mkdir x
     - run: mkdir x\$env:OUTPUT_DIR
     - run: copy-item extras\windows\* x\$env:OUTPUT_DIR
-    - run: copy-item target\x86_64-pc-windows-gnu\release\orbital_decay_wgpu.exe x\$env:OUTPUT_DIR\template2023.exe
-    - run: copy-item target\x86_64-pc-windows-gnu\release\orbital_decay_ggez.exe x\$env:OUTPUT_DIR\template2023-compatibility.exe
+    - run: copy-item target\x86_64-pc-windows-gnu\release\template2023_wgpu.exe x\$env:OUTPUT_DIR\template2023.exe
+    - run: copy-item target\x86_64-pc-windows-gnu\release\template2023_ggez.exe x\$env:OUTPUT_DIR\template2023-compatibility.exe
     - run: Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('x', $env:OUTPUT_DIR + '.zip');
     - uses: ncipollo/release-action@v1
       with:
@@ -68,13 +68,13 @@ jobs:
       run: cargo build --target=aarch64-apple-darwin --manifest-path=ansi-terminal/Cargo.toml --release
     - name: 'Strip binaries'
       run: |
-        strip -v target/aarch64-apple-darwin/release/orbital_decay_wgpu
-        strip -v target/aarch64-apple-darwin/release/orbital_decay_ggez
-        strip -v target/aarch64-apple-darwin/release/orbital_decay_ansi_terminal
+        strip -v target/aarch64-apple-darwin/release/template2023_wgpu
+        strip -v target/aarch64-apple-darwin/release/template2023_ggez
+        strip -v target/aarch64-apple-darwin/release/template2023_ansi_terminal
     - name: 'Make archives'
       run: MODE=aarch64-apple-darwin/release ARCHIVE_NAME=template2023-macos-aarch64-${{ github.ref_name }} scripts/make_archives_unix.sh
     - name: 'Make app and disk image'
-      run: MODE=aarch64-apple-darwin/release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-macos-aarch64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
+      run: MODE=aarch64-apple-darwin/release APP_NAME=Template2023 DMG_NAME=Template2023-macos-aarch64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
     - uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
@@ -109,14 +109,14 @@ jobs:
       run: cargo build --manifest-path=ansi-terminal/Cargo.toml --release
     - name: 'Strip binaries'
       run: |
-        strip -v target/release/orbital_decay_wgpu
-        strip -v target/release/orbital_decay_ggez
-        strip -v target/release/orbital_decay_ansi_terminal
+        strip -v target/release/template2023_wgpu
+        strip -v target/release/template2023_ggez
+        strip -v target/release/template2023_ansi_terminal
     - name: 'Make archives'
       run: MODE=release ARCHIVE_NAME=template2023-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
     - if: matrix.os == 'macOS-latest'
       name: 'Make macos app and disk image'
-      run: MODE=release APP_NAME=OrbitalDecay DMG_NAME=OrbitalDecay-macos-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
+      run: MODE=release APP_NAME=Template2023 DMG_NAME=Template2023-macos-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
     - uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
