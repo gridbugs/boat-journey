@@ -36,13 +36,11 @@ struct Private;
 
 #[derive(Debug)]
 pub struct Running(Private);
-#[derive(Debug)]
-pub struct GameOver(Private);
 
 #[derive(Debug)]
 pub enum Witness {
     Running(Running),
-    GameOver(GameOver),
+    GameOver,
     Win,
 }
 
@@ -94,16 +92,6 @@ impl Running {
     }
 }
 
-impl GameOver {
-    pub fn tick(self, game: &mut Game, since_last_tick: Duration, config: &Config) -> GameOver {
-        let Self(private) = self;
-        match game.witness_handle_tick(since_last_tick, config, private) {
-            Witness::GameOver(game_over) => game_over,
-            other => panic!("unexpected witness: {:?}", other),
-        }
-    }
-}
-
 impl Game {
     fn witness_handle_input(
         &mut self,
@@ -114,7 +102,7 @@ impl Game {
         match self.inner_game.handle_input(input, config) {
             Err(e) => (Witness::running(private), Err(e)),
             Ok(None) => (Witness::running(private), Ok(())),
-            Ok(Some(GameControlFlow::GameOver)) => (Witness::GameOver(GameOver(private)), Ok(())),
+            Ok(Some(GameControlFlow::GameOver)) => (Witness::GameOver, Ok(())),
             Ok(Some(other)) => panic!("unhandled control flow {:?}", other),
         }
     }
@@ -127,7 +115,7 @@ impl Game {
     ) -> Witness {
         match self.inner_game.handle_tick(since_last_tick, config) {
             None => Witness::running(private),
-            Some(GameControlFlow::GameOver) => Witness::GameOver(GameOver(private)),
+            Some(GameControlFlow::GameOver) => Witness::GameOver,
             Some(GameControlFlow::Win) => Witness::Win,
         }
     }

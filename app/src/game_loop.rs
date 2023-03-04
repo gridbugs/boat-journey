@@ -1,24 +1,18 @@
-use crate::audio::{AppAudioPlayer, Audio, AudioState};
 use crate::{
     controls::{AppInput, Controls},
     game_instance::{GameInstance, GameInstanceStorable},
     text,
 };
 use gridbugs::{
-    chargrid::{
-        border::BorderStyle, control_flow::*, input::*, menu, menu::Menu, pad_by::Padding,
-        prelude::*, text::StyledString,
-    },
-    direction::Direction,
+    chargrid::{border::BorderStyle, control_flow::*, menu, prelude::*},
     storage::{format, Storage},
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
-use rand_xorshift::XorShiftRng;
 use serde::{Deserialize, Serialize};
 use template2023_game::{
-    witness::{self, GameOver, Witness},
-    ActionError, Config as GameConfig, Game, MAP_SIZE,
+    witness::{self, Witness},
+    Config as GameConfig,
 };
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -44,7 +38,6 @@ impl Default for Config {
 pub type AppCF<T> = CF<Option<T>, GameLoopData>;
 pub type State = GameLoopData;
 
-const CURSOR_COLOUR: Rgba32 = Rgba32::new(255, 255, 0, 64);
 const MENU_BACKGROUND: Rgba32 = Rgba32::new_rgb(0, 0, 0);
 const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
     use menu::identifier::fade_spec::*;
@@ -279,7 +272,6 @@ pub struct GameLoopData {
     game_config: GameConfig,
     storage: AppStorage,
     rng_seed_source: RngSeedSource,
-    audio_state: AudioState,
     config: Config,
 }
 
@@ -288,7 +280,6 @@ impl GameLoopData {
         game_config: GameConfig,
         mut storage: AppStorage,
         initial_rng_seed: InitialRngSeed,
-        audio_player: AppAudioPlayer,
         force_new_game: bool,
     ) -> (Self, GameLoopState) {
         let mut rng_seed_source = RngSeedSource::new(initial_rng_seed);
@@ -319,7 +310,6 @@ impl GameLoopData {
             storage.save_controls(&controls);
             controls
         };
-        let mut audio_state = AudioState::new(audio_player);
         let config = storage.load_config().unwrap_or_default();
         (
             Self {
@@ -328,7 +318,6 @@ impl GameLoopData {
                 game_config,
                 storage,
                 rng_seed_source,
-                audio_state,
                 config,
             },
             state,
@@ -357,7 +346,7 @@ impl GameLoopData {
         self.storage.save_config(&self.config);
     }
 
-    fn render(&self, cursor_colour: Rgba32, ctx: Ctx, fb: &mut FrameBuffer) {
+    fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
         instance.render(ctx, fb);
     }
@@ -367,7 +356,7 @@ impl GameLoopData {
         let witness = match event {
             Event::Input(input) => {
                 if let Some(app_input) = self.controls.get(input) {
-                    let (witness, action_result) = match app_input {
+                    let (witness, _action_result) = match app_input {
                         AppInput::Direction(direction) => {
                             running.walk(&mut instance.game, direction, &self.game_config)
                         }
@@ -384,18 +373,6 @@ impl GameLoopData {
             _ => Witness::Running(running),
         };
         GameLoopState::Playing(witness)
-    }
-
-    fn game(&self) -> &witness::Game {
-        &self.instance.as_ref().unwrap().game
-    }
-
-    fn game_mut_config(&mut self) -> (&mut witness::Game, &GameConfig) {
-        (&mut self.instance.as_mut().unwrap().game, &self.game_config)
-    }
-
-    fn game_inner(&self) -> &Game {
-        self.game().inner_ref()
     }
 }
 
@@ -418,7 +395,7 @@ impl Component for GameInstanceComponent {
     type State = GameLoopData;
 
     fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
-        state.render(CURSOR_COLOUR, ctx, fb);
+        state.render(ctx, fb);
     }
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
@@ -440,7 +417,7 @@ fn menu_style<T: 'static>(menu: AppCF<T>) -> AppCF<T> {
         .fill(MENU_BACKGROUND)
         .centre()
         .overlay_tint(
-            render_state(|state: &State, ctx, fb| state.render(CURSOR_COLOUR, ctx, fb)),
+            render_state(|state: &State, ctx, fb| state.render(ctx, fb)),
             gridbugs::chargrid::core::TintDim(63),
             10,
         )
@@ -465,20 +442,18 @@ fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
 }
 
 fn main_menu() -> AppCF<MainMenuEntry> {
-    on_state_then(|state: &mut State| {
-        use menu::builder::*;
-        use MainMenuEntry::*;
-        let mut builder = menu_builder().vi_keys();
-        let mut add_item = |entry, name, ch: char| {
-            let identifier =
-                MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
-            builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
-        };
-        add_item(NewGame, "New Game", 'n');
-        add_item(Help, "Help", 'h');
-        add_item(Quit, "Quit", 'q');
-        builder.build_cf()
-    })
+    use menu::builder::*;
+    use MainMenuEntry::*;
+    let mut builder = menu_builder().vi_keys();
+    let mut add_item = |entry, name, ch: char| {
+        let identifier =
+            MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
+        builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
+    };
+    add_item(NewGame, "New Game", 'n');
+    add_item(Help, "Help", 'h');
+    add_item(Quit, "Quit", 'q');
+    builder.build_cf()
 }
 
 enum MainMenuOutput {
@@ -511,23 +486,21 @@ enum PauseMenuEntry {
 }
 
 fn pause_menu() -> AppCF<PauseMenuEntry> {
-    on_state_then(|state: &mut State| {
-        use menu::builder::*;
-        use PauseMenuEntry::*;
-        let mut builder = menu_builder().vi_keys();
-        let mut add_item = |entry, name, ch: char| {
-            let identifier =
-                MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
-            builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
-        };
-        add_item(Resume, "Resume", 'r');
-        add_item(SaveQuit, "Save and Quit", 'q');
-        add_item(Save, "Save", 's');
-        add_item(NewGame, "New Game", 'n');
-        add_item(Help, "Help", 'h');
-        add_item(Clear, "Clear", 'c');
-        builder.build_cf()
-    })
+    use menu::builder::*;
+    use PauseMenuEntry::*;
+    let mut builder = menu_builder().vi_keys();
+    let mut add_item = |entry, name, ch: char| {
+        let identifier =
+            MENU_FADE_SPEC.identifier(move |b| write!(b, "({}) {}", ch, name).unwrap());
+        builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
+    };
+    add_item(Resume, "Resume", 'r');
+    add_item(SaveQuit, "Save and Quit", 'q');
+    add_item(Save, "Save", 's');
+    add_item(NewGame, "New Game", 'n');
+    add_item(Help, "Help", 'h');
+    add_item(Clear, "Clear", 'c');
+    builder.build_cf()
 }
 
 fn pause_menu_loop(running: witness::Running) -> AppCF<PauseOutput> {
@@ -589,7 +562,7 @@ fn win() -> AppCF<()> {
     .centre()
 }
 
-fn game_over(game_over_witness: GameOver) -> AppCF<()> {
+fn game_over() -> AppCF<()> {
     on_state_then(move |state: &mut State| {
         state.clear_saved_game();
         state.save_config();
@@ -603,9 +576,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
     loop_(initial_state, |state| match state {
         Playing(witness) => match witness {
             Witness::Running(running) => game_instance_component(running).continue_(),
-            Witness::GameOver(game_over_witness) => game_over(game_over_witness)
-                .map_val(|| MainMenu)
-                .continue_(),
+            Witness::GameOver => game_over().map_val(|| MainMenu).continue_(),
             Witness::Win => win().map_val(|| MainMenu).continue_(),
         },
         Paused(running) => pause(running).map(|pause_output| match pause_output {

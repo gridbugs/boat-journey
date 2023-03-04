@@ -1,5 +1,5 @@
 use gridbugs::{
-    chargrid::input::{GamepadButton, Input, KeyboardInput},
+    chargrid::input::{Input, KeyboardInput},
     direction::CardinalDirection,
 };
 use maplit::btreemap;
@@ -35,12 +35,5 @@ impl Controls {
             Input::Keyboard(keyboard_input) => self.keys.get(&keyboard_input).cloned(),
             Input::Gamepad(_) | Input::Mouse(_) => None,
         }
-    }
-
-    pub fn get_direction(&self, input: Input) -> Option<CardinalDirection> {
-        self.get(input).and_then(|app_input| match app_input {
-            AppInput::Direction(direction) => Some(direction),
-            _ => None,
-        })
     }
 }

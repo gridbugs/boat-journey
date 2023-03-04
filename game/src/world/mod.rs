@@ -1,17 +1,14 @@
-use gridbugs::{
-    coord_2d::{Coord, Size},
-    entity_table::{Entity, EntityAllocator},
-    rgb_int::Rgb24,
-};
-use rand_isaac::Isaac64Rng;
+use gridbugs::{coord_2d::Size, entity_table::EntityAllocator};
 use serde::{Deserialize, Serialize};
 
-mod spatial;
+pub mod spatial;
 use spatial::SpatialTable;
 
 mod data;
 use data::Components;
 pub use data::Tile;
+
+pub mod spawn;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct World {

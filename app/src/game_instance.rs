@@ -1,4 +1,4 @@
-use gridbugs::chargrid::{prelude::*, text::StyledString};
+use gridbugs::chargrid::prelude::*;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use template2023_game::{
@@ -22,7 +22,7 @@ impl GameInstance {
         GameInstanceStorable { running_game }
     }
 
-    pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {}
+    pub fn render(&self, _ctx: Ctx, _fb: &mut FrameBuffer) {}
 }
 
 #[derive(Serialize, Deserialize)]

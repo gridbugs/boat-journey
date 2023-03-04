@@ -9,23 +9,8 @@ pub type AppHandle = Option<AudioHandle>;
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
 pub enum Audio {}
 
-pub struct AudioTable {
-    map: Option<HashMap<Audio, Sound>>,
-}
-
-impl AudioTable {
-    pub fn new(audio_player: &AppAudioPlayer) -> Self {
-        let map = audio_player.as_ref().map(|audio_player| hashmap![]);
-        Self { map }
-    }
-    pub fn get(&self, audio: Audio) -> Option<&Sound> {
-        self.map.as_ref().map(|map| map.get(&audio).unwrap())
-    }
-}
-
 pub struct AudioState {
     audio_player: AppAudioPlayer,
-    audio_table: AudioTable,
     music_handle: AppHandle,
     music_volume: f32,
     music_volume_multiplier: f32,
@@ -33,10 +18,8 @@ pub struct AudioState {
 
 impl AudioState {
     pub fn new(audio_player: AppAudioPlayer) -> Self {
-        let audio_table = AudioTable::new(&audio_player);
         Self {
             audio_player,
-            audio_table,
             music_handle: None,
             music_volume: 1.,
             music_volume_multiplier: 1.,

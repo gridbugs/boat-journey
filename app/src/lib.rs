@@ -1,13 +1,17 @@
-use gridbugs::chargrid::{control_flow::*, core::*};
+use gridbugs::{
+    audio::{AudioHandle, AudioPlayer},
+    chargrid::{control_flow::*, core::*},
+};
 use template2023_game::Config;
 
-mod audio;
+pub type AppAudioPlayer = Option<AudioPlayer>;
+pub type AppHandle = Option<AudioHandle>;
+
 mod controls;
 mod game_instance;
 mod game_loop;
 mod text;
 
-pub use audio::AppAudioPlayer;
 pub use game_loop::{AppStorage, InitialRngSeed};
 
 struct AppState {
@@ -17,18 +21,18 @@ struct AppState {
 pub struct AppArgs {
     pub storage: AppStorage,
     pub initial_rng_seed: InitialRngSeed,
-    pub audio_player: AppAudioPlayer,
     pub omniscient: bool,
     pub new_game: bool,
+    pub audio_player: AppAudioPlayer,
 }
 
 pub fn app(
     AppArgs {
         storage,
         initial_rng_seed,
-        audio_player,
         omniscient,
         new_game,
+        audio_player: _,
     }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {
@@ -37,7 +41,7 @@ pub fn app(
         debug: false,
     };
     let (game_loop_data, initial_state) =
-        game_loop::GameLoopData::new(config, storage, initial_rng_seed, audio_player, new_game);
+        game_loop::GameLoopData::new(config, storage, initial_rng_seed, new_game);
     let state = AppState { game_loop_data };
     game_loop::game_loop_component(initial_state)
         .lens_state(lens!(AppState[game_loop_data]: game_loop::GameLoopData))

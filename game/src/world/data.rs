@@ -1,8 +1,5 @@
 pub use crate::world::spatial::{Layer, Location};
-use gridbugs::{
-    coord_2d::Axis, direction::CardinalDirection, entity_table::declare_entity_module,
-    rgb_int::Rgb24,
-};
+use gridbugs::entity_table::declare_entity_module;
 use serde::{Deserialize, Serialize};
 
 declare_entity_module! {
