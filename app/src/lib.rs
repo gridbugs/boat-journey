@@ -2,17 +2,10 @@ use gridbugs::chargrid::{control_flow::*, core::*};
 use template2023_game::Config;
 
 mod audio;
-mod colours;
 mod controls;
-mod examine;
-mod game;
 mod game_instance;
 mod game_loop;
-mod menu_background;
-mod stars;
 mod text;
-mod tile_3x3;
-mod ui;
 
 pub use audio::AppAudioPlayer;
 pub use game_loop::{AppStorage, InitialRngSeed};

@@ -23,7 +23,6 @@ gridbugs = { version = "0.9", features = [
     "chargrid_gamepad",
 ] }
 template2023_game = { path = "../game" }
-audio_data = { path = "../audio-data" }
 log = "0.4"
 serde = { version = "1.0", features = ["serde_derive"] }
 rand = "0.8"

@@ -1,23 +1,13 @@
 use gridbugs::audio::{Audio as Sound, AudioHandle, AudioPlayer};
 
 use maplit::hashmap;
-use template2023_game::SoundEffect;
 use std::collections::HashMap;
 
 pub type AppAudioPlayer = Option<AudioPlayer>;
 pub type AppHandle = Option<AudioHandle>;
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, Debug)]
-pub enum Audio {
-    Gameplay0,
-    Gameplay1,
-    Gameplay2,
-    EndTextHappy,
-    EndTextSad,
-    Menu,
-    Explosion,
-    SoundEffect(SoundEffect),
-}
+pub enum Audio {}
 
 pub struct AudioTable {
     map: Option<HashMap<Audio, Sound>>,
@@ -25,29 +15,7 @@ pub struct AudioTable {
 
 impl AudioTable {
     pub fn new(audio_player: &AppAudioPlayer) -> Self {
-        use audio_data::*;
-        let map = audio_player.as_ref().map(|audio_player| {
-        hashmap![
-            Audio::Gameplay0 => audio_player.load_sound(GAMEPLAY0),
-            Audio::Gameplay1 => audio_player.load_sound(GAMEPLAY1),
-            Audio::Gameplay2=> audio_player.load_sound(GAMEPLAY2),
-            Audio::EndTextHappy => audio_player.load_sound(END_TEXT_HAPPY),
-            Audio::EndTextSad => audio_player.load_sound(END_TEXT_SAD),
-            Audio::Menu => audio_player.load_sound(MENU),
-            Audio::Explosion => audio_player.load_sound(EXPLOSION),
-            Audio::SoundEffect(SoundEffect::Shotgun) => audio_player.load_sound(SHOTGUN),
-            Audio::SoundEffect(SoundEffect::Rifle) => audio_player.load_sound(RIFLE),
-            Audio::SoundEffect(SoundEffect::Railgun) => audio_player.load_sound(RAILGUN),
-            Audio::SoundEffect(SoundEffect::GausCannon) => audio_player.load_sound(GAUS_CANNON),
-            Audio::SoundEffect(SoundEffect::LifeStealer) => audio_player.load_sound(LIFE_STEALER),
-            Audio::SoundEffect(SoundEffect::Oxidiser) => audio_player.load_sound(OXIDISER),
-            Audio::SoundEffect(SoundEffect::Chainsaw) => audio_player.load_sound(CHAINSAW),
-            Audio::SoundEffect(SoundEffect::Punch) => audio_player.load_sound(PUNCH),
-            Audio::SoundEffect(SoundEffect::DoorOpen) => audio_player.load_sound(DOOR_OPEN),
-            Audio::SoundEffect(SoundEffect::Heal) => audio_player.load_sound(HEAL),
-            Audio::SoundEffect(SoundEffect::Die) => audio_player.load_sound(DIE),
-        ]
-        });
+        let map = audio_player.as_ref().map(|audio_player| hashmap![]);
         Self { map }
     }
     pub fn get(&self, audio: Audio) -> Option<&Sound> {

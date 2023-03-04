@@ -164,10 +164,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a40729d2133846d9ed0ea60a8b9541bccddab49cd30f0715a1da672fe9a2524"
 
 [[package]]
-name = "audio_data"
-version = "0.1.0"
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3265,7 +3261,6 @@ dependencies = [
 name = "template2023_app"
 version = "0.1.0"
 dependencies = [
- "audio_data",
  "getrandom",
  "gridbugs",
  "log",
