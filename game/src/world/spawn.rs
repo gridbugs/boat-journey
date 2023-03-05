@@ -112,6 +112,18 @@ impl World {
         )
     }
 
+    pub fn spawn_boat_wall(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Wall,
+                solid: (),
+                part_of_boat: (),
+                opacity: 255,
+            },
+        )
+    }
+
     pub fn spawn_board(&mut self, coord: Coord) -> Entity {
         self.spawn_entity(
             (coord, Layer::Boat),

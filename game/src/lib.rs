@@ -161,19 +161,34 @@ impl Game {
     }
 
     fn try_rasterize_boat(&mut self, boat_entity: Entity, boat: Boat, boat_coord: Coord) -> bool {
-        let boat_width1 = 3;
-        let boat_width2 = 5;
-        let boat_length1 = 3;
-        let boat_length2 = 7;
-        let boat_length3 = 7;
-        let boat_length4 = 10;
+        //        #
+        //      #####
+        //     ##   ##
+        //    ##     ##
+        //    #   @   #
+        //    #       #
+        //    # ###+# #
+        //    # #   # #
+        //    # #   # #
+        //    # #+### #
+        //    #       #
+        //    ##     ##
+        //     #######
+
+        let boat_width1 = 4;
+        let boat_width2 = 4;
+        let boat_width3 = 3;
+        let boat_length1 = 8;
+        let boat_length2 = 10;
+        let boat_length3 = 1;
+        let boat_length4 = 6;
         let vertices_int = vec![
             Coord::new(0, -boat_length4),            // 0
             Coord::new(boat_width1, -boat_length3),  // 1
             Coord::new(boat_width2, boat_length1),   // 2
-            Coord::new(boat_width1, boat_length2),   // 3
+            Coord::new(boat_width3, boat_length2),   // 3
             Coord::new(0, boat_length2),             // 4
-            Coord::new(-boat_width1, boat_length2),  // 5
+            Coord::new(-boat_width3, boat_length2),  // 5
             Coord::new(-boat_width2, boat_length1),  // 6
             Coord::new(-boat_width1, -boat_length3), // 7
         ];
@@ -259,6 +274,8 @@ impl Game {
             }
         }
 
+        let boat_heading = boat.heading();
+
         let mut to_delete = Vec::new();
         for entity in self.world.components.part_of_boat.entities() {
             to_delete.push(entity);
@@ -288,6 +305,62 @@ impl Game {
             .world
             .spatial_table
             .update_coord(self.player_entity, boat_coord);
+
+        if false {
+            // the cabin is tricky to get right when the boat is not facing a cardinal direction
+            let unit = Cartesian { x: 1., y: 0. }
+                .to_radial()
+                .rotate_clockwise(boat_heading)
+                .to_cartesian()
+                .to_coord_round_nearest();
+            let is_cardinal = unit.x * unit.y == 0;
+
+            if is_cardinal {
+                let cabin_top_left = Cartesian { x: -2., y: 3. }
+                    .to_radial()
+                    .rotate_clockwise(boat_heading)
+                    .to_cartesian()
+                    .to_coord_round_nearest();
+                let cabin_top_right = Cartesian { x: 0., y: 3. }
+                    .to_radial()
+                    .rotate_clockwise(boat_heading)
+                    .to_cartesian()
+                    .to_coord_round_nearest();
+                let cabin_bottom_left = Cartesian { x: -2., y: 7. }
+                    .to_radial()
+                    .rotate_clockwise(boat_heading)
+                    .to_cartesian()
+                    .to_coord_round_nearest();
+                for coord in coords_between_cardinal(cabin_top_left, cabin_top_right) {
+                    self.world.spawn_boat_wall(coord + boat_coord);
+                }
+                for coord in coords_between_cardinal(cabin_top_left, cabin_bottom_left).skip(1) {
+                    self.world.spawn_boat_wall(coord + boat_coord);
+                }
+                let cabin_top_right = Cartesian { x: 2., y: 3. }
+                    .to_radial()
+                    .rotate_clockwise(boat_heading)
+                    .to_cartesian()
+                    .to_coord_round_nearest();
+                let cabin_bottom_right = Cartesian { x: 2., y: 7. }
+                    .to_radial()
+                    .rotate_clockwise(boat_heading)
+                    .to_cartesian()
+                    .to_coord_round_nearest();
+                let cabin_bottom_left = Cartesian { x: 0., y: 7. }
+                    .to_radial()
+                    .rotate_clockwise(boat_heading)
+                    .to_cartesian()
+                    .to_coord_round_nearest();
+                for coord in coords_between_cardinal(cabin_top_right, cabin_bottom_right) {
+                    self.world.spawn_boat_wall(coord + boat_coord);
+                }
+                for coord in coords_between_cardinal(cabin_bottom_right, cabin_bottom_left).skip(1)
+                {
+                    self.world.spawn_boat_wall(coord + boat_coord);
+                }
+            }
+        }
 
         true
     }
@@ -406,6 +479,7 @@ impl Game {
         if let Some(&Layers {
             water: Some(_),
             floor: None,
+            feature: None,
             ..
         }) = layers
         {
