@@ -1,10 +1,10 @@
+use boat_journey_game::{
+    witness::{self, Game, RunningGame},
+    Config, Tile,
+};
 use gridbugs::chargrid::prelude::*;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use boat_journey_game::{
-    witness::{self, Game, RunningGame},
-    Config,
-};
 
 pub struct GameInstance {
     pub game: Game,
@@ -22,7 +22,23 @@ impl GameInstance {
         GameInstanceStorable { running_game }
     }
 
-    pub fn render(&self, _ctx: Ctx, _fb: &mut FrameBuffer) {}
+    fn tile_to_render_cell(tile: Tile) -> RenderCell {
+        let character = match tile {
+            Tile::Player => '@',
+            Tile::BoatEdge => '#',
+            Tile::BoatFloor => '.',
+        };
+        RenderCell {
+            character: Some(character),
+            style: Style::plain_text(),
+        }
+    }
+
+    pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        self.game.inner_ref().render(|coord, tile| {
+            fb.set_cell_relative_to_ctx(ctx, coord, 0, Self::tile_to_render_cell(tile));
+        });
+    }
 }
 
 #[derive(Serialize, Deserialize)]

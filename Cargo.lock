@@ -244,6 +244,90 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "boat_journey_ansi_terminal"
+version = "0.1.0"
+dependencies = [
+ "boat_journey_app",
+ "boat_journey_native",
+ "env_logger",
+ "gridbugs",
+ "meap",
+ "rand",
+]
+
+[[package]]
+name = "boat_journey_app"
+version = "0.1.0"
+dependencies = [
+ "boat_journey_game",
+ "getrandom",
+ "gridbugs",
+ "log",
+ "maplit",
+ "rand",
+ "rand_isaac",
+ "rand_xorshift",
+ "serde",
+]
+
+[[package]]
+name = "boat_journey_game"
+version = "0.1.0"
+dependencies = [
+ "gridbugs",
+ "log",
+ "procgen",
+ "rand",
+ "rand_isaac",
+ "rand_range",
+ "rational",
+ "serde",
+ "vector",
+]
+
+[[package]]
+name = "boat_journey_ggez"
+version = "0.1.0"
+dependencies = [
+ "boat_journey_app",
+ "boat_journey_native",
+ "env_logger",
+ "gridbugs",
+]
+
+[[package]]
+name = "boat_journey_native"
+version = "0.1.0"
+dependencies = [
+ "boat_journey_app",
+ "gridbugs",
+ "log",
+ "meap",
+]
+
+[[package]]
+name = "boat_journey_web"
+version = "0.1.0"
+dependencies = [
+ "boat_journey_app",
+ "console_error_panic_hook",
+ "gridbugs",
+ "log",
+ "wasm-bindgen",
+ "wasm-logger",
+]
+
+[[package]]
+name = "boat_journey_wgpu"
+version = "0.1.0"
+dependencies = [
+ "boat_journey_app",
+ "boat_journey_native",
+ "env_logger",
+ "gridbugs",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3243,90 +3327,6 @@ dependencies = [
  "redox_syscall",
  "rustix",
  "windows-sys 0.42.0",
-]
-
-[[package]]
-name = "boat_journey_ansi_terminal"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "gridbugs",
- "meap",
- "rand",
- "boat_journey_app",
- "boat_journey_native",
-]
-
-[[package]]
-name = "boat_journey_app"
-version = "0.1.0"
-dependencies = [
- "getrandom",
- "gridbugs",
- "log",
- "maplit",
- "rand",
- "rand_isaac",
- "rand_xorshift",
- "serde",
- "boat_journey_game",
-]
-
-[[package]]
-name = "boat_journey_game"
-version = "0.1.0"
-dependencies = [
- "gridbugs",
- "log",
- "procgen",
- "rand",
- "rand_isaac",
- "rand_range",
- "rational",
- "serde",
- "vector",
-]
-
-[[package]]
-name = "boat_journey_ggez"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "gridbugs",
- "boat_journey_app",
- "boat_journey_native",
-]
-
-[[package]]
-name = "boat_journey_native"
-version = "0.1.0"
-dependencies = [
- "gridbugs",
- "log",
- "meap",
- "boat_journey_app",
-]
-
-[[package]]
-name = "boat_journey_web"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "gridbugs",
- "log",
- "boat_journey_app",
- "wasm-bindgen",
- "wasm-logger",
-]
-
-[[package]]
-name = "boat_journey_wgpu"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "gridbugs",
- "boat_journey_app",
- "boat_journey_native",
 ]
 
 [[package]]

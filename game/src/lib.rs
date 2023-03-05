@@ -13,7 +13,11 @@ pub mod witness;
 mod world;
 
 pub use gridbugs::entity_table::Entity;
+pub use world::data::Tile;
 use world::World;
+
+mod terrain;
+use terrain::Terrain;
 
 pub const MAP_SIZE: Size = Size::new_u16(20, 14);
 
@@ -62,18 +66,11 @@ pub enum ActionError {}
 
 impl Game {
     pub fn new<R: Rng>(_config: &Config, base_rng: &mut R) -> Self {
-        let rng = Isaac64Rng::seed_from_u64(base_rng.gen());
-        let mut world = World::new(MAP_SIZE);
-        let player_entity = {
-            let player = crate::world::spawn::make_player();
-            world.insert_entity_data(
-                crate::world::spatial::Location {
-                    coord: Coord::new(0, 0),
-                    layer: Some(world::spatial::Layer::Character),
-                },
-                player,
-            )
-        };
+        let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
+        let Terrain {
+            world,
+            player_entity,
+        } = Terrain::generate(world::spawn::make_player(), &mut rng);
         let game = Self {
             rng,
             world,
@@ -82,8 +79,14 @@ impl Game {
         game
     }
 
+    pub fn render<F: FnMut(Coord, Tile)>(&self, mut f: F) {
+        let (boat_enity, boat) = self.world.components.boat.iter().next().unwrap();
+        let boat_coord = self.world.spatial_table.coord_of(boat_enity).unwrap();
+        f(boat_coord, Tile::BoatFloor);
+    }
+
     #[must_use]
-    pub fn handle_tick(
+    pub(crate) fn handle_tick(
         &mut self,
         _since_last_tick: Duration,
         _config: &Config,
@@ -92,7 +95,7 @@ impl Game {
     }
 
     #[must_use]
-    pub fn handle_input(
+    pub(crate) fn handle_input(
         &mut self,
         _input: Input,
         _config: &Config,

@@ -4,9 +4,8 @@ use serde::{Deserialize, Serialize};
 pub mod spatial;
 use spatial::SpatialTable;
 
-mod data;
+pub mod data;
 use data::Components;
-pub use data::Tile;
 
 pub mod spawn;
 
