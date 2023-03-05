@@ -8,7 +8,10 @@ pub use gridbugs::{
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{
+    collections::{HashSet, VecDeque},
+    time::Duration,
+};
 use vector::{Cartesian, Radial, Radians};
 
 pub mod witness;
@@ -114,12 +117,10 @@ impl Game {
                     .rotate_clockwise(boat.heading)
                     .to_cartesian()
                     .to_coord_round_nearest()
-                    + boat_coord
             })
             .collect::<Vec<_>>();
-
         let pairs = {
-            let vs = vertices_rotated;
+            let vs = &vertices_rotated;
             vec![
                 (vs[0], vs[1]),
                 (vs[1], vs[2]),
@@ -131,11 +132,31 @@ impl Game {
                 (vs[5], vs[4]),
             ]
         };
-
-        for (start, end) in pairs.into_iter() {
+        let mut boat_edge = HashSet::new();
+        for (start, end) in pairs {
             for coord in coords_between_cardinal(start, end) {
-                f(coord, Tile::BoatEdge);
+                boat_edge.insert(coord);
+                f(coord + boat_coord, Tile::BoatEdge);
             }
+        }
+
+        let mut seen = HashSet::new();
+        let mut to_visit = VecDeque::new();
+        seen.insert(Coord::new(0, 0));
+        to_visit.push_back(Coord::new(0, 0));
+        while let Some(coord) = to_visit.pop_front() {
+            for d in CardinalDirection::all() {
+                let nei_coord = coord + d.coord();
+                if !boat_edge.contains(&nei_coord) {
+                    if seen.insert(nei_coord) {
+                        to_visit.push_back(nei_coord);
+                    }
+                }
+            }
+        }
+
+        for coord in seen {
+            f(coord + boat_coord, Tile::BoatFloor);
         }
     }
 
