@@ -1,4 +1,4 @@
-# Template2023
+# Boat Journey
 
 ## Package Contents
 

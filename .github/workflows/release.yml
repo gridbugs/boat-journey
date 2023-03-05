@@ -74,7 +74,7 @@ jobs:
     - name: 'Make archives'
       run: MODE=aarch64-apple-darwin/release ARCHIVE_NAME=template2023-macos-aarch64-${{ github.ref_name }} scripts/make_archives_unix.sh
     - name: 'Make app and disk image'
-      run: MODE=aarch64-apple-darwin/release APP_NAME=Template2023 DMG_NAME=Template2023-macos-aarch64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
+      run: MODE=aarch64-apple-darwin/release APP_NAME=BoatJourney DMG_NAME=BoatJourney-macos-aarch64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
     - uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
@@ -116,7 +116,7 @@ jobs:
       run: MODE=release ARCHIVE_NAME=template2023-${{ env.SYSTEM_NAME }}-x86_64-${{ github.ref_name }} scripts/make_archives_unix.sh
     - if: matrix.os == 'macOS-latest'
       name: 'Make macos app and disk image'
-      run: MODE=release APP_NAME=Template2023 DMG_NAME=Template2023-macos-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
+      run: MODE=release APP_NAME=BoatJourney DMG_NAME=BoatJourney-macos-x86_64-${{ github.ref_name }}.dmg scripts/make_dmg_macos.sh
     - uses: ncipollo/release-action@v1
       with:
         allowUpdates: true

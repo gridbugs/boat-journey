@@ -1,8 +1,8 @@
-# Template2023
+# Boat Journey
 
 ## Package Contents
 
-- Template2023.app: Graphical version of the game
+- BoatJourney.app: Graphical version of the game
 
 ## Notes
 

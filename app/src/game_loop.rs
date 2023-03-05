@@ -434,7 +434,7 @@ fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
     let decoration = {
         let style = Style::default();
         gridbugs::chargrid::many![styled_string(
-            "Template2023".to_string(),
+            "Boat Journey".to_string(),
             style.with_bold(true)
         )]
     };

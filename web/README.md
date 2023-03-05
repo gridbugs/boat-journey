@@ -1,4 +1,4 @@
-# Template2023 Web
+# Boat Journey Web
 
 ## Install
 ```
