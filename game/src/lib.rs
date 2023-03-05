@@ -3,6 +3,7 @@ pub use gridbugs::{
     entity_table::ComponentTable,
     grid_2d::{Coord, Grid, Size},
     line_2d::{coords_between, coords_between_cardinal},
+    rgb_int::Rgb24,
     shadowcast::Context as ShadowcastContext,
 };
 use rand::{Rng, SeedableRng};
@@ -17,18 +18,21 @@ use vector::{Cartesian, Radians};
 pub mod witness;
 mod world;
 
-pub use gridbugs::entity_table::{entity_data, entity_update, Entity};
+pub use gridbugs::{
+    entity_table::{entity_data, entity_update, Entity},
+    visible_area_detection::{
+        vision_distance::Circle, CellVisibility, VisibilityGrid, World as VisibleWorld,
+    },
+};
 pub use world::data::{Boat, Layer, Location, Tile};
 use world::{
     data::{DoorState, EntityData, EntityUpdate},
-    spatial::Layers,
+    spatial::{LayerTable, Layers},
     World,
 };
 
 mod terrain;
 use terrain::Terrain;
-
-pub const MAP_SIZE: Size = Size::new_u16(20, 14);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Omniscient;
@@ -75,12 +79,49 @@ enum MoveDirection {
     Backward,
 }
 
+#[derive(Serialize, Deserialize, Default)]
+pub struct VisibleCellData {
+    pub tiles: LayerTable<Option<Tile>>,
+}
+
+impl VisibleCellData {
+    fn update(&mut self, world: &World, coord: Coord) {
+        let layers = world.spatial_table.layers_at_checked(coord);
+        self.tiles = layers.option_and_then(|&entity| world.components.tile.get(entity).cloned());
+    }
+}
+
+impl VisibleWorld for World {
+    type VisionDistance = Circle;
+
+    fn size(&self) -> Size {
+        self.spatial_table.grid_size()
+    }
+
+    fn get_opacity(&self, coord: Coord) -> u8 {
+        if let Some(&Layers {
+            feature: Some(feature_entity),
+            ..
+        }) = self.spatial_table.layers_at(coord)
+        {
+            self.components
+                .opacity
+                .get(feature_entity)
+                .cloned()
+                .unwrap_or(0)
+        } else {
+            0
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Game {
     world: World,
     rng: Isaac64Rng,
     player_entity: Entity,
     driving: bool,
+    visibility_grid: VisibilityGrid<VisibleCellData>,
 }
 
 pub enum ActionError {}
@@ -94,6 +135,7 @@ impl Game {
         } = Terrain::generate(world::spawn::make_player(), &mut rng);
         let mut game = Self {
             rng,
+            visibility_grid: VisibilityGrid::new(world.spatial_table.grid_size()),
             world,
             player_entity,
             driving: true,
@@ -103,7 +145,19 @@ impl Game {
         if !game.try_rasterize_boat(boat_entity, boat.clone(), boat_coord) {
             panic!("failed to create the boat");
         }
+        game.update_visibility();
         game
+    }
+
+    pub fn update_visibility(&mut self) {
+        let update_fn = |data: &mut VisibleCellData, coord| data.update(&self.world, coord);
+        self.visibility_grid.update_custom(
+            Rgb24::new_grey(255),
+            &self.world,
+            Circle::new_squared(500),
+            self.player_coord(),
+            update_fn,
+        );
     }
 
     fn try_rasterize_boat(&mut self, boat_entity: Entity, boat: Boat, boat_coord: Coord) -> bool {
@@ -250,6 +304,16 @@ impl Game {
             });
     }
 
+    pub fn enumerate_cell_visibility(
+        &self,
+    ) -> impl Iterator<Item = (Coord, CellVisibility<&VisibleCellData>)> {
+        self.visibility_grid.enumerate()
+    }
+
+    pub fn cell_visibility_at_coord(&self, coord: Coord) -> CellVisibility<&VisibleCellData> {
+        self.visibility_grid.get_visibility(coord)
+    }
+
     fn rotate_boat(&mut self, rotate_direction: RotateDirection) {
         let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
         let step_radians = std::f64::consts::FRAC_PI_4;
@@ -392,6 +456,7 @@ impl Game {
                 _ => (),
             }
         }
+        self.update_visibility();
         Ok(None)
     }
 }

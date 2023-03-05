@@ -1,12 +1,13 @@
+use boat_journey_game::Config;
 use gridbugs::{
     audio::{AudioHandle, AudioPlayer},
     chargrid::{control_flow::*, core::*},
 };
-use boat_journey_game::Config;
 
 pub type AppAudioPlayer = Option<AudioPlayer>;
 pub type AppHandle = Option<AudioHandle>;
 
+mod colour;
 mod controls;
 mod game_instance;
 mod game_loop;

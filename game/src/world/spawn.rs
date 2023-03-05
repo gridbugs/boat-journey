@@ -55,6 +55,7 @@ impl World {
             entity_data! {
                 tile: Tile::Wall,
                 solid: (),
+                opacity: 255,
             },
         )
     }
@@ -85,6 +86,7 @@ impl World {
                 tile: Tile::DoorClosed,
                 solid: (),
                 door_state: DoorState::Closed,
+                opacity: 255,
             },
         )
     }

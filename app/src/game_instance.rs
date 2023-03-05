@@ -1,8 +1,9 @@
+use crate::colour;
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
     Config, Layer, Tile,
 };
-use gridbugs::chargrid::prelude::*;
+use gridbugs::{chargrid::prelude::*, visible_area_detection::CellVisibility};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +34,7 @@ impl GameInstance {
         }
     }
 
-    fn tile_to_render_cell(tile: Tile) -> RenderCell {
+    fn tile_to_render_cell(tile: Tile, current: bool) -> RenderCell {
         let character = match tile {
             Tile::Player => {
                 return RenderCell {
@@ -41,7 +42,7 @@ impl GameInstance {
                     style: Style::new()
                         .with_bold(true)
                         .with_foreground(Rgba32::new_grey(255))
-                        .with_background(Rgba32::new_rgb(0, 0x40, 0x40)),
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
             Tile::BoatControls => {
@@ -50,12 +51,18 @@ impl GameInstance {
                     style: Style::new()
                         .with_bold(true)
                         .with_foreground(Rgba32::new_grey(255))
-                        .with_background(Rgba32::new_rgb(0, 0x40, 0x40)),
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
             Tile::BoatEdge => '#',
             Tile::BoatFloor => ',',
-            Tile::Water1 => '~',
+            Tile::Water1 => {
+                if current {
+                    '~'
+                } else {
+                    ' '
+                }
+            }
             Tile::Water2 => ' ',
             Tile::Floor => '.',
             Tile::Wall => '█',
@@ -69,25 +76,48 @@ impl GameInstance {
             style: Style::new()
                 .with_bold(false)
                 .with_foreground(Rgba32::new_grey(187))
-                .with_background(Rgba32::new_rgb(0, 0x40, 0x40)),
+                .with_background(colour::MURKY_GREEN.to_rgba32(255)),
         }
     }
 
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let centre_coord_delta =
             self.game.inner_ref().player_coord() - (ctx.bounding_box.size() / 2);
-        self.game.inner_ref().render(|location, tile| {
-            if let Some(layer) = location.layer {
-                let depth = Self::layer_to_depth(layer);
-                let render_cell = Self::tile_to_render_cell(tile);
-                fb.set_cell_relative_to_ctx(
-                    ctx,
-                    location.coord - centre_coord_delta,
-                    depth,
-                    render_cell,
-                );
+        for coord in ctx.bounding_box.size().coord_iter_row_major() {
+            let cell = self
+                .game
+                .inner_ref()
+                .cell_visibility_at_coord(coord + centre_coord_delta);
+            match cell {
+                CellVisibility::Never => {
+                    let render_cell = RenderCell {
+                        character: None,
+                        style: Style::new().with_background(colour::MISTY_GREY.to_rgba32(255)),
+                    };
+                    fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
+                }
+                CellVisibility::Previous(data) => {
+                    data.tiles.for_each_enumerate(|tile, layer| {
+                        if let Some(&tile) = tile.as_ref() {
+                            let depth = Self::layer_to_depth(layer);
+                            let mut render_cell = Self::tile_to_render_cell(tile, false);
+                            render_cell.style.background = Some(colour::MISTY_GREY.to_rgba32(255));
+                            render_cell.style.foreground = Some(Rgba32::new_grey(63));
+                            fb.set_cell_relative_to_ctx(ctx, coord, depth, render_cell);
+                        }
+                    });
+                }
+                CellVisibility::Current { data, .. } => {
+                    data.tiles.for_each_enumerate(|tile, layer| {
+                        if let Some(&tile) = tile.as_ref() {
+                            let depth = Self::layer_to_depth(layer);
+                            let render_cell = Self::tile_to_render_cell(tile, true);
+                            fb.set_cell_relative_to_ctx(ctx, coord, depth, render_cell);
+                        }
+                    });
+                }
             }
-        });
+        }
     }
 }
 
