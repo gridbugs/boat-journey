@@ -21,7 +21,7 @@ pub enum Tile {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Boat {
-    heading: Radians,
+    pub heading: Radians,
 }
 
 impl Boat {
