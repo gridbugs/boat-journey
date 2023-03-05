@@ -1,9 +1,9 @@
+use boat_journey_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
 use gridbugs::{
     audio::{AudioPlayer, NativeAudioError, NativeAudioPlayer},
     storage::{FileStorage, IfDirectoryMissing, Storage},
 };
 pub use meap;
-use boat_journey_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
 
 const DEFAULT_SAVE_FILE: &str = "save";
 const DEFAULT_NEXT_TO_EXE_STORAGE_DIR: &str = "save";
@@ -33,6 +33,7 @@ impl NativeCommon {
                     .with_default(DEFAULT_NEXT_TO_EXE_STORAGE_DIR.to_string());
                 delete_save = flag("delete-save").desc("delete save game file");
                 delete_config = flag("delete-config").desc("delete config file");
+                delete_controls = flag("delete-controls").desc("delete controls file");
                 new_game = flag("new-game").desc("start a new game, skipping the menu");
                 omniscient = flag("omniscient").desc("enable omniscience");
                 mute = flag('m').name("mute").desc("mute audio");
@@ -52,6 +53,12 @@ impl NativeCommon {
                     let result = file_storage.remove(&config_file);
                     if result.is_err() {
                         log::warn!("couldn't find config file to delete");
+                    }
+                }
+                if delete_controls {
+                    let result = file_storage.remove(&controls_file);
+                    if result.is_err() {
+                        log::warn!("couldn't find controls file to delete");
                     }
                 }
                 let storage = AppStorage {

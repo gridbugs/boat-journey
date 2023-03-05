@@ -35,7 +35,24 @@ impl GameInstance {
 
     fn tile_to_render_cell(tile: Tile) -> RenderCell {
         let character = match tile {
-            Tile::Player => '@',
+            Tile::Player => {
+                return RenderCell {
+                    character: Some('@'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(Rgba32::new_rgb(0, 0x40, 0x40)),
+                };
+            }
+            Tile::BoatControls => {
+                return RenderCell {
+                    character: Some('░'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(Rgba32::new_rgb(0, 0x40, 0x40)),
+                };
+            }
             Tile::BoatEdge => '#',
             Tile::BoatFloor => ',',
             Tile::Water1 => '~',
@@ -50,6 +67,7 @@ impl GameInstance {
         RenderCell {
             character: Some(character),
             style: Style::new()
+                .with_bold(false)
                 .with_foreground(Rgba32::new_grey(187))
                 .with_background(Rgba32::new_rgb(0, 0x40, 0x40)),
         }

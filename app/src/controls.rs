@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 pub enum AppInput {
     Direction(CardinalDirection),
     Wait,
+    DriveToggle,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -25,6 +26,7 @@ impl Default for Controls {
             KeyboardInput::Up => AppInput::Direction(CardinalDirection::North),
             KeyboardInput::Down => AppInput::Direction(CardinalDirection::South),
             KeyboardInput::Char(' ') => AppInput::Wait,
+            KeyboardInput::Char('e') => AppInput::DriveToggle,
         ];
         Self { keys }
     }

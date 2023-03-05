@@ -3,6 +3,10 @@ use crate::{
     game_instance::{GameInstance, GameInstanceStorable},
     text,
 };
+use boat_journey_game::{
+    witness::{self, Witness},
+    Config as GameConfig,
+};
 use gridbugs::{
     chargrid::{border::BorderStyle, control_flow::*, menu, prelude::*},
     storage::{format, Storage},
@@ -10,10 +14,6 @@ use gridbugs::{
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
-use boat_journey_game::{
-    witness::{self, Witness},
-    Config as GameConfig,
-};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 struct Config {
@@ -361,6 +361,9 @@ impl GameLoopData {
                             running.walk(&mut instance.game, direction, &self.game_config)
                         }
                         AppInput::Wait => running.wait(&mut instance.game, &self.game_config),
+                        AppInput::DriveToggle => {
+                            running.drive_toggle(&mut instance.game, &self.game_config)
+                        }
                     };
                     witness
                 } else {

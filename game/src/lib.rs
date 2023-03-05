@@ -1,5 +1,5 @@
 pub use gridbugs::{
-    direction::CardinalDirection,
+    direction::{CardinalDirection, Direction},
     entity_table::ComponentTable,
     grid_2d::{Coord, Grid, Size},
     line_2d::{coords_between, coords_between_cardinal},
@@ -17,9 +17,13 @@ use vector::{Cartesian, Radians};
 pub mod witness;
 mod world;
 
-pub use gridbugs::entity_table::Entity;
+pub use gridbugs::entity_table::{entity_data, entity_update, Entity};
 pub use world::data::{Boat, Layer, Location, Tile};
-use world::World;
+use world::{
+    data::{DoorState, EntityData, EntityUpdate},
+    spatial::Layers,
+    World,
+};
 
 mod terrain;
 use terrain::Terrain;
@@ -58,6 +62,7 @@ pub enum GameControlFlow {
 pub enum Input {
     Walk(CardinalDirection),
     Wait,
+    DriveToggle,
 }
 
 enum RotateDirection {
@@ -75,6 +80,7 @@ pub struct Game {
     world: World,
     rng: Isaac64Rng,
     player_entity: Entity,
+    driving: bool,
 }
 
 pub enum ActionError {}
@@ -90,6 +96,7 @@ impl Game {
             rng,
             world,
             player_entity,
+            driving: true,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -97,12 +104,6 @@ impl Game {
             panic!("failed to create the boat");
         }
         game
-    }
-
-    pub fn player_coord(&self) -> Coord {
-        let (boat_enity, _boat) = self.world.components.boat.iter().next().unwrap();
-        let boat_coord = self.world.spatial_table.coord_of(boat_enity).unwrap();
-        boat_coord
     }
 
     fn try_rasterize_boat(&mut self, boat_entity: Entity, boat: Boat, boat_coord: Coord) -> bool {
@@ -219,9 +220,11 @@ impl Game {
         for coord in boat_edge {
             self.world.spawn_boat_edge(coord + boat_coord);
         }
+        boat_floor.remove(&Coord::new(0, 0));
         for coord in boat_floor {
             self.world.spawn_boat_floor(coord + boat_coord);
         }
+        self.world.spawn_boat_controls(boat_coord);
         self.world.components.boat.insert(boat_entity, boat);
         let _ = self
             .world
@@ -269,6 +272,91 @@ impl Game {
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord + delta);
     }
 
+    // Returns the coordinate of the player character
+    pub fn player_coord(&self) -> Coord {
+        self.world
+            .spatial_table
+            .coord_of(self.player_entity)
+            .expect("player does not have coord")
+    }
+
+    fn open_door(&mut self, entity: Entity) {
+        self.world.components.apply_entity_update(
+            entity,
+            entity_update! {
+                door_state: Some(DoorState::Open),
+                tile: Some(Tile::DoorOpen),
+                solid: None,
+                opacity: None,
+            },
+        );
+    }
+
+    fn open_door_entity_adjacent_to_coord(&self, coord: Coord) -> Option<Entity> {
+        for direction in Direction::all() {
+            let potential_door_coord = coord + direction.coord();
+            if let Some(&Layers {
+                feature: Some(feature_entity),
+                ..
+            }) = self.world.spatial_table.layers_at(potential_door_coord)
+            {
+                if let Some(DoorState::Open) = self.world.components.door_state.get(feature_entity)
+                {
+                    return Some(feature_entity);
+                }
+            }
+        }
+        None
+    }
+
+    fn close_door(&mut self, entity: Entity) {
+        self.world.components.insert_entity_data(
+            entity,
+            entity_data! {
+                door_state: DoorState::Closed,
+                tile: Tile::DoorClosed,
+                solid: (),
+                opacity: 255,
+            },
+        );
+    }
+
+    fn player_walk(&mut self, direction: CardinalDirection) {
+        let player_coord = self.player_coord();
+        let new_player_coord = player_coord + direction.coord();
+        if let Some(&Layers {
+            feature: Some(feature_entity),
+            ..
+        }) = self.world.spatial_table.layers_at(new_player_coord)
+        {
+            // If the player bumps into a door, open the door
+            if let Some(DoorState::Closed) = self.world.components.door_state.get(feature_entity) {
+                self.open_door(feature_entity);
+                return;
+            }
+            // Don't let the player walk through solid entities
+            if self.world.components.solid.contains(feature_entity) {
+                if let Some(open_door_entity) =
+                    self.open_door_entity_adjacent_to_coord(player_coord)
+                {
+                    self.close_door(open_door_entity);
+                }
+                return;
+            }
+        }
+        self.world
+            .spatial_table
+            .update_coord(self.player_entity, new_player_coord)
+            .unwrap();
+    }
+
+    fn is_player_on_driving_coord(&self) -> bool {
+        let player_coord = self.player_coord();
+        let (boat_entity, _boat) = self.world.components.boat.iter().next().unwrap();
+        let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
+        player_coord == boat_coord
+    }
+
     #[must_use]
     pub(crate) fn handle_tick(
         &mut self,
@@ -284,12 +372,25 @@ impl Game {
         input: Input,
         _config: &Config,
     ) -> Result<Option<GameControlFlow>, ActionError> {
-        match input {
-            Input::Walk(CardinalDirection::East) => self.rotate_boat(RotateDirection::Right),
-            Input::Walk(CardinalDirection::West) => self.rotate_boat(RotateDirection::Left),
-            Input::Walk(CardinalDirection::North) => self.move_boat(MoveDirection::Forward),
-            Input::Walk(CardinalDirection::South) => self.move_boat(MoveDirection::Backward),
-            _ => (),
+        if self.driving {
+            match input {
+                Input::Walk(CardinalDirection::East) => self.rotate_boat(RotateDirection::Right),
+                Input::Walk(CardinalDirection::West) => self.rotate_boat(RotateDirection::Left),
+                Input::Walk(CardinalDirection::North) => self.move_boat(MoveDirection::Forward),
+                Input::Walk(CardinalDirection::South) => self.move_boat(MoveDirection::Backward),
+                Input::DriveToggle => self.driving = false,
+                _ => (),
+            }
+        } else {
+            match input {
+                Input::Walk(direction) => self.player_walk(direction),
+                Input::DriveToggle => {
+                    if self.is_player_on_driving_coord() {
+                        self.driving = true;
+                    }
+                }
+                _ => (),
+            }
         }
         Ok(None)
     }

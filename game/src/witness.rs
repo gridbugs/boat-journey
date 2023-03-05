@@ -90,6 +90,15 @@ impl Running {
         let Self(private) = self;
         game.witness_handle_input(Input::Wait, config, private)
     }
+
+    pub fn drive_toggle(
+        self,
+        game: &mut Game,
+        config: &Config,
+    ) -> (Witness, Result<(), ActionError>) {
+        let Self(private) = self;
+        game.witness_handle_input(Input::DriveToggle, config, private)
+    }
 }
 
 impl Game {

@@ -9,10 +9,12 @@ declare_entity_module! {
         boat: Boat,
         solid: (),
         part_of_boat: (),
+        door_state: DoorState,
+        opacity: u8,
+        boat_controls: (),
     }
 }
-pub use components::Components;
-pub use components::EntityData;
+pub use components::{Components, EntityData, EntityUpdate};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Tile {
@@ -27,6 +29,7 @@ pub enum Tile {
     DoorOpen,
     Rock,
     Board,
+    BoatControls,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,4 +83,10 @@ impl Boat {
         let coord = ret.movement_iter.step_back().coord();
         (ret, coord)
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DoorState {
+    Open,
+    Closed,
 }

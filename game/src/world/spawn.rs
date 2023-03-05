@@ -1,6 +1,6 @@
 use crate::{
     world::{
-        data::{EntityData, Layer, Location, Tile},
+        data::{DoorState, EntityData, Layer, Location, Tile},
         World,
     },
     Entity,
@@ -84,6 +84,7 @@ impl World {
             entity_data! {
                 tile: Tile::DoorClosed,
                 solid: (),
+                door_state: DoorState::Closed,
             },
         )
     }
@@ -115,6 +116,17 @@ impl World {
             entity_data! {
                 tile: Tile::Board,
                 part_of_boat: (),
+            },
+        )
+    }
+
+    pub fn spawn_boat_controls(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Floor),
+            entity_data! {
+                tile: Tile::BoatControls,
+                part_of_boat: (),
+                boat_controls: (),
             },
         )
     }
