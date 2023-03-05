@@ -5,6 +5,8 @@ spatial_table::declare_layers_module! {
         feature: Feature,
         character: Character,
         item: Item,
+        boat: Boat,
+        water: Water,
     }
 }
 pub use layers::{Layer, Layers};

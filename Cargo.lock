@@ -2025,9 +2025,9 @@ dependencies = [
 
 [[package]]
 name = "line_2d"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "229378051894cb3fc9815df2f7266c66e1b3bfbfa8cf541b58a6a1f4cd064c96"
+checksum = "e34ec579bd0a49fc9aa9b40233b19f618399b5dff3a03cbe4c298a8159e62e5a"
 dependencies = [
  "coord_2d",
  "direction",
