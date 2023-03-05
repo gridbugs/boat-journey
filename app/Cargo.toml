@@ -21,6 +21,7 @@ gridbugs = { version = "0.9", features = [
     "coord_2d",
     "chargrid_serialize",
     "chargrid_gamepad",
+    "perlin2_serialize",
 ] }
 boat_journey_game = { path = "../game" }
 log = "0.4"

@@ -1,4 +1,4 @@
-use crate::colour;
+use crate::{colour, mist::Mist};
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
     Config, Layer, Tile,
@@ -9,18 +9,20 @@ use serde::{Deserialize, Serialize};
 
 pub struct GameInstance {
     pub game: Game,
+    pub mist: Mist,
 }
 
 impl GameInstance {
     pub fn new<R: Rng>(config: &Config, rng: &mut R) -> (Self, witness::Running) {
         let (game, running) = witness::new_game(config, rng);
-        (GameInstance { game }, running)
+        let mist = Mist::new(rng);
+        (GameInstance { game, mist }, running)
     }
 
     pub fn into_storable(self, running: witness::Running) -> GameInstanceStorable {
-        let Self { game } = self;
+        let Self { game, mist } = self;
         let running_game = game.into_running_game(running);
-        GameInstanceStorable { running_game }
+        GameInstanceStorable { running_game, mist }
     }
 
     fn layer_to_depth(layer: Layer) -> i8 {
@@ -55,7 +57,7 @@ impl GameInstance {
                 };
             }
             Tile::BoatEdge => '#',
-            Tile::BoatFloor => ',',
+            Tile::BoatFloor => '.',
             Tile::Water1 => {
                 if current {
                     '~'
@@ -88,20 +90,24 @@ impl GameInstance {
                 .game
                 .inner_ref()
                 .cell_visibility_at_coord(coord + centre_coord_delta);
+            let mist = self.mist.get(coord);
+
             match cell {
                 CellVisibility::Never => {
+                    let background = mist.alpha_composite(colour::MISTY_GREY.to_rgba32(255));
                     let render_cell = RenderCell {
                         character: None,
-                        style: Style::new().with_background(colour::MISTY_GREY.to_rgba32(255)),
+                        style: Style::new().with_background(background),
                     };
                     fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
                 }
                 CellVisibility::Previous(data) => {
+                    let background = mist.alpha_composite(colour::MISTY_GREY.to_rgba32(255));
                     data.tiles.for_each_enumerate(|tile, layer| {
                         if let Some(&tile) = tile.as_ref() {
                             let depth = Self::layer_to_depth(layer);
                             let mut render_cell = Self::tile_to_render_cell(tile, false);
-                            render_cell.style.background = Some(colour::MISTY_GREY.to_rgba32(255));
+                            render_cell.style.background = Some(background);
                             render_cell.style.foreground = Some(Rgba32::new_grey(63));
                             fb.set_cell_relative_to_ctx(ctx, coord, depth, render_cell);
                         }
@@ -111,7 +117,12 @@ impl GameInstance {
                     data.tiles.for_each_enumerate(|tile, layer| {
                         if let Some(&tile) = tile.as_ref() {
                             let depth = Self::layer_to_depth(layer);
-                            let render_cell = Self::tile_to_render_cell(tile, true);
+                            let mut render_cell = Self::tile_to_render_cell(tile, true);
+                            if let Some(background) = render_cell.style.background.as_mut() {
+                                *background = mist
+                                    //                                    .saturating_scalar_mul_div(1, 2)
+                                    .alpha_composite(*background);
+                            }
                             fb.set_cell_relative_to_ctx(ctx, coord, depth, render_cell);
                         }
                     });
@@ -124,12 +135,13 @@ impl GameInstance {
 #[derive(Serialize, Deserialize)]
 pub struct GameInstanceStorable {
     running_game: RunningGame,
+    mist: Mist,
 }
 
 impl GameInstanceStorable {
     pub fn into_game_instance(self) -> (GameInstance, witness::Running) {
-        let Self { running_game } = self;
+        let Self { running_game, mist } = self;
         let (game, running) = running_game.into_game();
-        (GameInstance { game }, running)
+        (GameInstance { game, mist }, running)
     }
 }

@@ -304,12 +304,6 @@ impl Game {
             });
     }
 
-    pub fn enumerate_cell_visibility(
-        &self,
-    ) -> impl Iterator<Item = (Coord, CellVisibility<&VisibleCellData>)> {
-        self.visibility_grid.enumerate()
-    }
-
     pub fn cell_visibility_at_coord(&self, coord: Coord) -> CellVisibility<&VisibleCellData> {
         self.visibility_grid.get_visibility(coord)
     }
@@ -388,10 +382,11 @@ impl Game {
     fn player_walk(&mut self, direction: CardinalDirection) {
         let player_coord = self.player_coord();
         let new_player_coord = player_coord + direction.coord();
+        let layers = self.world.spatial_table.layers_at(new_player_coord);
         if let Some(&Layers {
             feature: Some(feature_entity),
             ..
-        }) = self.world.spatial_table.layers_at(new_player_coord)
+        }) = layers
         {
             // If the player bumps into a door, open the door
             if let Some(DoorState::Closed) = self.world.components.door_state.get(feature_entity) {
@@ -407,6 +402,14 @@ impl Game {
                 }
                 return;
             }
+        }
+        if let Some(&Layers {
+            water: Some(_),
+            floor: None,
+            ..
+        }) = layers
+        {
+            return;
         }
         self.world
             .spatial_table

@@ -371,6 +371,7 @@ impl GameLoopData {
                 }
             }
             Event::Tick(since_previous) => {
+                instance.mist.tick();
                 running.tick(&mut instance.game, since_previous, &self.game_config)
             }
             _ => Witness::Running(running),
