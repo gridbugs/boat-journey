@@ -2,5 +2,5 @@
 
 ## Package Contents
 
-- template2023.exe: Graphical version of the game
-- template2023-compatibility.exe: Graphical version of the game (slower but possibly more compatible)
+- boat_journey.exe: Graphical version of the game
+- boat-journey-compatibility.exe: Graphical version of the game (slower but possibly more compatible)

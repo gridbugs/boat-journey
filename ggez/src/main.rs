@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
 use gridbugs::chargrid_ggez::*;
-use template2023_app::{app, AppArgs};
-use template2023_native::{meap, NativeCommon};
+use boat_journey_app::{app, AppArgs};
+use boat_journey_native::{meap, NativeCommon};
 
 const CELL_SIZE: f64 = 12.;
 

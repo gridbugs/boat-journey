@@ -1,5 +1,5 @@
 [package]
-name = "template2023_ansi_terminal"
+name = "boat_journey_ansi_terminal"
 version = "0.1.0"
 authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
@@ -8,6 +8,6 @@ edition = "2021"
 gridbugs = { version = "0.9", features = [ "chargrid_ansi_terminal_gamepad" ] }
 env_logger = "0.10"
 meap = "0.5"
-template2023_app = { path = "../app" }
-template2023_native = { path = "../native" }
+boat_journey_app = { path = "../app" }
+boat_journey_native = { path = "../native" }
 rand = "0.8"

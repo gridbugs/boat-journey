@@ -1,6 +1,6 @@
 use gridbugs::chargrid_ansi_terminal::{col_encode, Context};
-use template2023_app::{app, AppArgs, InitialRngSeed};
-use template2023_native::NativeCommon;
+use boat_journey_app::{app, AppArgs, InitialRngSeed};
+use boat_journey_native::NativeCommon;
 use rand::Rng;
 
 enum ColEncodeChoice {

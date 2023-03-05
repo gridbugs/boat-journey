@@ -1,9 +1,7 @@
-# Gridbugs Template 2023
+# Boat Journey
 
-[![dependency status](https://deps.rs/repo/github/gridbugs/gridbugs-template-2023/status.svg)](https://deps.rs/repo/github/gridbugs/gridbugs-template-2023)
-[![test status](https://github.com/gridbugs/gridbugs-template-2023/actions/workflows/test.yml/badge.svg)](https://github.com/gridbugs/gridbugs-template-2023/actions/workflows/test.yml)
-
-Starting point for programs made with the gridbugs library
+[![dependency status](https://deps.rs/repo/github/gridbugs/boat-journey/status.svg)](https://deps.rs/repo/github/gridbugs/boat-journey)
+[![test status](https://github.com/gridbugs/boat-journey/actions/workflows/test.yml/badge.svg)](https://github.com/gridbugs/boat-journey/actions/workflows/test.yml)
 
 ## HIDPI
 

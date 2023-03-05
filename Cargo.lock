@@ -3246,19 +3246,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "template2023_ansi_terminal"
+name = "boat_journey_ansi_terminal"
 version = "0.1.0"
 dependencies = [
  "env_logger",
  "gridbugs",
  "meap",
  "rand",
- "template2023_app",
- "template2023_native",
+ "boat_journey_app",
+ "boat_journey_native",
 ]
 
 [[package]]
-name = "template2023_app"
+name = "boat_journey_app"
 version = "0.1.0"
 dependencies = [
  "getrandom",
@@ -3269,11 +3269,11 @@ dependencies = [
  "rand_isaac",
  "rand_xorshift",
  "serde",
- "template2023_game",
+ "boat_journey_game",
 ]
 
 [[package]]
-name = "template2023_game"
+name = "boat_journey_game"
 version = "0.1.0"
 dependencies = [
  "gridbugs",
@@ -3288,45 +3288,45 @@ dependencies = [
 ]
 
 [[package]]
-name = "template2023_ggez"
+name = "boat_journey_ggez"
 version = "0.1.0"
 dependencies = [
  "env_logger",
  "gridbugs",
- "template2023_app",
- "template2023_native",
+ "boat_journey_app",
+ "boat_journey_native",
 ]
 
 [[package]]
-name = "template2023_native"
+name = "boat_journey_native"
 version = "0.1.0"
 dependencies = [
  "gridbugs",
  "log",
  "meap",
- "template2023_app",
+ "boat_journey_app",
 ]
 
 [[package]]
-name = "template2023_web"
+name = "boat_journey_web"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "gridbugs",
  "log",
- "template2023_app",
+ "boat_journey_app",
  "wasm-bindgen",
  "wasm-logger",
 ]
 
 [[package]]
-name = "template2023_wgpu"
+name = "boat_journey_wgpu"
 version = "0.1.0"
 dependencies = [
  "env_logger",
  "gridbugs",
- "template2023_app",
- "template2023_native",
+ "boat_journey_app",
+ "boat_journey_native",
 ]
 
 [[package]]

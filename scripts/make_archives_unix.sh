@@ -9,9 +9,9 @@ TMP=$(mktemp -d)
 trap "rm -rf $TMP" EXIT
 
 mkdir $TMP/$ARCHIVE_NAME
-cp -v target/$MODE/template2023_wgpu $TMP/$ARCHIVE_NAME/template2023-graphical
-cp -v target/$MODE/template2023_ggez $TMP/$ARCHIVE_NAME/template2023-graphical-compatibility
-cp -v target/$MODE/template2023_ansi_terminal $TMP/$ARCHIVE_NAME/template2023-terminal
+cp -v target/$MODE/boat_journey_wgpu $TMP/$ARCHIVE_NAME/boat-journey-graphical
+cp -v target/$MODE/boat_journey_ggez $TMP/$ARCHIVE_NAME/boat-journey-graphical-compatibility
+cp -v target/$MODE/boat_journey_ansi_terminal $TMP/$ARCHIVE_NAME/boat-journey-terminal
 cp -v extras/unix/* $TMP/$ARCHIVE_NAME
 
 pushd $TMP

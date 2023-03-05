@@ -2,7 +2,7 @@ use gridbugs::{
     audio::{AudioHandle, AudioPlayer},
     chargrid::{control_flow::*, core::*},
 };
-use template2023_game::Config;
+use boat_journey_game::Config;
 
 pub type AppAudioPlayer = Option<AudioPlayer>;
 pub type AppHandle = Option<AudioHandle>;

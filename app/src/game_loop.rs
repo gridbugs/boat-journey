@@ -10,7 +10,7 @@ use gridbugs::{
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
-use template2023_game::{
+use boat_journey_game::{
     witness::{self, Witness},
     Config as GameConfig,
 };

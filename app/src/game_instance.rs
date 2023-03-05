@@ -1,7 +1,7 @@
 use gridbugs::chargrid::prelude::*;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use template2023_game::{
+use boat_journey_game::{
     witness::{self, Game, RunningGame},
     Config,
 };
