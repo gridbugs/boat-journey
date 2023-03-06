@@ -5,11 +5,19 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-wfc = "0.10"
-grid_2d = "0.15"
+gridbugs = { version = "0.9", features = [
+    "perlin2",
+    "coord_2d",
+    "grid_2d",
+]}
 rand = "0.8"
-direction = "0.18"
 
 [dev-dependencies]
+gridbugs = { version = "0.9", features = [
+    "chargrid",
+    "chargrid_ansi_terminal",
+    "rgb_int",
+    "direction",
+] }
 meap = "0.5"
 rand_isaac = "0.3"

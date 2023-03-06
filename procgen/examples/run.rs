@@ -1,5 +1,10 @@
-use grid_2d::Size;
-use procgen::{generate, GameCell, Spec};
+use gridbugs::{
+    chargrid::{control_flow::*, core::*},
+    chargrid_ansi_terminal::{col_encode, Context},
+    grid_2d::Size,
+    rgb_int::Rgba32,
+};
+use procgen::{generate, Spec, Terrain};
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 
@@ -17,7 +22,7 @@ impl Args {
                 width = opt_opt("INT", 'x').name("width").with_default(20);
                 height = opt_opt("INT", 'y').name("height").with_default(14);
             } in {{
-                println!("RNG Seed: {}", rng_seed);
+                eprintln!("RNG Seed: {}", rng_seed);
                 let rng = Isaac64Rng::seed_from_u64(rng_seed);
                 let size = Size::new(width, height);
                 Self {
@@ -29,26 +34,41 @@ impl Args {
     }
 }
 
+fn app(terrain: Terrain) -> App {
+    render(move |ctx, fb| {
+        let mut max_height = 0f64;
+        for coord in terrain.land.cells.coord_iter() {
+            max_height = max_height.max(terrain.land.get_height(coord).unwrap());
+        }
+        for (y, row) in terrain.land.cells.rows().enumerate() {
+            for (x, _cell) in row.into_iter().enumerate() {
+                let coord = Coord::new(x as i32, y as i32);
+                let height = terrain.land.get_height(coord).unwrap();
+                let bg = Rgba32::new_grey(((height * 255.) / max_height) as u8);
+                let render_cell = RenderCell::default().with_background(bg);
+                fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
+            }
+        }
+        for &coord in &terrain.river {
+            let bg = Rgba32::new(0, 0, 255, 255);
+            let render_cell = RenderCell::default().with_background(bg);
+            fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
+        }
+    })
+    .press_any_key()
+    .map(|()| app::Exit)
+}
+
+fn run(terrain: Terrain) {
+    let context = Context::new().unwrap();
+    let app = app(terrain);
+    context.run(app, col_encode::XtermTrueColour);
+}
+
 fn main() {
     use meap::Parser;
     let Args { size, mut rng } = Args::parser().with_help_default().parse_env_or_exit();
-    let spec = Spec { size, small: false };
-    let terrain = generate(spec, &mut rng);
-    println!("    abcdefghijklmnopqrstuvwxyz\n");
-    for (i, row) in terrain.rows().enumerate() {
-        print!("{:2}: ", i);
-        for (_j, cell) in row.into_iter().enumerate() {
-            let ch = match cell {
-                GameCell::Floor => '.',
-                GameCell::Wall => '#',
-                GameCell::Space => ' ',
-                GameCell::Door(_) => '+',
-                GameCell::Window(_) => '%',
-                GameCell::Stairs => '>',
-                GameCell::Spawn => '@',
-            };
-            print!("{}", ch);
-        }
-        println!("");
-    }
+    let spec = Spec { size };
+    let terrain = generate(&spec, &mut rng);
+    run(terrain);
 }

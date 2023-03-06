@@ -2718,12 +2718,10 @@ dependencies = [
 name = "procgen"
 version = "0.1.0"
 dependencies = [
- "direction",
- "grid_2d",
+ "gridbugs",
  "meap",
  "rand",
  "rand_isaac",
- "wfc",
 ]
 
 [[package]]
@@ -3745,20 +3743,6 @@ name = "weezl"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9193164d4de03a926d909d3bc7c30543cecb35400c02114792c2cae20d5e2dbb"
-
-[[package]]
-name = "wfc"
-version = "0.10.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f2e3d966729ec64112a2167bfd6237f449e2445b70c4f7547916707fc684b11"
-dependencies = [
- "coord_2d",
- "direction",
- "getrandom",
- "grid_2d",
- "hashbrown 0.13.2",
- "rand",
-]
 
 [[package]]
 name = "wgpu"
