@@ -1,13 +1,13 @@
 use gridbugs::{
     coord_2d::{Coord, Size},
-    direction::CardinalDirection,
+    direction::{CardinalDirection, Direction},
     grid_2d::Grid,
     perlin2::Perlin2,
 };
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 use std::{
     cmp::Ordering,
-    collections::{BinaryHeap, HashMap},
+    collections::{BinaryHeap, HashMap, HashSet, VecDeque},
 };
 
 pub struct Spec {
@@ -65,7 +65,6 @@ impl Land {
         let mut best = Vec::new();
         for i in 0..self.cells.height() as usize {
             let (path, cost) = self.plot_river_from_row(i);
-            //eprintln!("{}: {}", i, cost);
             if cost < best_cost {
                 best_cost = cost;
                 best = path;
@@ -88,7 +87,6 @@ impl Land {
         let mut chain: HashMap<Coord, Coord> = HashMap::new();
         let mut end = None;
         while let Some(cell) = pq.pop() {
-            //eprintln!("{:?}", cell);
             if cell.coord.x as u32 == self.cells.width() - 1 {
                 end = Some(cell);
                 break;
@@ -173,18 +171,159 @@ pub fn land_and_river<R: Rng>(spec: &Spec, rng: &mut R) -> (Land, Vec<Coord>) {
     (land, river)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorldCell1 {
+    Land,
+    Water,
+}
+
+fn world_grid1_from_river(size: Size, river: &[Coord]) -> Grid<WorldCell1> {
+    let mut grid = Grid::new_copy(size, WorldCell1::Land);
+    for &coord in river {
+        *grid.get_checked_mut(coord) = WorldCell1::Water;
+    }
+    grid
+}
+
+fn world_grid1_widen_river(grid: &mut Grid<WorldCell1>) {
+    let mut new_grid = grid.clone();
+    for coord in grid.coord_iter() {
+        for d in Direction::all() {
+            let neighbour_coord = coord + d.coord();
+            if let Some(&WorldCell1::Water) = grid.get(neighbour_coord) {
+                *new_grid.get_checked_mut(coord) = WorldCell1::Water;
+            }
+        }
+    }
+    *grid = new_grid;
+}
+
+fn world_grid1_validate_no_loops(grid: &Grid<WorldCell1>) -> bool {
+    let mut seen = HashSet::new();
+    let mut region_counter = 0;
+    for (coord, &cell) in grid.enumerate() {
+        if let WorldCell1::Water = cell {
+            continue;
+        }
+        if !seen.insert(coord) {
+            continue;
+        }
+        let mut to_visit = VecDeque::new();
+        to_visit.push_front(coord);
+        while let Some(coord) = to_visit.pop_back() {
+            for d in CardinalDirection::all() {
+                let neighbour_coord = coord + d.coord();
+                if let Some(&WorldCell1::Land) = grid.get(neighbour_coord) {
+                    if seen.insert(neighbour_coord) {
+                        to_visit.push_front(neighbour_coord);
+                    }
+                }
+            }
+        }
+        region_counter += 1;
+    }
+    // the river should divide the land into 2 regions
+    region_counter == 2
+}
+
+const TOWN_SIZE: Size = Size::new_u16(20, 20);
+
+fn is_point_valid_for_river_town(grid: &Grid<WorldCell1>, coord: Coord) -> bool {
+    if *grid.get_checked(coord) != WorldCell1::Water {
+        return false;
+    }
+    let rect_grid = Grid::new_copy(TOWN_SIZE, ());
+    let rect_top_left = coord - (rect_grid.size() / 2);
+    let mut current = if let Some(cell) = grid.get(rect_top_left).cloned() {
+        if let WorldCell1::Water = cell {
+            return false;
+        }
+        WorldCell1::Land
+    } else {
+        return false;
+    };
+    let mut transition_count = 0;
+    for relative_edge_coord in rect_grid.edge_coord_iter() {
+        let coord = relative_edge_coord + rect_top_left;
+        if let Some(&cell) = grid.get(coord) {
+            if cell != current && current == WorldCell1::Land {
+                transition_count += 1;
+            }
+            current = cell;
+        } else {
+            return false;
+        }
+    }
+    // the rectangle intersects the river in two locations
+    transition_count == 2
+}
+
+fn get_town_candidate_positions(grid: &Grid<WorldCell1>, river: &[Coord]) -> Vec<Vec<Coord>> {
+    let town_position_range = 10;
+    let town_indicies_approx = vec![river.len() / 4, (4 * river.len()) / 5];
+    town_indicies_approx
+        .into_iter()
+        .map(|index_approx| {
+            let mut candidates = Vec::new();
+            for i in (index_approx - town_position_range)..(index_approx + town_position_range) {
+                if let Some(&coord) = river.get(i) {
+                    if is_point_valid_for_river_town(grid, coord) {
+                        candidates.push(coord);
+                    }
+                }
+            }
+            candidates
+        })
+        .collect()
+}
+
+fn make_towns<R: Rng>(
+    grid: &Grid<WorldCell1>,
+    town_candidate_positions: &Vec<Vec<Coord>>,
+    rng: &mut R,
+) -> Grid<WorldCell1> {
+    let mut output = grid.clone();
+    for candidates in town_candidate_positions {
+        let &centre = candidates.choose(rng).unwrap();
+        let rect_grid = Grid::new_copy(TOWN_SIZE, ());
+        let rect_top_left = centre - (rect_grid.size() / 2);
+        for relative_coord in rect_grid.coord_iter() {
+            let coord = relative_coord + rect_top_left;
+            *output.get_checked_mut(coord) = WorldCell1::Water;
+        }
+    }
+    output
+}
+
 pub struct Terrain {
     pub land: Land,
     pub river: Vec<Coord>,
+    pub world1: Grid<WorldCell1>,
 }
 
 pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
-    let (land, river) = loop {
-        let (land, river) = land_and_river(spec, rng);
-        if validate_river(&river) {
-            break (land, river);
+    loop {
+        let (land, river) = loop {
+            let (land, river) = land_and_river(spec, rng);
+            if validate_river(&river) {
+                break (land, river);
+            }
+        };
+        let mut world1 = world_grid1_from_river(spec.size, &river);
+        world_grid1_widen_river(&mut world1);
+        world_grid1_widen_river(&mut world1);
+        let town_candidate_positions = get_town_candidate_positions(&world1, &river);
+        if town_candidate_positions.iter().any(|v| v.is_empty()) {
+            continue;
         }
-        eprintln!("x");
-    };
-    Terrain { land, river }
+        let world1 = make_towns(&world1, &town_candidate_positions, rng);
+        if !world_grid1_validate_no_loops(&world1) {
+            continue;
+        }
+        break Terrain {
+            land,
+            river,
+            world1,
+        };
+    }
 }

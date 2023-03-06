@@ -54,6 +54,16 @@ fn app(terrain: Terrain) -> App {
             let render_cell = RenderCell::default().with_background(bg);
             fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
         }
+        for (coord, &cell) in terrain.world1.enumerate() {
+            use procgen::WorldCell1;
+            let render_cell = match cell {
+                WorldCell1::Land => RenderCell::default().with_character('#'),
+                WorldCell1::Water => RenderCell::default()
+                    .with_character('~')
+                    .with_background(Rgba32::new_rgb(0, 255, 255)),
+            };
+            fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
+        }
     })
     .press_any_key()
     .map(|()| app::Exit)
