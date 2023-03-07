@@ -175,13 +175,13 @@ impl Game {
         //    ##     ##
         //     #######
 
-        let boat_width1 = 4;
-        let boat_width2 = 4;
-        let boat_width3 = 3;
-        let boat_length1 = 8;
-        let boat_length2 = 10;
+        let boat_width1 = 3;
+        let boat_width2 = 3;
+        let boat_width3 = 2;
+        let boat_length1 = 4;
+        let boat_length2 = 6;
         let boat_length3 = 1;
-        let boat_length4 = 6;
+        let boat_length4 = 4;
         let vertices_int = vec![
             Coord::new(0, -boat_length4),            // 0
             Coord::new(boat_width1, -boat_length3),  // 1

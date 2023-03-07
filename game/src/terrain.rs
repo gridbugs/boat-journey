@@ -10,6 +10,7 @@ use gridbugs::{
     coord_2d::{Coord, Size},
     entity_table::entity_data,
 };
+use procgen::{generate, Spec, WorldCell2};
 use rand::Rng;
 use vector::Radians;
 
@@ -44,7 +45,7 @@ impl Terrain {
         }
     }
 
-    pub fn generate<R: Rng>(player_data: EntityData, rng: &mut R) -> Self {
+    pub fn generate_debug<R: Rng>(player_data: EntityData, rng: &mut R) -> Self {
         let mut world = World::new(Size::new(1000, 500));
         let player_entity = world.insert_entity_data(
             Location {
@@ -71,6 +72,54 @@ impl Terrain {
                     world.spawn_water1(coord);
                 } else {
                     world.spawn_water2(coord);
+                }
+            }
+        }
+        Self {
+            world,
+            player_entity,
+        }
+    }
+
+    pub fn generate<R: Rng>(player_data: EntityData, rng: &mut R) -> Self {
+        let g = generate(
+            &Spec {
+                size: Size::new(150, 80),
+            },
+            rng,
+        );
+        let mut world = World::new(g.world2.grid.size());
+        let player_entity = world.insert_entity_data(
+            Location {
+                coord: g.world2.spawn,
+                layer: Some(Layer::Character),
+            },
+            player_data,
+        );
+        let boat_data = entity_data! {
+            boat: Boat::new(Radians(0f64)),
+        };
+        world.insert_entity_data(
+            Location {
+                coord: g.world2.spawn,
+                layer: None,
+            },
+            boat_data,
+        );
+        println!("spawn: {:?}", g.world2.spawn);
+        println!("world size: {:?}", g.world2.grid.size());
+        let water_visible_chance = 0.01f64;
+        for (coord, &cell) in g.world2.grid.enumerate() {
+            match cell {
+                WorldCell2::Land => {
+                    world.spawn_floor(coord);
+                }
+                WorldCell2::Water => {
+                    if rng.gen::<f64>() < water_visible_chance {
+                        world.spawn_water1(coord);
+                    } else {
+                        world.spawn_water2(coord);
+                    }
                 }
             }
         }

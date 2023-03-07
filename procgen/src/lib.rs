@@ -93,7 +93,7 @@ impl Land {
                 end = Some(cell);
                 break;
             }
-            for d in CardinalDirection::all() {
+            for d in Direction::all() {
                 let neighbour_coord = cell.coord + d.coord();
                 if let Some(neighbour_height) = self.get_height(neighbour_coord) {
                     let mut neighbour_cost = cell.cost + neighbour_height.powf(2.);
@@ -134,7 +134,7 @@ impl Land {
 }
 
 fn validate_river(river: &[Coord]) -> bool {
-    let n = 4;
+    let n = 10;
     'outer: for w in river.windows((2 * n) + 1) {
         let delta_0 = w[1] - w[0];
         for i in 1..n {
@@ -159,7 +159,7 @@ fn validate_river(river: &[Coord]) -> bool {
 
 pub fn land_and_river<R: Rng>(spec: &Spec, rng: &mut R) -> (Land, Vec<Coord>) {
     let perlin2 = Perlin2::new(rng);
-    let zoom = 0.05;
+    let zoom = 0.03;
     let height_weight = 1000.;
     let scale_coord = |coord: Coord| (coord.x as f64 * zoom, coord.y as f64 * zoom);
     let land_cells = Grid::new_fn(spec.size, |coord| LandCell {
@@ -228,7 +228,7 @@ fn world_grid1_validate_no_loops(grid: &Grid<WorldCell1>) -> bool {
     region_counter == 2
 }
 
-const TOWN_SIZE: Size = Size::new_u16(20, 20);
+const TOWN_SIZE: Size = Size::new_u16(40, 40);
 
 fn is_point_valid_for_river_town(grid: &Grid<WorldCell1>, coord: Coord) -> bool {
     if *grid.get_checked(coord) != WorldCell1::Water {
@@ -262,7 +262,7 @@ fn is_point_valid_for_river_town(grid: &Grid<WorldCell1>, coord: Coord) -> bool 
 
 fn get_town_candidate_positions(grid: &Grid<WorldCell1>, river: &[Coord]) -> Vec<Vec<Coord>> {
     let town_position_range = 10;
-    let town_indicies_approx = vec![river.len() / 4, (4 * river.len()) / 5];
+    let town_indicies_approx = vec![river.len() / 4, (3 * river.len()) / 4];
     town_indicies_approx
         .into_iter()
         .map(|index_approx| {
@@ -283,10 +283,12 @@ fn make_towns<R: Rng>(
     grid: &Grid<WorldCell1>,
     town_candidate_positions: &Vec<Vec<Coord>>,
     rng: &mut R,
-) -> Grid<WorldCell1> {
+) -> (Grid<WorldCell1>, Vec<Coord>) {
     let mut output = grid.clone();
+    let mut town_positions = Vec::new();
     for candidates in town_candidate_positions {
         let &centre = candidates.choose(rng).unwrap();
+        town_positions.push(centre);
         let rect_grid = Grid::new_copy(TOWN_SIZE, ());
         let rect_top_left = centre - (rect_grid.size() / 2);
         for relative_coord in rect_grid.coord_iter() {
@@ -294,7 +296,7 @@ fn make_towns<R: Rng>(
             *output.get_checked_mut(coord) = WorldCell1::Water;
         }
     }
-    output
+    (output, town_positions)
 }
 
 fn convex_hull(points: &[(f64, f64)]) -> Vec<(f64, f64)> {
@@ -366,7 +368,7 @@ pub struct Blob {
     pub inside: Vec<Coord>,
 }
 
-fn blob<R: Rng>(size: Size, rng: &mut R) -> Blob {
+fn blob<R: Rng>(coord: Coord, size: Size, rng: &mut R) -> Blob {
     let n = 400;
     let radius = 0.5;
     let mut points = Vec::new();
@@ -376,14 +378,14 @@ fn blob<R: Rng>(size: Size, rng: &mut R) -> Blob {
         let vector = Radial { length, angle };
         let Cartesian { x, y } = vector.to_cartesian();
         points.push((
-            (x + radius) * size.width() as f64,
-            (y + radius) * size.height() as f64,
+            (x + radius) * size.width() as f64 * 2.0,
+            (y + radius) * size.height() as f64 * 2.0,
         ));
     }
     let ch = convex_hull(&points);
     let mut ch_coords = ch
         .into_iter()
-        .map(|(x, y)| Coord::new(x as i32, y as i32))
+        .map(|(x, y)| Coord::new(x as i32, y as i32) + coord - (size.to_coord().unwrap()))
         .collect::<Vec<_>>();
     ch_coords.push(ch_coords[0]);
     let border_set = ch_coords
@@ -391,7 +393,7 @@ fn blob<R: Rng>(size: Size, rng: &mut R) -> Blob {
         .flat_map(|w| line_2d::coords_between_cardinal(w[0], w[1]))
         .collect::<HashSet<_>>();
     let border = border_set.iter().cloned().collect::<Vec<_>>();
-    let centre = size.to_coord().unwrap() / 2;
+    let centre = coord;
     let mut to_visit = VecDeque::new();
     to_visit.push_front(centre);
     let mut seen = HashSet::new();
@@ -410,11 +412,76 @@ fn blob<R: Rng>(size: Size, rng: &mut R) -> Blob {
     Blob { border, inside }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorldCell2 {
+    Water,
+    Land,
+}
+
+pub struct World2 {
+    pub grid: Grid<WorldCell2>,
+    pub spawn: Coord,
+}
+
+fn make_world_grid2<R: Rng>(
+    spec: &Spec,
+    river: &[Coord],
+    town_positions: &[Coord],
+    rng: &mut R,
+) -> World2 {
+    let left_padding = 100;
+    let right_padding = 50;
+    let top_padding = 50;
+    let bottom_padding = 50;
+    let zoom = 3;
+    let lake_radius = 35;
+    let size =
+        spec.size * zoom + Size::new(left_padding + right_padding, top_padding + bottom_padding);
+    let scale_coord =
+        |coord: Coord| (coord * zoom as i32) + Coord::new(left_padding as i32, top_padding as i32);
+    let mut grid = Grid::new_copy(size, WorldCell2::Land);
+    let lake_coord_unscaled = river[0] + Coord::new(-(lake_radius as i32) / zoom as i32, 0);
+    let mut river = river.into_iter().cloned().collect::<VecDeque<_>>();
+    river.push_front(lake_coord_unscaled);
+    let river = river.into_iter().collect::<Vec<_>>();
+    for w in river.windows(2) {
+        for coord in line_2d::coords_between(scale_coord(w[0]), scale_coord(w[1])) {
+            *grid.get_checked_mut(coord) = WorldCell2::Water;
+        }
+    }
+    let widen_river = |grid: Grid<WorldCell2>| {
+        let mut output = grid.clone();
+        for (coord, &cell) in grid.enumerate() {
+            if cell == WorldCell2::Water {
+                for d in Direction::all() {
+                    if let Some(output_cell) = output.get_mut(coord + d.coord()) {
+                        *output_cell = WorldCell2::Water;
+                    }
+                }
+            }
+        }
+        output
+    };
+    for _ in 0..6 {
+        grid = widen_river(grid);
+    }
+
+    let lake_coord = scale_coord(lake_coord_unscaled);
+    println!("before ch");
+    let lake = blob(lake_coord, Size::new(lake_radius, lake_radius), rng);
+    println!("after ch");
+    for &coord in &lake.inside {
+        *grid.get_checked_mut(coord) = WorldCell2::Water;
+    }
+    let spawn = lake_coord;
+    World2 { grid, spawn }
+}
+
 pub struct Terrain {
     pub land: Land,
     pub river: Vec<Coord>,
     pub world1: Grid<WorldCell1>,
-    pub blob: Blob,
+    pub world2: World2,
 }
 
 pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
@@ -424,38 +491,28 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
             if validate_river(&river) {
                 break (land, river);
             }
+            eprintln!("bad river");
         };
+        println!("good river");
         let mut world1 = world_grid1_from_river(spec.size, &river);
         world_grid1_widen_river(&mut world1);
         world_grid1_widen_river(&mut world1);
         let town_candidate_positions = get_town_candidate_positions(&world1, &river);
         if town_candidate_positions.iter().any(|v| v.is_empty()) {
+            println!("no town candidate");
             continue;
         }
-        let world1 = make_towns(&world1, &town_candidate_positions, rng);
+        let (world1, town_positions) = make_towns(&world1, &town_candidate_positions, rng);
         if !world_grid1_validate_no_loops(&world1) {
+            println!("found loop");
             continue;
         }
+        let world2 = make_world_grid2(spec, &river, &town_positions, rng);
         break Terrain {
             land,
             river,
             world1,
-            blob: blob(spec.size, rng),
+            world2,
         };
     }
-}
-
-#[test]
-fn convex_hull_test() {
-    use std::collections::BTreeSet;
-    let points = vec![
-        (0., 0.),
-        (1., 1.),
-        (1., -1.),
-        (-1., 1.),
-        (-1., -1.),
-        (0.5, 0.5),
-    ];
-    let ch = convex_hull(&points);
-    panic!("{:?}", ch);
 }
