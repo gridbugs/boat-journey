@@ -566,7 +566,6 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eca10b37f24b6acc00078af2e2bb5a60badd76d240715118e157eb8844546aff"
 dependencies = [
- "chargrid_gamepad",
  "chargrid_input",
  "chargrid_runtime",
  "grid_2d",

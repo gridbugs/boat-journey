@@ -110,15 +110,17 @@ impl Terrain {
         println!("world size: {:?}", g.world2.grid.size());
         let water_visible_chance = 0.01f64;
         for (coord, &cell) in g.world2.grid.enumerate() {
-            match cell {
-                WorldCell2::Land => {
-                    world.spawn_floor(coord);
-                }
-                WorldCell2::Water => {
-                    if rng.gen::<f64>() < water_visible_chance {
-                        world.spawn_water1(coord);
-                    } else {
-                        world.spawn_water2(coord);
+            if *g.water_distance_map.distances.get_checked(coord) < 20 {
+                match cell {
+                    WorldCell2::Land => {
+                        world.spawn_floor(coord);
+                    }
+                    WorldCell2::Water => {
+                        if rng.gen::<f64>() < water_visible_chance {
+                            world.spawn_water1(coord);
+                        } else {
+                            world.spawn_water2(coord);
+                        }
                     }
                 }
             }

@@ -1,9 +1,9 @@
+use boat_journey_app::{app, AppArgs, AppStorage, InitialRngSeed};
 use gridbugs::{
     audio::{AudioPlayer, WebAudioPlayer},
     chargrid_web::{Context, Size},
     storage::{LocalStorage, Storage},
 };
-use boat_journey_app::{app, AppArgs, AppStorage, InitialRngSeed};
 use wasm_bindgen::prelude::*;
 
 const SAVE_KEY: &str = "save";
@@ -15,7 +15,9 @@ pub fn run() -> Result<(), JsValue> {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Info));
     console_error_panic_hook::set_once();
     let audio_player = Some(AudioPlayer::new(WebAudioPlayer::new_with_mime("video/ogg")));
-    let storage = Storage::new(LocalStorage::new());
+    let mut storage = Storage::new(LocalStorage::new());
+    let _ = storage.remove(CONFIG_KEY);
+    let _ = storage.remove(CONTROLS_KEY);
     let context = Context::new(Size::new(80, 60), "content");
     let args = AppArgs {
         storage: AppStorage {

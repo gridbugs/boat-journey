@@ -228,7 +228,7 @@ fn world_grid1_validate_no_loops(grid: &Grid<WorldCell1>) -> bool {
     region_counter == 2
 }
 
-const TOWN_SIZE: Size = Size::new_u16(40, 40);
+const TOWN_SIZE: Size = Size::new_u16(25, 25);
 
 fn is_point_valid_for_river_town(grid: &Grid<WorldCell1>, coord: Coord) -> bool {
     if *grid.get_checked(coord) != WorldCell1::Water {
@@ -430,19 +430,29 @@ fn make_world_grid2<R: Rng>(
     rng: &mut R,
 ) -> World2 {
     let left_padding = 100;
-    let right_padding = 50;
-    let top_padding = 50;
-    let bottom_padding = 50;
+    let right_land_padding = 50;
+    let right_ocean_padding = 50;
+    let top_padding = 200;
+    let bottom_padding = 200;
     let zoom = 3;
     let lake_radius = 35;
-    let size =
-        spec.size * zoom + Size::new(left_padding + right_padding, top_padding + bottom_padding);
+    let size = spec.size * zoom
+        + Size::new(
+            left_padding + right_land_padding + right_ocean_padding,
+            top_padding + bottom_padding,
+        );
     let scale_coord =
         |coord: Coord| (coord * zoom as i32) + Coord::new(left_padding as i32, top_padding as i32);
     let mut grid = Grid::new_copy(size, WorldCell2::Land);
     let lake_coord_unscaled = river[0] + Coord::new(-(lake_radius as i32) / zoom as i32, 0);
+    let river_end_unscaled = (*river.last().unwrap())
+        + Coord::new(
+            (right_land_padding + right_ocean_padding) as i32 / zoom as i32,
+            0,
+        );
     let mut river = river.into_iter().cloned().collect::<VecDeque<_>>();
     river.push_front(lake_coord_unscaled);
+    river.push_back(river_end_unscaled);
     let river = river.into_iter().collect::<Vec<_>>();
     for w in river.windows(2) {
         for coord in line_2d::coords_between(scale_coord(w[0]), scale_coord(w[1])) {
@@ -467,14 +477,68 @@ fn make_world_grid2<R: Rng>(
     }
 
     let lake_coord = scale_coord(lake_coord_unscaled);
-    println!("before ch");
     let lake = blob(lake_coord, Size::new(lake_radius, lake_radius), rng);
-    println!("after ch");
     for &coord in &lake.inside {
         *grid.get_checked_mut(coord) = WorldCell2::Water;
     }
     let spawn = lake_coord;
+    let town_size = scale_coord(TOWN_SIZE.to_coord().unwrap())
+        .to_size()
+        .unwrap();
+    println!("world size: {:?}", grid.size());
+    for &town_coord_unscaled in town_positions {
+        let town_coord = scale_coord(town_coord_unscaled);
+        let town_blob = blob(town_coord, town_size / 2, rng);
+        for &coord in &town_blob.inside {
+            println!("{:?}", coord);
+            *grid.get_checked_mut(coord) = WorldCell2::Water;
+        }
+    }
+    let ocean_centre = Coord::new(grid.width() as i32, grid.height() as i32 / 2);
+    let ocean_height = grid.height();
+    let ocean_blob = blob(
+        ocean_centre,
+        Size::new(right_ocean_padding, ocean_height),
+        rng,
+    );
+    for &coord in &ocean_blob.inside {
+        if let Some(cell) = grid.get_mut(coord) {
+            *cell = WorldCell2::Water;
+        }
+    }
+    let spawn = ocean_centre - Coord::new(10, 0);
     World2 { grid, spawn }
+}
+
+pub struct WaterDistanceMap {
+    pub distances: Grid<u32>,
+}
+
+impl WaterDistanceMap {
+    fn new(world2: &Grid<WorldCell2>) -> Self {
+        let mut distances = Grid::new_copy(world2.size(), 0);
+        let mut seen = HashSet::new();
+        let mut to_visit = VecDeque::new();
+        for (coord, &cell) in world2.enumerate() {
+            if cell == WorldCell2::Water {
+                seen.insert(coord);
+                to_visit.push_front(coord);
+            }
+        }
+        while let Some(coord) = to_visit.pop_back() {
+            for d in Direction::all() {
+                let neighbour_coord = coord + d.coord();
+                if let Some(WorldCell2::Land) = world2.get(neighbour_coord) {
+                    if seen.insert(neighbour_coord) {
+                        let distance = *distances.get_checked(coord) + 1;
+                        *distances.get_checked_mut(neighbour_coord) = distance;
+                        to_visit.push_front(neighbour_coord);
+                    }
+                }
+            }
+        }
+        Self { distances }
+    }
 }
 
 pub struct Terrain {
@@ -482,6 +546,7 @@ pub struct Terrain {
     pub river: Vec<Coord>,
     pub world1: Grid<WorldCell1>,
     pub world2: World2,
+    pub water_distance_map: WaterDistanceMap,
 }
 
 pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
@@ -508,11 +573,13 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
             continue;
         }
         let world2 = make_world_grid2(spec, &river, &town_positions, rng);
+        let water_distance_map = WaterDistanceMap::new(&world2.grid);
         break Terrain {
             land,
             river,
             world1,
             world2,
+            water_distance_map,
         };
     }
 }

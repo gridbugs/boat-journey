@@ -45,8 +45,8 @@ const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
         on_select: Fade {
             to: To {
                 rgba32: Layers {
-                    foreground: Rgba32::new_grey(0),
-                    background: Rgba32::new_grey(255),
+                    foreground: Rgba32::new_grey(255),
+                    background: crate::colour::MURKY_GREEN.to_rgba32(255),
                 },
                 bold: true,
                 underline: false,
@@ -60,7 +60,7 @@ const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
         on_deselect: Fade {
             to: To {
                 rgba32: Layers {
-                    foreground: Rgba32::new_grey(255),
+                    foreground: Rgba32::new_grey(127),
                     background: Rgba32::new_grey(0),
                 },
                 bold: false,
@@ -456,6 +456,7 @@ fn main_menu() -> AppCF<MainMenuEntry> {
     };
     add_item(NewGame, "New Game", 'n');
     add_item(Help, "Help", 'h');
+    #[cfg(not(feature = "web"))]
     add_item(Quit, "Quit", 'q');
     builder.build_cf()
 }
@@ -499,7 +500,9 @@ fn pause_menu() -> AppCF<PauseMenuEntry> {
         builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
     };
     add_item(Resume, "Resume", 'r');
+    #[cfg(not(feature = "web"))]
     add_item(SaveQuit, "Save and Quit", 'q');
+    #[cfg(not(feature = "web"))]
     add_item(Save, "Save", 's');
     add_item(NewGame, "New Game", 'n');
     add_item(Help, "Help", 'h');

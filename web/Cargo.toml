@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gridbugs = { version = "0.9", features = [
-    "chargrid_web_gamepad",
+    "chargrid_web",
     "storage_backend_web",
     "audio_backend_web",
 ] }
