@@ -413,14 +413,21 @@ fn blob<R: Rng>(coord: Coord, size: Size, rng: &mut R) -> Blob {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WaterType {
+    Ocean,
+    River,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WorldCell2 {
-    Water,
+    Water(WaterType),
     Land,
 }
 
 pub struct World2 {
     pub grid: Grid<WorldCell2>,
     pub spawn: Coord,
+    pub ocean_x_ofset: u32,
 }
 
 fn make_world_grid2<R: Rng>(
@@ -456,16 +463,16 @@ fn make_world_grid2<R: Rng>(
     let river = river.into_iter().collect::<Vec<_>>();
     for w in river.windows(2) {
         for coord in line_2d::coords_between(scale_coord(w[0]), scale_coord(w[1])) {
-            *grid.get_checked_mut(coord) = WorldCell2::Water;
+            *grid.get_checked_mut(coord) = WorldCell2::Water(WaterType::River);
         }
     }
     let widen_river = |grid: Grid<WorldCell2>| {
         let mut output = grid.clone();
         for (coord, &cell) in grid.enumerate() {
-            if cell == WorldCell2::Water {
+            if cell == WorldCell2::Water(WaterType::River) {
                 for d in Direction::all() {
                     if let Some(output_cell) = output.get_mut(coord + d.coord()) {
-                        *output_cell = WorldCell2::Water;
+                        *output_cell = WorldCell2::Water(WaterType::River);
                     }
                 }
             }
@@ -479,19 +486,17 @@ fn make_world_grid2<R: Rng>(
     let lake_coord = scale_coord(lake_coord_unscaled);
     let lake = blob(lake_coord, Size::new(lake_radius, lake_radius), rng);
     for &coord in &lake.inside {
-        *grid.get_checked_mut(coord) = WorldCell2::Water;
+        *grid.get_checked_mut(coord) = WorldCell2::Water(WaterType::River);
     }
     let spawn = lake_coord;
     let town_size = scale_coord(TOWN_SIZE.to_coord().unwrap())
         .to_size()
         .unwrap();
-    println!("world size: {:?}", grid.size());
     for &town_coord_unscaled in town_positions {
         let town_coord = scale_coord(town_coord_unscaled);
         let town_blob = blob(town_coord, town_size / 2, rng);
         for &coord in &town_blob.inside {
-            println!("{:?}", coord);
-            *grid.get_checked_mut(coord) = WorldCell2::Water;
+            *grid.get_checked_mut(coord) = WorldCell2::Water(WaterType::River);
         }
     }
     let ocean_centre = Coord::new(grid.width() as i32, grid.height() as i32 / 2);
@@ -503,11 +508,15 @@ fn make_world_grid2<R: Rng>(
     );
     for &coord in &ocean_blob.inside {
         if let Some(cell) = grid.get_mut(coord) {
-            *cell = WorldCell2::Water;
+            *cell = WorldCell2::Water(WaterType::Ocean);
         }
     }
     let spawn = ocean_centre - Coord::new(10, 0);
-    World2 { grid, spawn }
+    World2 {
+        spawn,
+        ocean_x_ofset: grid.width() - right_ocean_padding,
+        grid,
+    }
 }
 
 pub struct WaterDistanceMap {
@@ -520,7 +529,7 @@ impl WaterDistanceMap {
         let mut seen = HashSet::new();
         let mut to_visit = VecDeque::new();
         for (coord, &cell) in world2.enumerate() {
-            if cell == WorldCell2::Water {
+            if let WorldCell2::Water(_) = cell {
                 seen.insert(coord);
                 to_visit.push_front(coord);
             }
@@ -556,20 +565,16 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
             if validate_river(&river) {
                 break (land, river);
             }
-            eprintln!("bad river");
         };
-        println!("good river");
         let mut world1 = world_grid1_from_river(spec.size, &river);
         world_grid1_widen_river(&mut world1);
         world_grid1_widen_river(&mut world1);
         let town_candidate_positions = get_town_candidate_positions(&world1, &river);
         if town_candidate_positions.iter().any(|v| v.is_empty()) {
-            println!("no town candidate");
             continue;
         }
         let (world1, town_positions) = make_towns(&world1, &town_candidate_positions, rng);
         if !world_grid1_validate_no_loops(&world1) {
-            println!("found loop");
             continue;
         }
         let world2 = make_world_grid2(spec, &river, &town_positions, rng);

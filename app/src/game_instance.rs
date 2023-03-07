@@ -72,6 +72,7 @@ impl GameInstance {
             Tile::DoorOpen => '-',
             Tile::Rock => '░',
             Tile::Board => '=',
+            Tile::Tree => '♣',
         };
         RenderCell {
             character: Some(character),

@@ -144,4 +144,15 @@ impl World {
             },
         )
     }
+
+    pub fn spawn_tree(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Tree,
+                solid: (),
+                opacity: 100,
+            },
+        )
+    }
 }

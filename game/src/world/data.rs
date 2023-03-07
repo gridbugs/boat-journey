@@ -30,6 +30,7 @@ pub enum Tile {
     Rock,
     Board,
     BoatControls,
+    Tree,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

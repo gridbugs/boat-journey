@@ -106,16 +106,45 @@ impl Terrain {
             },
             boat_data,
         );
-        println!("spawn: {:?}", g.world2.spawn);
-        println!("world size: {:?}", g.world2.grid.size());
         let water_visible_chance = 0.01f64;
+        let tree_chance1 = 0.2f64;
+        let tree_chance2 = 0.4f64;
+        let rock_chance1 = 0.05f64;
+        let rock_chance2 = 0.1f64;
         for (coord, &cell) in g.world2.grid.enumerate() {
-            if *g.water_distance_map.distances.get_checked(coord) < 20 {
+            let water_distance = *g.water_distance_map.distances.get_checked(coord);
+            if water_distance < 20 {
                 match cell {
                     WorldCell2::Land => {
-                        world.spawn_floor(coord);
+                        if coord.x > g.world2.ocean_x_ofset as i32 - 5 {
+                            if rng.gen::<f64>() < rock_chance1 {
+                                world.spawn_rock(coord);
+                            } else {
+                                world.spawn_floor(coord);
+                            }
+                        } else {
+                            if water_distance > 15 {
+                                world.spawn_tree(coord);
+                            } else if water_distance > 7 {
+                                if rng.gen::<f64>() < tree_chance2 {
+                                    world.spawn_tree(coord);
+                                } else if rng.gen::<f64>() < rock_chance1 {
+                                    world.spawn_rock(coord);
+                                } else {
+                                    world.spawn_floor(coord);
+                                }
+                            } else {
+                                if rng.gen::<f64>() < tree_chance1 {
+                                    world.spawn_tree(coord);
+                                } else if rng.gen::<f64>() < rock_chance2 {
+                                    world.spawn_rock(coord);
+                                } else {
+                                    world.spawn_floor(coord);
+                                }
+                            }
+                        }
                     }
-                    WorldCell2::Water => {
+                    WorldCell2::Water(_) => {
                         if rng.gen::<f64>() < water_visible_chance {
                             world.spawn_water1(coord);
                         } else {
