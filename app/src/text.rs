@@ -14,7 +14,20 @@ pub fn help(width: u32) -> AppCF<()> {
         string: s.to_string(),
         style: Style::plain_text(),
     };
-    text_component(width, vec![t("Help")]).press_any_key()
+    let b = |s: &str| StyledString {
+        string: s.to_string(),
+        style: Style::plain_text().with_bold(true),
+    };
+    text_component(
+        width,
+        vec![
+            b("Help\n\n"),
+            b("On Foot\n"),
+            t("Walk: Arrow Keys\n"),
+            t("Drive Boat: e\n"),
+        ],
+    )
+    .press_any_key()
 }
 
 fn win_text(width: u32) -> CF<(), State> {

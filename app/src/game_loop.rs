@@ -46,7 +46,7 @@ const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
             to: To {
                 rgba32: Layers {
                     foreground: Rgba32::new_grey(255),
-                    background: crate::colour::MURKY_GREEN.to_rgba32(255),
+                    background: crate::colour::MISTY_GREY.to_rgba32(255),
                 },
                 bold: true,
                 underline: false,
@@ -60,8 +60,8 @@ const MENU_FADE_SPEC: menu::identifier::fade_spec::FadeSpec = {
         on_deselect: Fade {
             to: To {
                 rgba32: Layers {
-                    foreground: Rgba32::new_grey(127),
-                    background: Rgba32::new_grey(0),
+                    foreground: Rgba32::new_grey(187),
+                    background: Rgba32::new(0, 0, 0, 0),
                 },
                 bold: false,
                 underline: false,
@@ -454,7 +454,7 @@ fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
             style.with_bold(true)
         )]
     };
-    cf.overlay(decoration, 10)
+    cf.with_title_vertical(decoration, 2)
 }
 
 fn main_menu() -> AppCF<MainMenuEntry> {
@@ -480,16 +480,37 @@ enum MainMenuOutput {
 
 const MAIN_MENU_TEXT_WIDTH: u32 = 40;
 
+fn background() -> CF<(), State> {
+    render(|ctx, fb| {
+        for coord in ctx.bounding_box.size().coord_iter_row_major() {
+            fb.set_cell_relative_to_ctx(
+                ctx,
+                coord,
+                1,
+                RenderCell::default().with_background(crate::colour::MURKY_GREEN.to_rgba32(255)),
+            );
+        }
+    })
+    .ignore_state()
+}
+
 fn main_menu_loop() -> AppCF<MainMenuOutput> {
     use MainMenuEntry::*;
-    title_decorate(main_menu()).repeat_unit(move |entry| match entry {
-        NewGame => on_state(|state: &mut State| MainMenuOutput::NewGame {
-            new_running: state.new_game(),
+    title_decorate(main_menu())
+        .centre()
+        .overlay(background(), 1)
+        .repeat_unit(move |entry| match entry {
+            NewGame => on_state(|state: &mut State| MainMenuOutput::NewGame {
+                new_running: state.new_game(),
+            })
+            .break_(),
+            Help => text::help(MAIN_MENU_TEXT_WIDTH)
+                .fill(crate::colour::MURKY_GREEN.to_rgba32(255))
+                .centre()
+                .overlay(background(), 1)
+                .continue_(),
+            Quit => val_once(MainMenuOutput::Quit).break_(),
         })
-        .break_(),
-        Help => text::help(MAIN_MENU_TEXT_WIDTH).centre().continue_(),
-        Quit => val_once(MainMenuOutput::Quit).break_(),
-    })
 }
 
 #[derive(Clone)]
@@ -596,6 +617,7 @@ fn win(win_: witness::Win) -> AppCF<()> {
             text::win(MAIN_MENU_TEXT_WIDTH)
         })
         .centre()
+        .overlay(background(), 1)
     })
 }
 
@@ -606,6 +628,7 @@ fn game_over() -> AppCF<()> {
         text::game_over(MAIN_MENU_TEXT_WIDTH)
     })
     .centre()
+    .overlay(background(), 1)
 }
 
 pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
