@@ -511,7 +511,7 @@ fn make_world_grid2<R: Rng>(
             *cell = WorldCell2::Water(WaterType::Ocean);
         }
     }
-    let spawn = ocean_centre - Coord::new(10, 0);
+    let spawn = scale_coord(river_end_unscaled) - Coord::new(right_ocean_padding as i32 + 10, 0);
     World2 {
         spawn,
         ocean_x_ofset: grid.width() - right_ocean_padding,

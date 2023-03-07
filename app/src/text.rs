@@ -1,15 +1,12 @@
-use crate::game_loop::AppCF;
+use crate::game_loop::{AppCF, State};
 use gridbugs::chargrid::{
+    control_flow::*,
     prelude::*,
     text::{StyledString, Text},
 };
 
-fn text_component(width: u32, text: Vec<StyledString>) -> AppCF<()> {
-    Text::new(text)
-        .wrap_word()
-        .cf()
-        .set_width(width)
-        .press_any_key()
+fn text_component(width: u32, text: Vec<StyledString>) -> CF<(), State> {
+    Text::new(text).wrap_word().cf().set_width(width)
 }
 
 pub fn help(width: u32) -> AppCF<()> {
@@ -17,21 +14,33 @@ pub fn help(width: u32) -> AppCF<()> {
         string: s.to_string(),
         style: Style::plain_text(),
     };
-    text_component(width, vec![t("Help")])
+    text_component(width, vec![t("Help")]).press_any_key()
 }
 
-pub fn win(width: u32) -> AppCF<()> {
+fn win_text(width: u32) -> CF<(), State> {
     let t = |s: &str| StyledString {
         string: s.to_string(),
         style: Style::plain_text(),
     };
-    text_component(width, vec![t("Win")])
+    text_component(width, vec![t("The ocean welcomes your return.")])
+}
+pub fn win(width: u32) -> AppCF<()> {
+    // TODO: this is not ergonomic
+    win_text(width)
+        .delay(Duration::from_secs(2))
+        .then(move || win_text(width).press_any_key())
+}
+
+fn game_over_text(width: u32) -> CF<(), State> {
+    let t = |s: &str| StyledString {
+        string: s.to_string(),
+        style: Style::plain_text(),
+    };
+    text_component(width, vec![t("You fail to reach the ocean.")])
 }
 
 pub fn game_over(width: u32) -> AppCF<()> {
-    let t = |s: &str| StyledString {
-        string: s.to_string(),
-        style: Style::plain_text(),
-    };
-    text_component(width, vec![t("Game Over")])
+    game_over_text(width)
+        .delay(Duration::from_secs(2))
+        .then(move || game_over_text(width).press_any_key())
 }

@@ -49,6 +49,24 @@ impl World {
         self.spawn_water(coord, Tile::Water2)
     }
 
+    fn spawn_ocean_water(&mut self, coord: Coord, tile: Tile) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Water),
+            entity_data! {
+                tile,
+                ocean: (),
+            },
+        )
+    }
+
+    pub fn spawn_ocean_water1(&mut self, coord: Coord) -> Entity {
+        self.spawn_ocean_water(coord, Tile::Water1)
+    }
+
+    pub fn spawn_ocean_water2(&mut self, coord: Coord) -> Entity {
+        self.spawn_ocean_water(coord, Tile::Water2)
+    }
+
     pub fn spawn_wall(&mut self, coord: Coord) -> Entity {
         self.spawn_entity(
             (coord, Layer::Feature),

@@ -486,12 +486,27 @@ impl Game {
         player_coord == boat_coord
     }
 
+    fn check_control_flow(&self) -> Option<GameControlFlow> {
+        None
+    }
+
     #[must_use]
     pub(crate) fn handle_tick(
         &mut self,
         _since_last_tick: Duration,
         _config: &Config,
     ) -> Option<GameControlFlow> {
+        if let Layers {
+            water: Some(water), ..
+        } = self
+            .world
+            .spatial_table
+            .layers_at_checked(self.player_coord())
+        {
+            if self.world.components.ocean.contains(*water) {
+                return Some(GameControlFlow::Win);
+            }
+        }
         None
     }
 
@@ -522,6 +537,6 @@ impl Game {
             }
         }
         self.update_visibility();
-        Ok(None)
+        Ok(self.check_control_flow())
     }
 }

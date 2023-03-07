@@ -7,22 +7,57 @@ use gridbugs::{chargrid::prelude::*, visible_area_detection::CellVisibility};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
+pub struct FadeState {
+    pub boat_opacity: u8,
+    pub player_opacity: u8,
+    pub boat_fading: bool,
+    pub player_fading: bool,
+}
+
+impl FadeState {
+    pub fn new() -> Self {
+        Self {
+            boat_opacity: 255,
+            player_opacity: 255,
+            boat_fading: false,
+            player_fading: false,
+        }
+    }
+}
+
 pub struct GameInstance {
     pub game: Game,
     pub mist: Mist,
+    pub fade_state: FadeState,
 }
 
 impl GameInstance {
     pub fn new<R: Rng>(config: &Config, rng: &mut R) -> (Self, witness::Running) {
         let (game, running) = witness::new_game(config, rng);
         let mist = Mist::new(rng);
-        (GameInstance { game, mist }, running)
+        (
+            GameInstance {
+                game,
+                mist,
+                fade_state: FadeState::new(),
+            },
+            running,
+        )
     }
 
     pub fn into_storable(self, running: witness::Running) -> GameInstanceStorable {
-        let Self { game, mist } = self;
+        let Self {
+            game,
+            mist,
+            fade_state,
+        } = self;
         let running_game = game.into_running_game(running);
-        GameInstanceStorable { running_game, mist }
+        GameInstanceStorable {
+            running_game,
+            mist,
+            fade_state,
+        }
     }
 
     fn layer_to_depth(layer: Layer) -> i8 {
@@ -36,14 +71,23 @@ impl GameInstance {
         }
     }
 
-    fn tile_to_render_cell(tile: Tile, current: bool) -> RenderCell {
+    fn tile_to_render_cell(
+        tile: Tile,
+        current: bool,
+        boat_opacity: u8,
+        player_opacity: u8,
+    ) -> RenderCell {
         let character = match tile {
             Tile::Player => {
                 return RenderCell {
                     character: Some('@'),
                     style: Style::new()
                         .with_bold(true)
-                        .with_foreground(Rgba32::new_grey(255))
+                        .with_foreground(
+                            Rgba32::new_grey(255)
+                                .with_a(player_opacity)
+                                .alpha_composite(colour::MURKY_GREEN.to_rgba32(255)),
+                        )
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
@@ -52,12 +96,40 @@ impl GameInstance {
                     character: Some('░'),
                     style: Style::new()
                         .with_bold(true)
-                        .with_foreground(Rgba32::new_grey(255))
+                        .with_foreground(
+                            Rgba32::new_grey(255)
+                                .with_a(boat_opacity)
+                                .alpha_composite(colour::MURKY_GREEN.to_rgba32(255)),
+                        )
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
-            Tile::BoatEdge => '#',
-            Tile::BoatFloor => '.',
+            Tile::BoatEdge => {
+                return RenderCell {
+                    character: Some('#'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(
+                            Rgba32::new_grey(255)
+                                .with_a(boat_opacity)
+                                .alpha_composite(colour::MURKY_GREEN.to_rgba32(255)),
+                        )
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
+            Tile::BoatFloor => {
+                return RenderCell {
+                    character: Some('.'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(
+                            Rgba32::new_grey(255)
+                                .with_a(boat_opacity)
+                                .alpha_composite(colour::MURKY_GREEN.to_rgba32(255)),
+                        )
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
             Tile::Water1 => {
                 if current {
                     '~'
@@ -86,6 +158,8 @@ impl GameInstance {
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let centre_coord_delta =
             self.game.inner_ref().player_coord() - (ctx.bounding_box.size() / 2);
+        let boat_opacity = self.fade_state.boat_opacity;
+        let player_opacity = self.fade_state.player_opacity;
         for coord in ctx.bounding_box.size().coord_iter_row_major() {
             let cell = self
                 .game
@@ -107,7 +181,12 @@ impl GameInstance {
                     data.tiles.for_each_enumerate(|tile, layer| {
                         if let Some(&tile) = tile.as_ref() {
                             let depth = Self::layer_to_depth(layer);
-                            let mut render_cell = Self::tile_to_render_cell(tile, false);
+                            let mut render_cell = Self::tile_to_render_cell(
+                                tile,
+                                false,
+                                boat_opacity,
+                                player_opacity,
+                            );
                             render_cell.style.background = Some(background);
                             render_cell.style.foreground = Some(Rgba32::new_grey(63));
                             fb.set_cell_relative_to_ctx(ctx, coord, depth, render_cell);
@@ -118,7 +197,8 @@ impl GameInstance {
                     data.tiles.for_each_enumerate(|tile, layer| {
                         if let Some(&tile) = tile.as_ref() {
                             let depth = Self::layer_to_depth(layer);
-                            let mut render_cell = Self::tile_to_render_cell(tile, true);
+                            let mut render_cell =
+                                Self::tile_to_render_cell(tile, true, boat_opacity, player_opacity);
                             if let Some(background) = render_cell.style.background.as_mut() {
                                 *background = mist
                                     //                                    .saturating_scalar_mul_div(1, 2)
@@ -137,12 +217,24 @@ impl GameInstance {
 pub struct GameInstanceStorable {
     running_game: RunningGame,
     mist: Mist,
+    fade_state: FadeState,
 }
 
 impl GameInstanceStorable {
     pub fn into_game_instance(self) -> (GameInstance, witness::Running) {
-        let Self { running_game, mist } = self;
+        let Self {
+            running_game,
+            mist,
+            fade_state,
+        } = self;
         let (game, running) = running_game.into_game();
-        (GameInstance { game, mist }, running)
+        (
+            GameInstance {
+                game,
+                mist,
+                fade_state,
+            },
+            running,
+        )
     }
 }

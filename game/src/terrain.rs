@@ -10,7 +10,7 @@ use gridbugs::{
     coord_2d::{Coord, Size},
     entity_table::entity_data,
 };
-use procgen::{generate, Spec, WorldCell2};
+use procgen::{generate, Spec, WaterType, WorldCell2};
 use rand::Rng;
 use vector::Radians;
 
@@ -107,6 +107,7 @@ impl Terrain {
             boat_data,
         );
         let water_visible_chance = 0.01f64;
+        let ocean_water_visible_chance = 0.2f64;
         let tree_chance1 = 0.2f64;
         let tree_chance2 = 0.4f64;
         let rock_chance1 = 0.05f64;
@@ -144,11 +145,18 @@ impl Terrain {
                             }
                         }
                     }
-                    WorldCell2::Water(_) => {
+                    WorldCell2::Water(WaterType::River) => {
                         if rng.gen::<f64>() < water_visible_chance {
                             world.spawn_water1(coord);
                         } else {
                             world.spawn_water2(coord);
+                        }
+                    }
+                    WorldCell2::Water(WaterType::Ocean) => {
+                        if rng.gen::<f64>() < ocean_water_visible_chance {
+                            world.spawn_ocean_water1(coord);
+                        } else {
+                            world.spawn_ocean_water2(coord);
                         }
                     }
                 }

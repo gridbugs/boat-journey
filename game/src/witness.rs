@@ -38,10 +38,13 @@ struct Private;
 pub struct Running(Private);
 
 #[derive(Debug)]
+pub struct Win(Private);
+
+#[derive(Debug)]
 pub enum Witness {
     Running(Running),
     GameOver,
-    Win,
+    Win(Win),
 }
 
 impl Witness {
@@ -62,9 +65,20 @@ pub fn new_game<R: Rng>(config: &Config, base_rng: &mut R) -> (Game, Running) {
     (g, Running(Private))
 }
 
+impl Win {
+    pub fn into_running(self) -> Running {
+        Running(self.0)
+    }
+}
+
 impl Running {
     pub fn new_panics() -> Self {
         panic!("this constructor is meant for temporary use during debugging to get the code to compile")
+    }
+
+    /// Call this method with the knowledge that you have sinned
+    pub fn cheat() -> Self {
+        Self(Private)
     }
 
     pub fn into_witness(self) -> Witness {
@@ -125,7 +139,7 @@ impl Game {
         match self.inner_game.handle_tick(since_last_tick, config) {
             None => Witness::running(private),
             Some(GameControlFlow::GameOver) => Witness::GameOver,
-            Some(GameControlFlow::Win) => Witness::Win,
+            Some(GameControlFlow::Win) => Witness::Win(Win(private)),
         }
     }
 

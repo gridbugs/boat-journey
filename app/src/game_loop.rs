@@ -372,6 +372,18 @@ impl GameLoopData {
             }
             Event::Tick(since_previous) => {
                 instance.mist.tick();
+                let fade_speed = 8;
+                if instance.fade_state.player_fading {
+                    instance.fade_state.player_opacity = instance
+                        .fade_state
+                        .player_opacity
+                        .saturating_sub(fade_speed);
+                }
+                if instance.fade_state.boat_fading {
+                    instance.fade_state.boat_opacity =
+                        instance.fade_state.boat_opacity.saturating_sub(fade_speed);
+                }
+
                 running.tick(&mut instance.game, since_previous, &self.game_config)
             }
             _ => Witness::Running(running),
@@ -403,7 +415,7 @@ impl Component for GameInstanceComponent {
     }
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
-        let running = self.0.take().unwrap();
+        let running = witness::Running::cheat(); // XXX
         if event.is_escape_or_start() {
             GameLoopState::Paused(running)
         } else {
@@ -559,14 +571,32 @@ fn game_instance_component(running: witness::Running) -> AppCF<GameLoopState> {
     cf(GameInstanceComponent::new(running)).some().no_peek()
 }
 
-fn win() -> AppCF<()> {
-    on_state_then(move |state: &mut State| {
-        state.clear_saved_game();
-        state.config.won = true;
-        state.save_config();
-        text::win(MAIN_MENU_TEXT_WIDTH)
+fn win(win_: witness::Win) -> AppCF<()> {
+    // TODO: fading out the player and then the boat shouldn't be hard
+    on_state_then(|state: &mut State| {
+        if let Some(instance) = state.instance.as_mut() {
+            instance.fade_state.player_fading = true;
+        }
+        unit()
     })
-    .centre()
+    .delay(Duration::from_secs(1))
+    .then_side_effect(|state: &mut State| {
+        if let Some(instance) = state.instance.as_mut() {
+            instance.fade_state.boat_fading = true;
+        }
+        // TODO: understand why calling `.some()` on the below causes it not to work
+        unit().delay(Duration::from_secs(1))
+    })
+    .overlay(game_instance_component(win_.into_running()), 1)
+    .then(|| {
+        on_state_then(move |state: &mut State| {
+            state.clear_saved_game();
+            state.config.won = true;
+            state.save_config();
+            text::win(MAIN_MENU_TEXT_WIDTH)
+        })
+        .centre()
+    })
 }
 
 fn game_over() -> AppCF<()> {
@@ -584,7 +614,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
         Playing(witness) => match witness {
             Witness::Running(running) => game_instance_component(running).continue_(),
             Witness::GameOver => game_over().map_val(|| MainMenu).continue_(),
-            Witness::Win => win().map_val(|| MainMenu).continue_(),
+            Witness::Win(win_) => win(win_).map_val(|| MainMenu).continue_(),
         },
         Paused(running) => pause(running).map(|pause_output| match pause_output {
             PauseOutput::ContinueGame { running } => {

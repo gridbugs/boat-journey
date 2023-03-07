@@ -12,6 +12,7 @@ declare_entity_module! {
         door_state: DoorState,
         opacity: u8,
         boat_controls: (),
+        ocean: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
