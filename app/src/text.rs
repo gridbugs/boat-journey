@@ -25,6 +25,11 @@ pub fn help(width: u32) -> AppCF<()> {
             b("On Foot\n"),
             t("Walk: Arrow Keys\n"),
             t("Drive Boat: e\n"),
+            t("\n"),
+            b("Driving Boat\n"),
+            t("Move: Forward/Backward\n"),
+            t("Turn: Left/Right\n"),
+            t("Leave Boat: e\n"),
         ],
     )
     .press_any_key()
