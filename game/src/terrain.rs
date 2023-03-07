@@ -45,7 +45,7 @@ impl Terrain {
     }
 
     pub fn generate<R: Rng>(player_data: EntityData, rng: &mut R) -> Self {
-        let mut world = World::new(Size::new(100, 100));
+        let mut world = World::new(Size::new(1000, 500));
         let player_entity = world.insert_entity_data(
             Location {
                 coord: Coord::new(50, 50),

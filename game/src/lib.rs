@@ -365,18 +365,6 @@ impl Game {
         true
     }
 
-    pub fn render<F: FnMut(Location, Tile)>(&self, mut f: F) {
-        self.world
-            .components
-            .tile
-            .iter()
-            .for_each(|(entity, &tile)| {
-                if let Some(&location) = self.world.spatial_table.location_of(entity) {
-                    f(location, tile);
-                }
-            });
-    }
-
     pub fn cell_visibility_at_coord(&self, coord: Coord) -> CellVisibility<&VisibleCellData> {
         self.visibility_grid.get_visibility(coord)
     }
