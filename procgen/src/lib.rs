@@ -2,6 +2,7 @@ use gridbugs::{
     coord_2d::{Coord, Size},
     direction::{CardinalDirection, Direction},
     grid_2d::Grid,
+    line_2d,
     perlin2::Perlin2,
 };
 use rand::{seq::SliceRandom, Rng};
@@ -9,6 +10,7 @@ use std::{
     cmp::Ordering,
     collections::{BinaryHeap, HashMap, HashSet, VecDeque},
 };
+use vector::{Cartesian, Radial, Radians};
 
 pub struct Spec {
     pub size: Size,
@@ -295,10 +297,124 @@ fn make_towns<R: Rng>(
     output
 }
 
+fn convex_hull(points: &[(f64, f64)]) -> Vec<(f64, f64)> {
+    use std::f64::consts;
+    fn left_most_point(points: &[(f64, f64)]) -> (f64, f64) {
+        let mut left_most = None;
+        let mut x_min = f64::MAX;
+        for &(x, y) in points {
+            if x < x_min {
+                x_min = x;
+                left_most = Some((x, y));
+            }
+        }
+        left_most.unwrap()
+    }
+    fn normalize_angle(mut radians: f64) -> f64 {
+        while radians > consts::PI {
+            radians -= consts::PI * 2.;
+        }
+        while radians <= -consts::PI {
+            radians += consts::PI * 2.;
+        }
+        radians
+    }
+    fn get_next_point(
+        points: &[(f64, f64)],
+        current: (f64, f64),
+        prev_angle: f64,
+    ) -> ((f64, f64), f64) {
+        let mut max_angle = f64::MIN;
+        let mut best_point = None;
+        for &point in points {
+            if point == current {
+                continue;
+            }
+            let current_to_point = (point.0 - current.0, point.1 - current.1);
+            let angle = normalize_angle(
+                current_to_point.1.atan2(current_to_point.0) - prev_angle
+                    + std::f64::consts::FRAC_PI_2,
+            );
+            if angle > max_angle {
+                max_angle = angle;
+                best_point = Some(point);
+            }
+        }
+        (
+            best_point.unwrap(),
+            normalize_angle(max_angle + prev_angle - std::f64::consts::FRAC_PI_2),
+        )
+    }
+    let start = left_most_point(points);
+    let mut current = start;
+    let mut hull = vec![current];
+    let mut prev_angle = std::f64::consts::FRAC_PI_2;
+    loop {
+        let (next_point, angle) = get_next_point(points, current, prev_angle);
+        prev_angle = angle;
+        if next_point == start {
+            break;
+        }
+        hull.push(next_point);
+        current = next_point;
+    }
+    hull
+}
+
+pub struct Blob {
+    pub border: Vec<Coord>,
+    pub inside: Vec<Coord>,
+}
+
+fn blob<R: Rng>(size: Size, rng: &mut R) -> Blob {
+    let n = 400;
+    let radius = 0.5;
+    let mut points = Vec::new();
+    for _ in 0..n {
+        let angle = Radians(rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
+        let length = rng.gen::<f64>() * radius;
+        let vector = Radial { length, angle };
+        let Cartesian { x, y } = vector.to_cartesian();
+        points.push((
+            (x + radius) * size.width() as f64,
+            (y + radius) * size.height() as f64,
+        ));
+    }
+    let ch = convex_hull(&points);
+    let mut ch_coords = ch
+        .into_iter()
+        .map(|(x, y)| Coord::new(x as i32, y as i32))
+        .collect::<Vec<_>>();
+    ch_coords.push(ch_coords[0]);
+    let border_set = ch_coords
+        .windows(2)
+        .flat_map(|w| line_2d::coords_between_cardinal(w[0], w[1]))
+        .collect::<HashSet<_>>();
+    let border = border_set.iter().cloned().collect::<Vec<_>>();
+    let centre = size.to_coord().unwrap() / 2;
+    let mut to_visit = VecDeque::new();
+    to_visit.push_front(centre);
+    let mut seen = HashSet::new();
+    seen.insert(centre);
+    while let Some(coord) = to_visit.pop_back() {
+        for d in CardinalDirection::all() {
+            let neighbour_coord = coord + d.coord();
+            if !border_set.contains(&neighbour_coord) {
+                if seen.insert(neighbour_coord) {
+                    to_visit.push_front(neighbour_coord);
+                }
+            }
+        }
+    }
+    let inside = seen.into_iter().collect::<Vec<_>>();
+    Blob { border, inside }
+}
+
 pub struct Terrain {
     pub land: Land,
     pub river: Vec<Coord>,
     pub world1: Grid<WorldCell1>,
+    pub blob: Blob,
 }
 
 pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
@@ -324,6 +440,22 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
             land,
             river,
             world1,
+            blob: blob(spec.size, rng),
         };
     }
+}
+
+#[test]
+fn convex_hull_test() {
+    use std::collections::BTreeSet;
+    let points = vec![
+        (0., 0.),
+        (1., 1.),
+        (1., -1.),
+        (-1., 1.),
+        (-1., -1.),
+        (0.5, 0.5),
+    ];
+    let ch = convex_hull(&points);
+    panic!("{:?}", ch);
 }

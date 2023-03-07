@@ -36,6 +36,7 @@ impl Args {
 
 fn app(terrain: Terrain) -> App {
     render(move |ctx, fb| {
+        /*
         let mut max_height = 0f64;
         for coord in terrain.land.cells.coord_iter() {
             max_height = max_height.max(terrain.land.get_height(coord).unwrap());
@@ -62,6 +63,10 @@ fn app(terrain: Terrain) -> App {
                     .with_character('~')
                     .with_background(Rgba32::new_rgb(0, 255, 255)),
             };
+            fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
+        }*/
+        for &coord in &terrain.blob.inside {
+            let render_cell = RenderCell::default().with_character('#');
             fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
         }
     })

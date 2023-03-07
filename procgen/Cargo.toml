@@ -9,8 +9,10 @@ gridbugs = { version = "0.9", features = [
     "perlin2",
     "coord_2d",
     "grid_2d",
+    "line_2d",
 ]}
 rand = "0.8"
+vector = { path = "../util/vector" }
 
 [dev-dependencies]
 gridbugs = { version = "0.9", features = [

@@ -2722,6 +2722,7 @@ dependencies = [
  "meap",
  "rand",
  "rand_isaac",
+ "vector",
 ]
 
 [[package]]
