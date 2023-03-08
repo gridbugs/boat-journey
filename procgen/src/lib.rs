@@ -816,7 +816,7 @@ impl World3 {
                 return None;
             }
         }
-        let spawn = {
+        let _spawn = {
             // city
             {
                 // gate
@@ -966,7 +966,7 @@ impl World3 {
             }
         };
         //let spawn = world2.city_centre;
-        let boat_spawn = spawn + Coord::new(-10, -4);
+        //let boat_spawn = spawn + Coord::new(-10, -4);
         //let boat_heading = Radians(0.);
         Some(Self {
             grid,
