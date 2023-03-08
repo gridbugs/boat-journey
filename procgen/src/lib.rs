@@ -700,12 +700,10 @@ impl World3 {
             start_coord.unwrap()
         };
         {
-            // swamp
-            let mut num_islands = 0;
-            let num_island_attempts = 2000;
-            'outer: for _ in 0..num_island_attempts {
+            {
+                // inn
                 let angle = Radians(rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
-                let distance = rng.gen::<f64>() * TOWN_SIZE.width() as f64 * 3.;
+                let distance = rng.gen::<f64>() * TOWN_SIZE.width() as f64 / 2.;
                 let coord = Radial {
                     angle,
                     length: distance,
@@ -713,7 +711,39 @@ impl World3 {
                 .to_cartesian()
                 .to_coord_round_nearest()
                     + world2.swamp_centre;
-                let boundary = blob(coord, Size::new(25, 25), rng);
+                let platform_size = Size::new(10, 10);
+                let platform_coord = coord - platform_size.to_coord().unwrap() / 2;
+                for c in platform_size.coord_iter_row_major() {
+                    *grid.get_checked_mut(c + platform_coord) = WorldCell3::Floor;
+                }
+                let building_size = platform_size - Size::new(2, 0);
+                let building_coord = platform_coord + Coord::new(2, 0);
+                let building_grid = Grid::new_copy(building_size, ());
+                for c in building_grid.edge_coord_iter() {
+                    *grid.get_checked_mut(c + building_coord) = WorldCell3::Wall;
+                }
+                for i in 1..10 {
+                    let c = Coord::new(-i, 3) + platform_coord;
+                    *grid.get_checked_mut(c) = WorldCell3::Floor;
+                    let c = Coord::new(-i, 4) + platform_coord;
+                    *grid.get_checked_mut(c) = WorldCell3::Floor;
+                }
+                *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
+            }
+            // swamp
+            let mut num_islands = 0;
+            let num_island_attempts = 2000;
+            'outer: for _ in 0..num_island_attempts {
+                let angle = Radians(rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
+                let distance = rng.gen::<f64>() * TOWN_SIZE.width() as f64 * 3. / 2.;
+                let coord = Radial {
+                    angle,
+                    length: distance,
+                }
+                .to_cartesian()
+                .to_coord_round_nearest()
+                    + world2.swamp_centre;
+                let boundary = blob(coord, Size::new(18, 18), rng);
                 for c in boundary.inside {
                     if let Some(WorldCell3::Water(_)) = grid.get(c) {
                     } else {
@@ -724,15 +754,15 @@ impl World3 {
                 let mut island_coords = Vec::new();
                 for _ in 0..num_island_parts {
                     let centre = coord + Coord::new(rng.gen_range(-2..=2), rng.gen_range(-2..=2));
-                    let size = Size::new(rng.gen_range(4..10), rng.gen_range(4..10));
+                    let size = Size::new(rng.gen_range(3..8), rng.gen_range(3..8));
                     let part = blob(centre, size, rng);
                     for c in part.inside {
                         *grid.get_checked_mut(c) = WorldCell3::TownGround;
                         island_coords.push(c);
                     }
                 }
-                for _ in 0..2 {
-                    let beanch_coords = island_coords
+                for _ in 0..rng.gen_range(1..=2) {
+                    let beach_coords = island_coords
                         .iter()
                         .cloned()
                         .filter(|coord| {
@@ -747,7 +777,7 @@ impl World3 {
                             false
                         })
                         .collect::<Vec<_>>();
-                    for c in beanch_coords {
+                    for c in beach_coords {
                         let cell = grid.get_checked_mut(c);
                         *cell = WorldCell3::Floor;
                     }
@@ -759,8 +789,9 @@ impl World3 {
                 return None;
             }
         }
-        let spawn = world2.swamp_centre;
-        let boat_spawn = world2.swamp_centre;
+        //let spawn = world2.swamp_centre;
+        //let boat_spawn = world2.swamp_centre + Coord::new(-17, 0);
+        //let boat_heading = Radians(0.);
         Some(Self {
             grid,
             spawn,

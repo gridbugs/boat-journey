@@ -94,7 +94,7 @@ fn app(terrain: Terrain) -> App {
             }
             if coord == terrain.world3.spawn {
                 let render_cell = RenderCell::default().with_character('@');
-                fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
+                //  fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
             }
         }
     })
