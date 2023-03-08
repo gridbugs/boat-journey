@@ -32,7 +32,7 @@ use world::{
 };
 
 mod terrain;
-use terrain::Terrain;
+use terrain::{Dungeon, Terrain};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Omniscient;
@@ -116,12 +116,22 @@ impl VisibleWorld for World {
 }
 
 #[derive(Serialize, Deserialize)]
+struct DungeonState {
+    world_tmp: World,
+    dungeon_index: usize,
+    return_coord: Coord,
+    dungeon_spawn: Coord,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct Game {
     world: World,
     rng: Isaac64Rng,
     player_entity: Entity,
     driving: bool,
     visibility_grid: VisibilityGrid<VisibleCellData>,
+    dungeons: Vec<Option<Dungeon>>,
+    dungeon_state: Option<DungeonState>,
 }
 
 pub enum ActionError {}
@@ -133,12 +143,17 @@ impl Game {
             world,
             player_entity,
         } = Terrain::generate(world::spawn::make_player(), &mut rng);
+        let dungeons = (0..4)
+            .map(|_| Some(Dungeon::generate(&mut rng)))
+            .collect::<Vec<_>>();
         let mut game = Self {
             rng,
             visibility_grid: VisibilityGrid::new(world.spatial_table.grid_size()),
             world,
             player_entity,
             driving: false,
+            dungeons,
+            dungeon_state: None,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -467,6 +482,18 @@ impl Game {
                 }
                 return;
             }
+            if let Some(&dungeon_index) = self.world.components.stairs_down.get(feature_entity) {
+                self.world
+                    .spatial_table
+                    .update_coord(self.player_entity, new_player_coord)
+                    .unwrap();
+                self.enter_dungeon(dungeon_index);
+                return;
+            }
+            if self.world.components.stairs_up.contains(feature_entity) {
+                self.exit_dungeon();
+                return;
+            }
         }
         if let Some(&Layers {
             water: Some(_),
@@ -481,6 +508,50 @@ impl Game {
             .spatial_table
             .update_coord(self.player_entity, new_player_coord)
             .unwrap();
+    }
+
+    fn exit_dungeon(&mut self) {
+        use std::mem;
+        let player_data = self.world.components.remove_entity_data(self.player_entity);
+        self.world.spatial_table.remove(self.player_entity);
+        self.world.entity_allocator.free(self.player_entity);
+        let dungeon_state = self.dungeon_state.take().unwrap();
+        let dungeon_world = mem::replace(&mut self.world, dungeon_state.world_tmp);
+        self.player_entity = self.world.insert_entity_data(
+            Location {
+                coord: dungeon_state.return_coord,
+                layer: Some(Layer::Character),
+            },
+            player_data,
+        );
+        self.dungeons[dungeon_state.dungeon_index] = Some(Dungeon {
+            world: dungeon_world,
+            spawn: dungeon_state.dungeon_spawn,
+        });
+    }
+
+    fn enter_dungeon(&mut self, dungeon_index: usize) {
+        use std::mem;
+        let return_coord = self.player_coord();
+        let player_data = self.world.components.remove_entity_data(self.player_entity);
+        self.world.spatial_table.remove(self.player_entity);
+        self.world.entity_allocator.free(self.player_entity);
+        let mut dungeon = self.dungeons[dungeon_index].take().unwrap();
+        self.player_entity = dungeon.world.insert_entity_data(
+            Location {
+                coord: dungeon.spawn,
+                layer: Some(Layer::Character),
+            },
+            player_data,
+        );
+        let world_tmp = mem::replace(&mut self.world, dungeon.world);
+        let dungeon_state = DungeonState {
+            world_tmp,
+            dungeon_index,
+            return_coord,
+            dungeon_spawn: dungeon.spawn,
+        };
+        self.dungeon_state = Some(dungeon_state);
     }
 
     fn is_player_on_driving_coord(&self) -> bool {

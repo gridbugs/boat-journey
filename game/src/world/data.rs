@@ -13,6 +13,8 @@ declare_entity_module! {
         opacity: u8,
         boat_controls: (),
         ocean: (),
+        stairs_down: usize,
+        stairs_up: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};

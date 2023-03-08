@@ -173,4 +173,24 @@ impl World {
             },
         )
     }
+
+    pub fn spawn_stairs_down(&mut self, coord: Coord, index: usize) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Tree,
+                stairs_down: index,
+            },
+        )
+    }
+
+    pub fn spawn_stairs_up(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Tree,
+                stairs_up: (),
+            },
+        )
+    }
 }

@@ -599,6 +599,8 @@ pub enum WorldCell3 {
     Water(WaterType),
     Wall,
     Door,
+    StairsDown,
+    StairsUp,
 }
 
 pub struct World3 {
@@ -812,7 +814,7 @@ impl World3 {
                 return None;
             }
         }
-        {
+        let spawn = {
             // city
             {
                 // gate
@@ -944,9 +946,11 @@ impl World3 {
                 }
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let inn_centre = building_coord + Coord::new(2, 4);
+                *grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
+                inn_centre
             }
-        }
-        let spawn = world2.city_centre;
+        };
+        //let spawn = world2.city_centre;
         //let boat_spawn = world2.swamp_centre + Coord::new(-17, 0);
         //let boat_heading = Radians(0.);
         Some(Self {

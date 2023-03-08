@@ -12,6 +12,7 @@ use gridbugs::{
 };
 use procgen::{generate, Spec, WaterType, WorldCell2, WorldCell3};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use vector::Radians;
 
 pub struct Terrain {
@@ -113,6 +114,7 @@ impl Terrain {
         let tree_chance3 = 0.05f64;
         let rock_chance1 = 0.05f64;
         let rock_chance2 = 0.1f64;
+        let mut num_stairs = 0;
         for (coord, &cell) in g.world3.grid.enumerate() {
             let water_distance = *g.water_distance_map.distances.get_checked(coord);
             if water_distance < 20 {
@@ -176,6 +178,13 @@ impl Terrain {
                     WorldCell3::Wall => {
                         world.spawn_wall(coord);
                     }
+                    WorldCell3::StairsDown => {
+                        num_stairs += 1;
+                        world.spawn_stairs_down(coord, num_stairs);
+                    }
+                    WorldCell3::StairsUp => {
+                        world.spawn_stairs_up(coord);
+                    }
                 }
             }
         }
@@ -183,5 +192,24 @@ impl Terrain {
             world,
             player_entity,
         }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Dungeon {
+    pub world: World,
+    pub spawn: Coord,
+}
+
+impl Dungeon {
+    pub fn generate<R: Rng>(rng: &mut R) -> Self {
+        let size = Size::new(10, 10);
+        let mut world = World::new(size);
+        for coord in size.coord_iter_row_major() {
+            world.spawn_floor(coord);
+        }
+        let spawn = Coord::new(1, 2);
+        world.spawn_stairs_up(spawn);
+        Self { world, spawn }
     }
 }

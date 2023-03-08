@@ -89,12 +89,14 @@ fn app(terrain: Terrain) -> App {
                         .with_background(Rgba32::new_rgb(0, 0, 255)),
                     WorldCell3::Wall => RenderCell::default().with_character('#'),
                     WorldCell3::Door => RenderCell::default().with_character('+'),
+                    WorldCell3::StairsDown => RenderCell::default().with_character('>'),
+                    WorldCell3::StairsUp => RenderCell::default().with_character('<'),
                 };
                 fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
             }
             if coord == terrain.world3.spawn {
                 let render_cell = RenderCell::default().with_character('@');
-                //  fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
+                fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
             }
         }
     })
