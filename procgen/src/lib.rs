@@ -262,7 +262,7 @@ fn is_point_valid_for_river_town(grid: &Grid<WorldCell1>, coord: Coord) -> bool 
 
 fn get_town_candidate_positions(grid: &Grid<WorldCell1>, river: &[Coord]) -> Vec<Vec<Coord>> {
     let town_position_range = 10;
-    let town_indicies_approx = vec![river.len() / 4, (3 * river.len()) / 4];
+    let town_indicies_approx = vec![river.len() / 4, (4 * river.len()) / 5];
     town_indicies_approx
         .into_iter()
         .map(|index_approx| {
@@ -369,6 +369,7 @@ fn convex_hull(points: &[(f64, f64)]) -> Vec<(f64, f64)> {
     hull
 }
 
+#[derive(Clone)]
 pub struct Blob {
     pub border: Vec<Coord>,
     pub inside: Vec<Coord>,
@@ -437,6 +438,8 @@ pub struct World2 {
     pub lake_centre: Coord,
     pub swamp_centre: Coord,
     pub city_centre: Coord,
+    pub city_blob: Blob,
+    pub gate: Vec<Coord>,
 }
 
 fn make_world_grid2<R: Rng>(
@@ -500,18 +503,20 @@ fn make_world_grid2<R: Rng>(
     let spawn = lake_coord;
     let town_size = TOWN_SIZE * zoom;
     let mut pool_centres = Vec::new();
+    let mut town_blobs = Vec::new();
     for &town_coord_unscaled in town_positions {
         let town_coord = scale_coord(town_coord_unscaled);
         pool_centres.push(town_coord);
         let radius = town_size / 2;
-
         println!("town_size {:?}", town_size);
         println!("radius {:?}", radius);
         let town_blob = blob(town_coord, radius, rng);
         for &coord in &town_blob.inside {
             *grid.get_checked_mut(coord) = WorldCell2::Water(WaterType::River);
         }
+        town_blobs.push(town_blob);
     }
+    let city_blob = town_blobs[1].clone();
     let swamp_centre = pool_centres[0];
     let city_centre = pool_centres[1];
     let ocean_centre = Coord::new(grid.width() as i32, grid.height() as i32 / 2);
@@ -526,6 +531,22 @@ fn make_world_grid2<R: Rng>(
             *cell = WorldCell2::Water(WaterType::Ocean);
         }
     }
+    let city_blob_set = city_blob.inside.iter().cloned().collect::<HashSet<_>>();
+    let gate_centre = {
+        let mut gate_centre = None;
+        for &coord in &river {
+            if city_blob_set.contains(&scale_coord(coord)) {
+                gate_centre = Some(scale_coord(coord));
+            }
+        }
+        gate_centre.unwrap()
+    };
+    let gate = city_blob
+        .border
+        .iter()
+        .cloned()
+        .filter(|coord| coord.distance2(gate_centre) < 400)
+        .collect::<Vec<_>>();
     //let spawn = scale_coord(river_end_unscaled) - Coord::new(right_ocean_padding as i32 + 10, 0);
     World2 {
         spawn,
@@ -534,6 +555,8 @@ fn make_world_grid2<R: Rng>(
         lake_centre: lake_coord,
         swamp_centre,
         city_centre,
+        city_blob,
+        gate,
     }
 }
 
@@ -789,7 +812,141 @@ impl World3 {
                 return None;
             }
         }
-        //let spawn = world2.swamp_centre;
+        {
+            // city
+            {
+                // gate
+                for &c in &world2.gate {
+                    let cell = grid.get_checked_mut(c);
+                    if *cell == WorldCell3::Water(WaterType::River) {
+                        *cell = WorldCell3::Wall;
+                    }
+                }
+            }
+            // building grid
+            let grid_size = Size::new(4, 4);
+            let building_size_including_padding = Size::new(25, 25);
+            let city_size = Size::new(
+                grid_size.width() * building_size_including_padding.width(),
+                grid_size.height() * building_size_including_padding.height(),
+            );
+            let city_coord = world2.city_centre - city_size.to_coord().unwrap() / 2;
+            let mut block_coords = grid_size
+                .coord_iter_row_major()
+                .filter(|&c| {
+                    !(c == Coord::new(0, 0)
+                        || c == Coord::new(grid_size.width() as i32 - 1, 0)
+                        || c == Coord::new(0, grid_size.height() as i32 - 1)
+                        || c == Coord::new(
+                            grid_size.width() as i32 - 1,
+                            grid_size.height() as i32 - 1,
+                        ))
+                })
+                .collect::<Vec<_>>();
+            block_coords.shuffle(rng);
+            for _ in 0..2 {
+                block_coords.pop();
+            }
+
+            let inn_block_coord = block_coords.pop().unwrap();
+
+            for c in block_coords {
+                let padding = rng.gen_range(3..6);
+                let coord = Coord {
+                    x: c.x * building_size_including_padding.width() as i32,
+                    y: c.y * building_size_including_padding.height() as i32,
+                } + Coord::new(padding, padding)
+                    + city_coord;
+                let size =
+                    building_size_including_padding - Size::new(padding as u32, padding as u32) * 2;
+                let g = Grid::new_copy(size, ());
+                for c in g.coord_iter() {
+                    let cell = grid.get_checked_mut(c + coord);
+                    *cell = WorldCell3::Floor;
+                }
+                for c in g.edge_coord_iter() {
+                    let cell = grid.get_checked_mut(c + coord);
+                    *cell = WorldCell3::Wall;
+                }
+                for i in 0..(size.height() as i32) {
+                    let c = Coord::new(size.width() as i32 / 2, i);
+                    let cell = grid.get_checked_mut(c + coord);
+                    *cell = WorldCell3::Wall;
+                }
+                for i in 0..(size.width() as i32) {
+                    let c = Coord::new(i, size.height() as i32 / 2);
+                    let cell = grid.get_checked_mut(c + coord);
+                    *cell = WorldCell3::Wall;
+                }
+                *grid.get_checked_mut(
+                    coord + Coord::new(size.width() as i32 / 4, size.height() as i32 / 2),
+                ) = WorldCell3::Door;
+                *grid.get_checked_mut(
+                    coord + Coord::new(3 * size.width() as i32 / 4, size.height() as i32 / 2),
+                ) = WorldCell3::Door;
+                *grid.get_checked_mut(
+                    coord + Coord::new(size.width() as i32 / 2, size.height() as i32 / 4),
+                ) = WorldCell3::Door;
+                *grid.get_checked_mut(
+                    coord + Coord::new(size.width() as i32 / 2, 3 * size.height() as i32 / 4),
+                ) = WorldCell3::Door;
+                let mut outer_door_candidates = vec![
+                    Coord::new(size.width() as i32 / 4, 0),
+                    Coord::new(size.width() as i32 / 4, size.height() as i32 - 1),
+                    Coord::new(3 * size.width() as i32 / 4, 0),
+                    Coord::new(3 * size.width() as i32 / 4, size.height() as i32 - 1),
+                    Coord::new(0, size.height() as i32 / 4),
+                    Coord::new(0, 3 * size.height() as i32 / 4),
+                    Coord::new(size.width() as i32 - 1, size.height() as i32 / 4),
+                    Coord::new(size.width() as i32 - 1, 3 * size.height() as i32 / 4),
+                ];
+                outer_door_candidates.shuffle(rng);
+                for _ in 0..rng.gen_range(1..=3) {
+                    let door_coord = outer_door_candidates.pop().unwrap() + coord;
+                    *grid.get_checked_mut(door_coord) = WorldCell3::Door;
+                }
+                let mut bomb_candidates = g.edge_coord_iter().collect::<Vec<_>>();
+                bomb_candidates.shuffle(rng);
+                for bomb_coord in bomb_candidates.into_iter().take(rng.gen_range(1..=3)) {
+                    let size = Size::new(rng.gen_range(4..8), rng.gen_range(4..8));
+                    let bomb = blob(bomb_coord, size, rng);
+                    for c in bomb.inside {
+                        let cell = grid.get_checked_mut(c + coord);
+                        if *cell != WorldCell3::Water(WaterType::River) {
+                            *cell = WorldCell3::TownGround;
+                        }
+                    }
+                }
+            }
+            {
+                // inn
+                let inn_coord = Coord::new(
+                    inn_block_coord.x * building_size_including_padding.width() as i32,
+                    inn_block_coord.y * building_size_including_padding.height() as i32,
+                ) + city_coord
+                    + Coord::new(15, 14);
+                let platform_size = Size::new(10, 10);
+                let platform_coord = inn_coord - platform_size.to_coord().unwrap() / 2;
+                for c in platform_size.coord_iter_row_major() {
+                    *grid.get_checked_mut(c + platform_coord) = WorldCell3::Floor;
+                }
+                let building_size = platform_size - Size::new(2, 0);
+                let building_coord = platform_coord + Coord::new(2, 0);
+                let building_grid = Grid::new_copy(building_size, ());
+                for c in building_grid.edge_coord_iter() {
+                    *grid.get_checked_mut(c + building_coord) = WorldCell3::Wall;
+                }
+                for i in 1..10 {
+                    let c = Coord::new(-i, 3) + platform_coord;
+                    *grid.get_checked_mut(c) = WorldCell3::Floor;
+                    let c = Coord::new(-i, 4) + platform_coord;
+                    *grid.get_checked_mut(c) = WorldCell3::Floor;
+                }
+                *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
+                let inn_centre = building_coord + Coord::new(2, 4);
+            }
+        }
+        let spawn = world2.city_centre;
         //let boat_spawn = world2.swamp_centre + Coord::new(-17, 0);
         //let boat_heading = Radians(0.);
         Some(Self {
