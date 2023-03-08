@@ -146,6 +146,9 @@ impl Game {
             panic!("failed to create the boat");
         }
         game.update_visibility();
+        if game.player_coord() == boat_coord {
+            game.driving = true;
+        }
         game
     }
 
