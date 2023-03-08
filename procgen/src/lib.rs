@@ -262,7 +262,7 @@ fn is_point_valid_for_river_town(grid: &Grid<WorldCell1>, coord: Coord) -> bool 
 
 fn get_town_candidate_positions(grid: &Grid<WorldCell1>, river: &[Coord]) -> Vec<Vec<Coord>> {
     let town_position_range = 10;
-    let town_indicies_approx = vec![river.len() / 4, (3 * river.len()) / 4];
+    let town_indicies_approx = vec![river.len() / 3, (3 * river.len()) / 4];
     town_indicies_approx
         .into_iter()
         .map(|index_approx| {
@@ -428,6 +428,7 @@ pub struct World2 {
     pub grid: Grid<WorldCell2>,
     pub spawn: Coord,
     pub ocean_x_ofset: u32,
+    pub lake_centre: Coord,
 }
 
 fn make_world_grid2<R: Rng>(
@@ -482,7 +483,6 @@ fn make_world_grid2<R: Rng>(
     for _ in 0..6 {
         grid = widen_river(grid);
     }
-
     let lake_coord = scale_coord(lake_coord_unscaled);
     let lake = blob(lake_coord, Size::new(lake_radius, lake_radius), rng);
     for &coord in &lake.inside {
@@ -511,11 +511,12 @@ fn make_world_grid2<R: Rng>(
             *cell = WorldCell2::Water(WaterType::Ocean);
         }
     }
-    let spawn = scale_coord(river_end_unscaled) - Coord::new(right_ocean_padding as i32 + 10, 0);
+    //let spawn = scale_coord(river_end_unscaled) - Coord::new(right_ocean_padding as i32 + 10, 0);
     World2 {
         spawn,
         ocean_x_ofset: grid.width() - right_ocean_padding,
         grid,
+        lake_centre: lake_coord,
     }
 }
 
@@ -550,12 +551,154 @@ impl WaterDistanceMap {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum WorldCell3 {
+    Ground,
+    TownGround,
+    Floor,
+    Water(WaterType),
+    Wall,
+    Door,
+}
+
+pub struct World3 {
+    pub grid: Grid<WorldCell3>,
+    pub spawn: Coord,
+    pub boat_spawn: Coord,
+    pub boat_heading: Radians,
+}
+
+impl World3 {
+    fn from_world2<R: Rng>(world2: &World2, rng: &mut R) -> World3 {
+        let mut grid = world2.grid.map_ref(|cell| match cell {
+            WorldCell2::Land => WorldCell3::Ground,
+            WorldCell2::Water(w) => WorldCell3::Water(*w),
+        });
+        let lake_bottom = {
+            let mut c = world2.lake_centre;
+            let c = loop {
+                if let WorldCell2::Water(_) = *world2.grid.get_checked(c) {
+                    c += Coord::new(0, 1);
+                    continue;
+                }
+                break c;
+            };
+            // padding in case the lack goes down further on one side
+            c + Coord::new(0, 7)
+        };
+        let pier_length = 15;
+        {
+            // pier
+            let mut c = lake_bottom;
+            for _ in 0..pier_length {
+                *grid.get_checked_mut(c) = WorldCell3::Floor;
+                *grid.get_checked_mut(c - Coord::new(1, 0)) = WorldCell3::Floor;
+                c -= Coord::new(0, 1);
+            }
+        }
+        let boat_spawn = lake_bottom - Coord::new(0, pier_length + 2);
+        let boat_heading = Radians(std::f64::consts::FRAC_PI_2);
+        let spawn = {
+            // lake town
+            let lake_town_area = blob(lake_bottom, Size::new(30, 10), rng);
+            for coord in lake_town_area.inside {
+                if let WorldCell3::Ground = *grid.get_checked(coord) {
+                    *grid.get_checked_mut(coord) = WorldCell3::TownGround;
+                }
+            }
+            let road_left = -20;
+            let road_right = 20;
+            let mut road_min = road_right;
+            let mut road_max = road_left;
+            let mut start_coord = None;
+            let mut max_dist = 0;
+            // houses
+            let mut num_houses = 0;
+            while num_houses < 2 {
+                let num_house_attemps = 50;
+                'outer: for _ in 0..num_house_attemps {
+                    let width = rng.gen_range(6..=8);
+                    let height = rng.gen_range(6..=7);
+                    let size = Size::new(width, height);
+                    let x = rng.gen_range(road_left..(road_right - width as i32));
+                    let y = if rng.gen::<bool>() {
+                        // below road
+                        rng.gen_range(1i32..4i32)
+                    } else {
+                        // above road
+                        rng.gen_range((-(height as i32) - 3)..(-(height as i32)))
+                    };
+                    let coord = Coord::new(x, y) + lake_bottom;
+                    let house_grid = Grid::new_copy(size, ());
+                    for offset in house_grid.coord_iter() {
+                        let c = coord + offset;
+                        if let WorldCell3::TownGround = *grid.get_checked(c) {
+                        } else {
+                            continue 'outer;
+                        }
+                    }
+                    let house_grid = Grid::new_copy(size - Size::new(2, 2), ());
+                    for offset in house_grid.coord_iter() {
+                        let c = coord + offset + Coord::new(1, 1);
+                        *grid.get_checked_mut(c) = WorldCell3::Floor;
+                    }
+                    for offset in house_grid.edge_coord_iter() {
+                        let c = coord + offset + Coord::new(1, 1);
+                        *grid.get_checked_mut(c) = WorldCell3::Wall;
+                    }
+                    let door_offset = rng.gen_range(2..(width as i32 - 2)) + x;
+                    let door_y = if y < 0 { y + height as i32 - 2 } else { y + 1 };
+                    let door_coord = Coord::new(door_offset, door_y) + lake_bottom;
+                    road_min = road_min.min(door_offset);
+                    road_max = road_max.max(door_offset);
+                    *grid.get_checked_mut(door_coord) = WorldCell3::Door;
+                    if y < 0 {
+                        for i in (door_coord.y + 1)..lake_bottom.y {
+                            let c = Coord::new(door_coord.x, i);
+                            *grid.get_checked_mut(c) = WorldCell3::Floor;
+                        }
+                        if door_offset.abs() > max_dist {
+                            max_dist = door_offset.abs();
+                            start_coord = Some(door_coord - Coord::new(0, 2));
+                        }
+                    } else {
+                        for i in (lake_bottom.y + 1)..door_coord.y {
+                            let c = Coord::new(door_coord.x, i);
+                            *grid.get_checked_mut(c) = WorldCell3::Floor;
+                        }
+                        if door_offset.abs() > max_dist {
+                            max_dist = door_offset.abs();
+                            start_coord = Some(door_coord + Coord::new(0, 2));
+                        }
+                    };
+                    num_houses += 1;
+                }
+            }
+            // road
+            for i in road_min..=road_max {
+                let c = lake_bottom + Coord::new(i, 0);
+                *grid.get_checked_mut(c) = WorldCell3::Floor;
+            }
+            start_coord.unwrap()
+        };
+        Self {
+            grid,
+            spawn,
+            boat_spawn,
+            boat_heading,
+        }
+    }
+}
+
 pub struct Terrain {
     pub land: Land,
     pub river: Vec<Coord>,
     pub world1: Grid<WorldCell1>,
     pub world2: World2,
+    pub world3: World3,
     pub water_distance_map: WaterDistanceMap,
+    pub viz_coord: Coord,
+    pub viz_size: Size,
 }
 
 pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
@@ -579,12 +722,18 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
         }
         let world2 = make_world_grid2(spec, &river, &town_positions, rng);
         let water_distance_map = WaterDistanceMap::new(&world2.grid);
+        let viz_size = Size::new(200, 160);
+        let viz_coord = world2.spawn - (viz_size.to_coord().unwrap() / 2);
+        let world3 = World3::from_world2(&world2, rng);
         break Terrain {
             land,
             river,
             world1,
             world2,
+            world3,
             water_distance_map,
+            viz_coord,
+            viz_size,
         };
     }
 }

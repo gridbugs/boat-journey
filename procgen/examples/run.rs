@@ -36,6 +36,7 @@ impl Args {
 
 fn app(terrain: Terrain) -> App {
     render(move |ctx, fb| {
+        /*
         let mut max_height = 0f64;
         for coord in terrain.land.cells.coord_iter() {
             max_height = max_height.max(terrain.land.get_height(coord).unwrap());
@@ -63,12 +64,39 @@ fn app(terrain: Terrain) -> App {
                     .with_background(Rgba32::new_rgb(0, 255, 255)),
             };
             fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
-        }
+        }*/
         /*
         for &coord in &terrain.blob.inside {
             let render_cell = RenderCell::default().with_character('#');
             fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
         }*/
+        for offset in terrain.viz_size.coord_iter_row_major() {
+            use procgen::WorldCell3;
+            let coord = terrain.viz_coord + offset;
+            if let Some(&cell) = terrain.world3.grid.get(coord) {
+                let render_cell = match cell {
+                    WorldCell3::Ground => RenderCell::default()
+                        .with_character('.')
+                        .with_background(Rgba32::new(0, 127, 0, 255)),
+                    WorldCell3::TownGround => RenderCell::default()
+                        .with_character('.')
+                        .with_background(Rgba32::new(87, 127, 0, 255)),
+                    WorldCell3::Floor => RenderCell::default()
+                        .with_character('.')
+                        .with_background(Rgba32::new(127, 127, 127, 255)),
+                    WorldCell3::Water(_) => RenderCell::default()
+                        .with_character('~')
+                        .with_background(Rgba32::new_rgb(0, 0, 255)),
+                    WorldCell3::Wall => RenderCell::default().with_character('#'),
+                    WorldCell3::Door => RenderCell::default().with_character('+'),
+                };
+                fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
+            }
+            if coord == terrain.world3.spawn {
+                let render_cell = RenderCell::default().with_character('@');
+                fb.set_cell_relative_to_ctx(ctx, offset, 0, render_cell);
+            }
+        }
     })
     .press_any_key()
     .map(|()| app::Exit)

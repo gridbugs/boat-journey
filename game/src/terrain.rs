@@ -10,7 +10,7 @@ use gridbugs::{
     coord_2d::{Coord, Size},
     entity_table::entity_data,
 };
-use procgen::{generate, Spec, WaterType, WorldCell2};
+use procgen::{generate, Spec, WaterType, WorldCell2, WorldCell3};
 use rand::Rng;
 use vector::Radians;
 
@@ -88,20 +88,20 @@ impl Terrain {
             },
             rng,
         );
-        let mut world = World::new(g.world2.grid.size());
+        let mut world = World::new(g.world3.grid.size());
         let player_entity = world.insert_entity_data(
             Location {
-                coord: g.world2.spawn,
+                coord: g.world3.spawn,
                 layer: Some(Layer::Character),
             },
             player_data,
         );
         let boat_data = entity_data! {
-            boat: Boat::new(Radians(0f64)),
+            boat: Boat::new(g.world3.boat_heading),
         };
         world.insert_entity_data(
             Location {
-                coord: g.world2.spawn,
+                coord: g.world3.boat_spawn,
                 layer: None,
             },
             boat_data,
@@ -110,13 +110,14 @@ impl Terrain {
         let ocean_water_visible_chance = 0.2f64;
         let tree_chance1 = 0.2f64;
         let tree_chance2 = 0.4f64;
+        let tree_chance3 = 0.05f64;
         let rock_chance1 = 0.05f64;
         let rock_chance2 = 0.1f64;
-        for (coord, &cell) in g.world2.grid.enumerate() {
+        for (coord, &cell) in g.world3.grid.enumerate() {
             let water_distance = *g.water_distance_map.distances.get_checked(coord);
             if water_distance < 20 {
                 match cell {
-                    WorldCell2::Land => {
+                    WorldCell3::Ground => {
                         if coord.x > g.world2.ocean_x_ofset as i32 - 5 {
                             if rng.gen::<f64>() < rock_chance1 {
                                 world.spawn_rock(coord);
@@ -145,19 +146,35 @@ impl Terrain {
                             }
                         }
                     }
-                    WorldCell2::Water(WaterType::River) => {
+                    WorldCell3::Water(WaterType::River) => {
                         if rng.gen::<f64>() < water_visible_chance {
                             world.spawn_water1(coord);
                         } else {
                             world.spawn_water2(coord);
                         }
                     }
-                    WorldCell2::Water(WaterType::Ocean) => {
+                    WorldCell3::Water(WaterType::Ocean) => {
                         if rng.gen::<f64>() < ocean_water_visible_chance {
                             world.spawn_ocean_water1(coord);
                         } else {
                             world.spawn_ocean_water2(coord);
                         }
+                    }
+                    WorldCell3::Door => {
+                        world.spawn_door(coord);
+                    }
+                    WorldCell3::Floor => {
+                        world.spawn_floor(coord);
+                    }
+                    WorldCell3::TownGround => {
+                        if rng.gen::<f64>() < tree_chance3 {
+                            world.spawn_tree(coord);
+                        } else {
+                            world.spawn_floor(coord);
+                        }
+                    }
+                    WorldCell3::Wall => {
+                        world.spawn_wall(coord);
                     }
                 }
             }

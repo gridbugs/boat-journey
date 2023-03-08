@@ -138,7 +138,7 @@ impl Game {
             visibility_grid: VisibilityGrid::new(world.spatial_table.grid_size()),
             world,
             player_entity,
-            driving: true,
+            driving: false,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -301,11 +301,12 @@ impl Game {
             .world
             .spatial_table
             .update_coord(boat_entity, boat_coord);
-        let _ = self
-            .world
-            .spatial_table
-            .update_coord(self.player_entity, boat_coord);
-
+        if self.driving {
+            let _ = self
+                .world
+                .spatial_table
+                .update_coord(self.player_entity, boat_coord);
+        }
         if false {
             // the cabin is tricky to get right when the boat is not facing a cardinal direction
             let unit = Cartesian { x: 1., y: 0. }
