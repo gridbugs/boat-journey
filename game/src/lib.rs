@@ -121,6 +121,7 @@ struct DungeonState {
     dungeon_index: usize,
     return_coord: Coord,
     dungeon_spawn: Coord,
+    visibility_grid: VisibilityGrid<VisibleCellData>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -142,8 +143,9 @@ impl Game {
         let Terrain {
             world,
             player_entity,
+            num_dungeons,
         } = Terrain::generate(world::spawn::make_player(), &mut rng);
-        let dungeons = (0..4)
+        let dungeons = (0..num_dungeons)
             .map(|_| Some(Dungeon::generate(&mut rng)))
             .collect::<Vec<_>>();
         let mut game = Self {
@@ -510,6 +512,10 @@ impl Game {
             .unwrap();
     }
 
+    pub fn is_in_dungeon(&self) -> bool {
+        self.dungeon_state.is_some()
+    }
+
     fn exit_dungeon(&mut self) {
         use std::mem;
         let player_data = self.world.components.remove_entity_data(self.player_entity);
@@ -528,6 +534,7 @@ impl Game {
             world: dungeon_world,
             spawn: dungeon_state.dungeon_spawn,
         });
+        self.visibility_grid = dungeon_state.visibility_grid;
     }
 
     fn enter_dungeon(&mut self, dungeon_index: usize) {
@@ -545,11 +552,16 @@ impl Game {
             player_data,
         );
         let world_tmp = mem::replace(&mut self.world, dungeon.world);
+        let visibility_grid = mem::replace(
+            &mut self.visibility_grid,
+            VisibilityGrid::new(self.world.spatial_table.grid_size()),
+        );
         let dungeon_state = DungeonState {
             world_tmp,
             dungeon_index,
             return_coord,
             dungeon_spawn: dungeon.spawn,
+            visibility_grid,
         };
         self.dungeon_state = Some(dungeon_state);
     }

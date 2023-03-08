@@ -178,7 +178,7 @@ impl World {
         self.spawn_entity(
             (coord, Layer::Feature),
             entity_data! {
-                tile: Tile::Tree,
+                tile: Tile::StairsDown,
                 stairs_down: index,
             },
         )
@@ -188,7 +188,7 @@ impl World {
         self.spawn_entity(
             (coord, Layer::Feature),
             entity_data! {
-                tile: Tile::Tree,
+                tile: Tile::StairsUp,
                 stairs_up: (),
             },
         )

@@ -12,6 +12,8 @@ use std::{
 };
 use vector::{Cartesian, Radial, Radians};
 
+mod rooms_and_corridors;
+
 pub struct Spec {
     pub size: Size,
 }
@@ -851,6 +853,7 @@ impl World3 {
             }
 
             let inn_block_coord = block_coords.pop().unwrap();
+            let mut stairs_candidates = Vec::new();
 
             for c in block_coords {
                 let padding = rng.gen_range(3..6);
@@ -919,6 +922,18 @@ impl World3 {
                         }
                     }
                 }
+                let stairs_candidates_here = vec![
+                    coord + Coord::new(size.width() as i32 / 4, size.height() as i32 / 4),
+                    coord + Coord::new(3 * size.width() as i32 / 4, size.height() as i32 / 4),
+                    coord + Coord::new(size.width() as i32 / 4, 3 * size.height() as i32 / 4),
+                    coord + Coord::new(3 * size.width() as i32 / 4, 3 * size.height() as i32 / 4),
+                ];
+                stairs_candidates.push(*stairs_candidates_here.choose(rng).unwrap());
+            }
+            stairs_candidates.shuffle(rng);
+            for c in stairs_candidates.into_iter().take(4) {
+                let cell = grid.get_checked_mut(c);
+                *cell = WorldCell3::StairsDown;
             }
             {
                 // inn
@@ -951,7 +966,7 @@ impl World3 {
             }
         };
         //let spawn = world2.city_centre;
-        //let boat_spawn = world2.swamp_centre + Coord::new(-17, 0);
+        let boat_spawn = spawn + Coord::new(-10, -4);
         //let boat_heading = Radians(0.);
         Some(Self {
             grid,
@@ -1022,5 +1037,31 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
             viz_coord,
             viz_size,
         };
+    }
+}
+
+pub struct Dungeon {
+    pub spawn: Coord,
+    pub grid: Grid<DungeonCell>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum DungeonCell {
+    Door,
+    Wall,
+    Floor,
+}
+
+pub fn generate_dungeon<R: Rng>(size: Size, rng: &mut R) -> Dungeon {
+    use rooms_and_corridors::*;
+    let RoomsAndCorridorsLevel { map, player_spawn } = RoomsAndCorridorsLevel::generate(size, rng);
+    let grid = map.map_ref(|cell| match cell {
+        RoomsAndCorridorsCell::Door => DungeonCell::Door,
+        RoomsAndCorridorsCell::Wall => DungeonCell::Wall,
+        RoomsAndCorridorsCell::Floor => DungeonCell::Floor,
+    });
+    Dungeon {
+        grid,
+        spawn: player_spawn,
     }
 }

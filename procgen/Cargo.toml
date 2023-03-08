@@ -10,6 +10,7 @@ gridbugs = { version = "0.9", features = [
     "coord_2d",
     "grid_2d",
     "line_2d",
+    "entity_table",
 ]}
 rand = "0.8"
 vector = { path = "../util/vector" }

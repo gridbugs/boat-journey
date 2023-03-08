@@ -145,6 +145,24 @@ impl GameInstance {
             Tile::Rock => '░',
             Tile::Board => '=',
             Tile::Tree => '♣',
+            Tile::StairsDown => {
+                return RenderCell {
+                    character: Some('>'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
+            Tile::StairsUp => {
+                return RenderCell {
+                    character: Some('<'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
         };
         RenderCell {
             character: Some(character),
@@ -165,11 +183,20 @@ impl GameInstance {
                 .game
                 .inner_ref()
                 .cell_visibility_at_coord(coord + centre_coord_delta);
-            let mist = self.mist.get(coord);
+            let mist = if self.game.inner_ref().is_in_dungeon() {
+                Rgba32::new(0, 0, 0, 0)
+            } else {
+                self.mist.get(coord)
+            };
+            let unseen_background = if self.game.inner_ref().is_in_dungeon() {
+                Rgba32::new(0, 0, 0, 255)
+            } else {
+                colour::MISTY_GREY.to_rgba32(255)
+            };
 
             match cell {
                 CellVisibility::Never => {
-                    let background = mist.alpha_composite(colour::MISTY_GREY.to_rgba32(255));
+                    let background = mist.alpha_composite(unseen_background);
                     let render_cell = RenderCell {
                         character: None,
                         style: Style::new().with_background(background),
@@ -177,7 +204,7 @@ impl GameInstance {
                     fb.set_cell_relative_to_ctx(ctx, coord, 0, render_cell);
                 }
                 CellVisibility::Previous(data) => {
-                    let background = mist.alpha_composite(colour::MISTY_GREY.to_rgba32(255));
+                    let background = mist.alpha_composite(unseen_background);
                     data.tiles.for_each_enumerate(|tile, layer| {
                         if let Some(&tile) = tile.as_ref() {
                             let depth = Self::layer_to_depth(layer);
@@ -200,9 +227,7 @@ impl GameInstance {
                             let mut render_cell =
                                 Self::tile_to_render_cell(tile, true, boat_opacity, player_opacity);
                             if let Some(background) = render_cell.style.background.as_mut() {
-                                *background = mist
-                                    //                                    .saturating_scalar_mul_div(1, 2)
-                                    .alpha_composite(*background);
+                                *background = mist.alpha_composite(*background);
                             }
                             fb.set_cell_relative_to_ctx(ctx, coord, depth, render_cell);
                         }
