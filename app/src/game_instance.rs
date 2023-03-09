@@ -1,9 +1,12 @@
 use crate::{colour, mist::Mist};
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
-    Config, Layer, Tile,
+    Config, Layer, Meter, Tile,
 };
-use gridbugs::{chargrid::prelude::*, visible_area_detection::CellVisibility};
+use gridbugs::{
+    chargrid::{prelude::*, text},
+    visible_area_detection::CellVisibility,
+};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -142,7 +145,7 @@ impl GameInstance {
             Tile::Wall => '█',
             Tile::DoorClosed => '+',
             Tile::DoorOpen => '-',
-            Tile::Rock => '░',
+            Tile::Rock => '%',
             Tile::Board => '=',
             Tile::Tree => '♣',
             Tile::StairsDown => {
@@ -173,7 +176,7 @@ impl GameInstance {
         }
     }
 
-    pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    pub fn render_game(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let centre_coord_delta =
             self.game.inner_ref().player_coord() - (ctx.bounding_box.size() / 2);
         let boat_opacity = self.fade_state.boat_opacity;
@@ -235,6 +238,64 @@ impl GameInstance {
                 }
             }
         }
+    }
+
+    fn render_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        use text::*;
+        let mut hints = Vec::new();
+        if self.game.inner_ref().is_player_on_boat() {
+            if self.game.inner_ref().is_driving() {
+                hints.push(StyledString {
+                    string: format!("Press `e' to stop driving the boat"),
+                    style: Style::plain_text(),
+                });
+            } else {
+                hints.push(StyledString {
+                    string: format!("Press `e' standing on ░ to drive the boat"),
+                    style: Style::plain_text(),
+                });
+            }
+        }
+        Text::new(hints).render(&(), ctx, fb);
+        let activity = if self.game.inner_ref().is_driving() {
+            "Driving Boat   "
+        } else {
+            "On Foot        "
+        };
+        let activity_text = StyledString {
+            string: activity.to_string(),
+            style: Style::plain_text().with_bold(true),
+        };
+        fn meter_text(name: &str, meter: &Meter) -> Vec<StyledString> {
+            vec![
+                StyledString {
+                    string: format!("{}: ", name),
+                    style: Style::plain_text().with_bold(true),
+                },
+                StyledString {
+                    string: format!("{}/{}  ", meter.current(), meter.max()),
+                    style: Style::plain_text().with_bold(true),
+                },
+            ]
+        }
+        let stats = self.game.inner_ref().stats();
+        let text = vec![
+            vec![activity_text],
+            meter_text("Health", &stats.health),
+            meter_text("Fuel", &stats.fuel),
+            meter_text("Day", &stats.day),
+            meter_text("Crew", &stats.crew),
+        ];
+        Text::new(text.concat()).render(&(), ctx.add_y(2), fb);
+    }
+
+    pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        self.render_game(ctx, fb);
+        self.render_ui(
+            ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 4)
+                .add_depth(20),
+            fb,
+        );
     }
 }
 

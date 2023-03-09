@@ -24,7 +24,7 @@ pub use gridbugs::{
         vision_distance::Circle, CellVisibility, VisibilityGrid, World as VisibleWorld,
     },
 };
-pub use world::data::{Boat, Layer, Location, Tile};
+pub use world::data::{Boat, Layer, Location, Meter, Tile};
 use world::{
     data::{DoorState, EntityData, EntityUpdate},
     spatial::{LayerTable, Layers},
@@ -133,6 +133,27 @@ pub struct Game {
     visibility_grid: VisibilityGrid<VisibleCellData>,
     dungeons: Vec<Option<Dungeon>>,
     dungeon_state: Option<DungeonState>,
+    stats: Stats,
+    has_been_on_boat: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Stats {
+    pub health: Meter,
+    pub fuel: Meter,
+    pub day: Meter,
+    pub crew: Meter,
+}
+
+impl Stats {
+    fn new() -> Self {
+        Self {
+            health: Meter::new(4, 4),
+            fuel: Meter::new(100, 100),
+            day: Meter::new(200, 200),
+            crew: Meter::new(0, 2),
+        }
+    }
 }
 
 pub enum ActionError {}
@@ -156,6 +177,8 @@ impl Game {
             driving: false,
             dungeons,
             dungeon_state: None,
+            stats: Stats::new(),
+            has_been_on_boat: false,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -167,6 +190,40 @@ impl Game {
             game.driving = true;
         }
         game
+    }
+
+    pub fn is_player_on_boat(&self) -> bool {
+        if let Layers { boat: Some(_), .. } = self
+            .world
+            .spatial_table
+            .layers_at_checked(self.player_coord())
+        {
+            true
+        } else {
+            if let Layers {
+                floor: Some(floor), ..
+            } = self
+                .world
+                .spatial_table
+                .layers_at_checked(self.player_coord())
+            {
+                self.world.components.part_of_boat.contains(*floor)
+            } else {
+                false
+            }
+        }
+    }
+
+    pub fn stats(&self) -> &Stats {
+        &self.stats
+    }
+
+    pub fn has_been_on_boat(&self) -> bool {
+        self.has_been_on_boat
+    }
+
+    pub fn is_driving(&self) -> bool {
+        self.driving
     }
 
     pub fn update_visibility(&mut self) {
@@ -506,6 +563,10 @@ impl Game {
         {
             return;
         }
+        if let Some(&Layers { boat: Some(_), .. }) = layers {
+            self.has_been_on_boat = true;
+        }
+
         self.world
             .spatial_table
             .update_coord(self.player_entity, new_player_coord)
