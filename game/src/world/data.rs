@@ -16,6 +16,8 @@ declare_entity_module! {
         stairs_down: usize,
         stairs_up: (),
         ghost: (),
+        unimportant_npc: (),
+        threshold: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -38,6 +40,7 @@ pub enum Tile {
     StairsDown,
     StairsUp,
     Ghost,
+    UnimportantNpc,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

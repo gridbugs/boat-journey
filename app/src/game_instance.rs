@@ -175,6 +175,14 @@ impl GameInstance {
             Tile::Rock => '%',
             Tile::Board => '=',
             Tile::Tree => '♣',
+            Tile::UnimportantNpc => {
+                return RenderCell {
+                    character: Some('@'),
+                    style: Style::new()
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
             Tile::StairsDown => {
                 return RenderCell {
                     character: Some('>'),
@@ -295,6 +303,12 @@ impl GameInstance {
                     style: Style::plain_text(),
                 });
             }
+        }
+        if tiles.contains(&Tile::UnimportantNpc) {
+            hints.push(StyledString {
+                string: format!("Walk into friendly characters (@) to converse.\n\n"),
+                style: Style::plain_text(),
+            });
         }
         if stats.day.current() < 100 && stats.day.current() > 0 {
             hints.push(StyledString {

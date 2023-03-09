@@ -7,7 +7,7 @@ pub use gridbugs::{
     shadowcast::Context as ShadowcastContext,
     spatial_table::UpdateError,
 };
-use rand::{Rng, SeedableRng};
+use rand::{seq::SliceRandom, Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -64,10 +64,22 @@ pub enum GameOverReason {
     KilledByGhost,
 }
 
+#[derive(Debug, Clone)]
+pub enum MenuChoice {
+    SayNothing,
+}
+
+#[derive(Debug, Clone)]
+pub struct Menu {
+    pub choices: Vec<MenuChoice>,
+    pub text: String,
+}
+
 #[derive(Debug)]
 pub enum GameControlFlow {
     GameOver(GameOverReason),
     Win,
+    Menu(Menu),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -143,6 +155,7 @@ pub struct Game {
     dungeon_state: Option<DungeonState>,
     stats: Stats,
     has_been_on_boat: bool,
+    has_crossed_threshold: bool,
     night_turn_count: u32,
     messages: Vec<String>,
 }
@@ -159,7 +172,7 @@ pub struct Stats {
 impl Stats {
     fn new() -> Self {
         let day_max = 1000;
-        let first_day_skip = 950;
+        let first_day_skip = 50;
         Self {
             health: Meter::new(4, 4),
             fuel: Meter::new(400, 400),
@@ -193,6 +206,7 @@ impl Game {
             dungeon_state: None,
             stats: Stats::new(),
             has_been_on_boat: false,
+            has_crossed_threshold: false,
             night_turn_count: 0,
             messages: Vec::new(),
         };
@@ -272,6 +286,9 @@ impl Game {
 
     pub fn has_been_on_boat(&self) -> bool {
         self.has_been_on_boat
+    }
+    pub fn has_crossed_threshold(&self) -> bool {
+        self.has_crossed_threshold
     }
 
     pub fn is_driving(&self) -> bool {
@@ -637,6 +654,15 @@ impl Game {
         if let Some(&Layers { boat: Some(_), .. }) = layers {
             self.has_been_on_boat = true;
         }
+        if let Some(&Layers {
+            feature: Some(feature),
+            ..
+        }) = layers
+        {
+            if self.world.components.threshold.contains(feature) {
+                self.has_crossed_threshold = true;
+            }
+        }
         if let Err(UpdateError::OccupiedBy(entity)) = self
             .world
             .spatial_table
@@ -648,6 +674,18 @@ impl Game {
                 if self.stats.health.is_empty() {
                     return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
                 }
+            }
+            if self.world.components.unimportant_npc.contains(entity) {
+                let text_options = vec![
+                    "I think you would be happier if you went to the ocean.",
+                    "Why don't you take a trip to the ocean. I hear it's wonderful this time of year.",
+                    "It's time for you to head to the ocean.",
+                ];
+                let text_str = text_options.choose(&mut self.rng).unwrap();
+                return Some(GameControlFlow::Menu(Menu {
+                    choices: vec![MenuChoice::SayNothing],
+                    text: text_str.to_string(),
+                }));
             }
         }
         self.pass_time();

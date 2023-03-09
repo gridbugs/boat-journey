@@ -11,6 +11,7 @@ mod colour;
 mod controls;
 mod game_instance;
 mod game_loop;
+mod image;
 mod mist;
 mod text;
 

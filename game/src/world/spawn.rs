@@ -109,6 +109,19 @@ impl World {
         )
     }
 
+    pub fn spawn_player_door(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::DoorClosed,
+                solid: (),
+                door_state: DoorState::Closed,
+                opacity: 255,
+                threshold: (),
+            },
+        )
+    }
+
     pub fn spawn_boat_floor(&mut self, coord: Coord) -> Entity {
         self.spawn_entity(
             (coord, Layer::Floor),
@@ -200,6 +213,16 @@ impl World {
             entity_data! {
                 tile: Tile::Ghost,
                 ghost: (),
+            },
+        )
+    }
+
+    pub fn spawn_unimportant_npc(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Character),
+            entity_data! {
+                tile: Tile::UnimportantNpc,
+                unimportant_npc: (),
             },
         )
     }

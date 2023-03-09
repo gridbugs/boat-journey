@@ -1,4 +1,4 @@
-use crate::{ActionError, Config, GameControlFlow, GameOverReason, Input};
+use crate::{ActionError, Config, GameControlFlow, GameOverReason, Input, Menu as GameMenu};
 use gridbugs::direction::CardinalDirection;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -41,15 +41,29 @@ pub struct Running(Private);
 pub struct Win(Private);
 
 #[derive(Debug)]
+pub struct Menu {
+    private: Private,
+    pub menu: GameMenu,
+}
+
+#[derive(Debug)]
 pub enum Witness {
     Running(Running),
     GameOver(GameOverReason),
     Win(Win),
+    Menu(Menu),
 }
 
 impl Witness {
     fn running(private: Private) -> Self {
         Self::Running(Running(private))
+    }
+}
+
+impl Menu {
+    pub fn cancel(self) -> Witness {
+        let Self { private, .. } = self;
+        Witness::running(private)
     }
 }
 
@@ -126,6 +140,9 @@ impl Game {
             Err(e) => (Witness::running(private), Err(e)),
             Ok(None) => (Witness::running(private), Ok(())),
             Ok(Some(GameControlFlow::GameOver(reason))) => (Witness::GameOver(reason), Ok(())),
+            Ok(Some(GameControlFlow::Menu(menu))) => {
+                (Witness::Menu(Menu { private, menu }), Ok(()))
+            }
             Ok(Some(other)) => panic!("unhandled control flow {:?}", other),
         }
     }
@@ -140,6 +157,7 @@ impl Game {
             None => Witness::running(private),
             Some(GameControlFlow::GameOver(reason)) => Witness::GameOver(reason),
             Some(GameControlFlow::Win) => Witness::Win(Win(private)),
+            Some(GameControlFlow::Menu(menu)) => Witness::Menu(Menu { private, menu }),
         }
     }
 

@@ -1,14 +1,15 @@
 use crate::{
     controls::{AppInput, Controls},
     game_instance::{GameInstance, GameInstanceStorable},
+    image::Images,
     text,
 };
 use boat_journey_game::{
     witness::{self, Witness},
-    Config as GameConfig, GameOverReason,
+    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice,
 };
 use gridbugs::{
-    chargrid::{border::BorderStyle, control_flow::*, menu, prelude::*},
+    chargrid::{self, border::BorderStyle, control_flow::*, menu, prelude::*},
     storage::{format, Storage},
 };
 use rand::{Rng, SeedableRng};
@@ -273,6 +274,7 @@ pub struct GameLoopData {
     storage: AppStorage,
     rng_seed_source: RngSeedSource,
     config: Config,
+    images: Images,
 }
 
 impl GameLoopData {
@@ -319,6 +321,7 @@ impl GameLoopData {
                 storage,
                 rng_seed_source,
                 config,
+                images: Images::new(),
             },
             state,
         )
@@ -644,6 +647,47 @@ fn game_over(reason: GameOverReason) -> AppCF<()> {
     .overlay(background(), 1)
 }
 
+fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
+    use chargrid::align::*;
+    use menu::builder::*;
+    let mut builder = menu_builder();
+    let mut add_item = |entry, name, ch: char| {
+        let identifier = MENU_FADE_SPEC.identifier(move |b| write!(b, "{}. {}", ch, name).unwrap());
+        builder.add_item_mut(item(entry, identifier).add_hotkey_char(ch));
+    };
+    for (i, choice) in menu_witness.menu.choices.iter().enumerate() {
+        let ch = std::char::from_digit(i as u32 + 1, 10).unwrap();
+        match choice {
+            GameMenuChoice::SayNothing => add_item(choice.clone(), "Say nothing...", ch),
+        }
+    }
+    let title = {
+        use chargrid::text::*;
+        Text::new(vec![StyledString {
+            string: menu_witness.menu.text.clone(),
+            style: Style::plain_text(),
+        }])
+        .wrap_word()
+        .cf::<State>()
+        .set_width(30)
+    };
+    let menu_cf = builder
+        .build_cf()
+        .menu_harness()
+        .add_x(2)
+        .with_title_vertical(title, 2)
+        .align(Alignment {
+            x: AlignmentX::Left,
+            y: AlignmentY::Centre,
+        })
+        .add_x(4)
+        .overlay(
+            render_state(|state: &State, ctx, fb| state.images.townsfolk1.render(ctx, fb)),
+            1,
+        );
+    menu_cf.map(|x| menu_witness.cancel())
+}
+
 pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
     use GameLoopState::*;
     loop_(initial_state, |state| match state {
@@ -651,6 +695,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
             Witness::Running(running) => game_instance_component(running).continue_(),
             Witness::GameOver(reason) => game_over(reason).map_val(|| MainMenu).continue_(),
             Witness::Win(win_) => win(win_).map_val(|| MainMenu).continue_(),
+            Witness::Menu(menu_) => game_menu(menu_).map(Playing).continue_(),
         },
         Paused(running) => pause(running).map(|pause_output| match pause_output {
             PauseOutput::ContinueGame { running } => {

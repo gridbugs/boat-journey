@@ -632,6 +632,8 @@ pub struct World3 {
     pub spawn: Coord,
     pub boat_spawn: Coord,
     pub boat_heading: Radians,
+    pub your_door: Coord,
+    pub unimportant_npc_spawns: HashSet<Coord>,
 }
 
 impl World3 {
@@ -664,7 +666,8 @@ impl World3 {
         }
         let boat_spawn = lake_bottom - Coord::new(0, pier_length + 2);
         let boat_heading = Radians(std::f64::consts::FRAC_PI_2);
-        let spawn = {
+        let mut unimportant_npc_spawns = HashSet::new();
+        let (spawn, your_door) = {
             // lake town
             let lake_town_area = blob(lake_bottom, Size::new(30, 10), rng);
             for coord in lake_town_area.inside {
@@ -677,6 +680,7 @@ impl World3 {
             let mut road_min = road_right;
             let mut road_max = road_left;
             let mut start_coord = None;
+            let mut your_door = None;
             let mut max_dist = 0;
             // houses
             let mut num_houses = 0;
@@ -726,6 +730,10 @@ impl World3 {
                         if door_offset.abs() > max_dist {
                             max_dist = door_offset.abs();
                             start_coord = Some(door_coord - Coord::new(0, 2));
+                            your_door = Some(door_coord);
+                        }
+                        if rng.gen::<f64>() < 0.3 {
+                            unimportant_npc_spawns.insert(door_coord + Coord::new(0, 2));
                         }
                     } else {
                         for i in (lake_bottom.y + 1)..door_coord.y {
@@ -735,6 +743,10 @@ impl World3 {
                         if door_offset.abs() > max_dist {
                             max_dist = door_offset.abs();
                             start_coord = Some(door_coord + Coord::new(0, 2));
+                            your_door = Some(door_coord);
+                        }
+                        if rng.gen::<f64>() < 0.3 {
+                            unimportant_npc_spawns.insert(door_coord - Coord::new(0, 2));
                         }
                     };
                     num_houses += 1;
@@ -745,7 +757,7 @@ impl World3 {
                 let c = lake_bottom + Coord::new(i, 0);
                 *grid.get_checked_mut(c) = WorldCell3::Floor;
             }
-            start_coord.unwrap()
+            (start_coord.unwrap(), your_door.unwrap())
         };
         {
             {
@@ -993,6 +1005,8 @@ impl World3 {
             spawn,
             boat_spawn,
             boat_heading,
+            your_door,
+            unimportant_npc_spawns,
         })
     }
 }

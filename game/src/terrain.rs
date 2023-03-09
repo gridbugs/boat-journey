@@ -106,7 +106,11 @@ impl Terrain {
                         }
                     }
                     WorldCell3::Door => {
-                        world.spawn_door(coord);
+                        if coord == g.world3.your_door {
+                            world.spawn_player_door(coord);
+                        } else {
+                            world.spawn_door(coord);
+                        }
                     }
                     WorldCell3::Floor => {
                         world.spawn_floor(coord);
@@ -130,6 +134,9 @@ impl Terrain {
                     }
                 }
             }
+        }
+        for &coord in g.world3.unimportant_npc_spawns.iter() {
+            world.spawn_unimportant_npc(coord);
         }
         Self {
             world,
