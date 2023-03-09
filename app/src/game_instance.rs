@@ -10,6 +10,7 @@ use gridbugs::{
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 #[derive(Serialize, Deserialize)]
 pub struct FadeState {
@@ -202,7 +203,8 @@ impl GameInstance {
         }
     }
 
-    pub fn render_game(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    pub fn render_game(&self, ctx: Ctx, fb: &mut FrameBuffer) -> HashSet<Tile> {
+        let mut tiles = HashSet::new();
         let ctx = if self.game.inner_ref().stats().day.is_empty() {
             ctx.with_tint(&NightTint)
         } else {
@@ -257,6 +259,7 @@ impl GameInstance {
                 CellVisibility::Current { data, .. } => {
                     data.tiles.for_each_enumerate(|tile, layer| {
                         if let Some(&tile) = tile.as_ref() {
+                            tiles.insert(tile);
                             let depth = Self::layer_to_depth(layer);
                             let mut render_cell =
                                 Self::tile_to_render_cell(tile, true, boat_opacity, player_opacity);
@@ -269,21 +272,22 @@ impl GameInstance {
                 }
             }
         }
+        tiles
     }
 
-    fn render_hints(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    fn render_hints(&self, ctx: Ctx, fb: &mut FrameBuffer, tiles: &HashSet<Tile>) {
         use text::*;
         let stats = self.game.inner_ref().stats();
         let mut hints = Vec::new();
         if self.game.inner_ref().is_player_on_boat() {
             if self.game.inner_ref().is_driving() {
                 hints.push(StyledString {
-                    string: format!("Press `e' to stop driving the boat\n\n"),
+                    string: format!("Press `e' to stop driving the boat.\n\n"),
                     style: Style::plain_text(),
                 });
             } else {
                 hints.push(StyledString {
-                    string: format!("Press `e' standing on ░ to drive the boat\n\n"),
+                    string: format!("Press `e' standing on ░ to drive the boat.\n\n"),
                     style: Style::plain_text(),
                 });
             }
@@ -310,6 +314,12 @@ impl GameInstance {
             hints.push(StyledString {
                 string: format!("GET INSIDE\n\n"),
                 style: Style::plain_text().with_bold(true),
+            });
+        }
+        if tiles.contains(&Tile::Ghost) {
+            hints.push(StyledString {
+                string: format!("Ghosts (g) can move diagonally."),
+                style: Style::plain_text(),
             });
         }
         Text::new(hints).render(&(), ctx, fb);
@@ -349,14 +359,53 @@ impl GameInstance {
             meter_text("Day", &stats.day),
             meter_text("Crew", &stats.crew),
         ];
-        Text::new(text.concat()).render(&(), ctx.add_y(2), fb);
+        Text::new(text.concat()).render(&(), ctx, fb);
+    }
+
+    fn render_messages(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        use text::*;
+        let max = 4;
+        let mut messages: Vec<(usize, String)> = Vec::new();
+        for m in self.game.inner_ref().messages().iter().rev() {
+            if messages.len() >= max {
+                break;
+            }
+            if let Some((ref mut count, last)) = messages.last_mut() {
+                if last == m {
+                    *count += 1;
+                    continue;
+                }
+            }
+            messages.push((1, m.clone()));
+        }
+        messages.reverse();
+        for (i, (count, m)) in messages.into_iter().enumerate() {
+            let string = if count == 1 {
+                m
+            } else {
+                format!("{} (x{})", m, count)
+            };
+            let alpha = 255;
+            //            -(i as u8 * 20);
+            let styled_string = StyledString {
+                string,
+                style: Style::plain_text().with_foreground(Rgba32::new_grey(255).with_a(alpha)),
+            };
+            let offset = max as i32 - i as i32 - 1;
+            styled_string.render(&(), ctx.add_y(offset), fb);
+        }
     }
 
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
-        self.render_game(ctx, fb);
-        self.render_hints(ctx.add_xy(1, 1), fb);
+        let tiles = self.render_game(ctx, fb);
+        self.render_hints(ctx.add_xy(1, 1), fb, &tiles);
+        self.render_messages(
+            ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 7)
+                .add_depth(20),
+            fb,
+        );
         self.render_ui(
-            ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 4)
+            ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 2)
                 .add_depth(20),
             fb,
         );

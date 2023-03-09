@@ -144,6 +144,7 @@ pub struct Game {
     stats: Stats,
     has_been_on_boat: bool,
     night_turn_count: u32,
+    messages: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -191,6 +192,7 @@ impl Game {
             stats: Stats::new(),
             has_been_on_boat: false,
             night_turn_count: 0,
+            messages: Vec::new(),
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -219,7 +221,7 @@ impl Game {
             self.stats.day.decrease(1);
         }
         if self.stats.day.is_empty() {
-            if self.night_turn_count % 10 == 0 {
+            if self.night_turn_count % 20 == 0 {
                 self.spawn_ghost();
             }
             self.night_turn_count += 1;
@@ -230,6 +232,14 @@ impl Game {
 
     pub fn spend_fuel(&mut self) {
         self.stats.fuel.decrease(1)
+    }
+
+    fn take_damage(&mut self) {
+        self.stats.health.decrease(1)
+    }
+
+    pub fn messages(&self) -> &[String] {
+        &self.messages
     }
 
     pub fn is_player_on_boat(&self) -> bool {
@@ -598,7 +608,11 @@ impl Game {
                     .update_coord(self.player_entity, new_player_coord)
                 {
                     if self.world.components.ghost.contains(entity) {
-                        return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                        self.take_damage();
+                        self.ghost_message();
+                        if self.stats.health.is_empty() {
+                            return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                        }
                     }
                 }
                 self.enter_dungeon(dungeon_index);
@@ -627,7 +641,11 @@ impl Game {
             .update_coord(self.player_entity, new_player_coord)
         {
             if self.world.components.ghost.contains(entity) {
-                return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                self.take_damage();
+                self.ghost_message();
+                if self.stats.health.is_empty() {
+                    return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                }
             }
         }
         self.pass_time();
@@ -709,13 +727,23 @@ impl Game {
             let coord = self.world.spatial_table.coord_of(entity).unwrap();
             if let Some(dest) = line_2d::coords_between(coord, player_coord).skip(1).next() {
                 if dest == player_coord {
-                    return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                    self.take_damage();
+                    self.ghost_message();
+                    if self.stats.health.is_empty() {
+                        return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                    }
                 } else {
                     let _ = self.world.spatial_table.update_coord(entity, dest);
                 }
             }
         }
         None
+    }
+
+    fn ghost_message(&mut self) {
+        self.messages.push(format!(
+            "A chill runs down your spine. The ghost deals you 1 damage."
+        ));
     }
 
     #[must_use]
@@ -754,7 +782,10 @@ impl Game {
                     self.driving = false;
                     None
                 }
-                _ => None,
+                Input::Wait => {
+                    self.pass_time();
+                    None
+                }
             }
         } else {
             match input {
@@ -765,7 +796,10 @@ impl Game {
                     }
                     None
                 }
-                _ => None,
+                Input::Wait => {
+                    self.pass_time();
+                    None
+                }
             }
         };
         if game_control_flow.is_some() {

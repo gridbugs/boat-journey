@@ -20,7 +20,7 @@ declare_entity_module! {
 }
 pub use components::{Components, EntityData, EntityUpdate};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum Tile {
     Player,
     BoatEdge,
