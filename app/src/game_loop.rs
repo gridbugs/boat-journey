@@ -5,7 +5,7 @@ use crate::{
 };
 use boat_journey_game::{
     witness::{self, Witness},
-    Config as GameConfig,
+    Config as GameConfig, GameOverReason,
 };
 use gridbugs::{
     chargrid::{border::BorderStyle, control_flow::*, menu, prelude::*},
@@ -634,11 +634,11 @@ fn win(win_: witness::Win) -> AppCF<()> {
     })
 }
 
-fn game_over() -> AppCF<()> {
+fn game_over(reason: GameOverReason) -> AppCF<()> {
     on_state_then(move |state: &mut State| {
         state.clear_saved_game();
         state.save_config();
-        text::game_over(MAIN_MENU_TEXT_WIDTH)
+        text::game_over(MAIN_MENU_TEXT_WIDTH, reason)
     })
     .centre()
     .overlay(background(), 1)
@@ -649,7 +649,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
     loop_(initial_state, |state| match state {
         Playing(witness) => match witness {
             Witness::Running(running) => game_instance_component(running).continue_(),
-            Witness::GameOver => game_over().map_val(|| MainMenu).continue_(),
+            Witness::GameOver(reason) => game_over(reason).map_val(|| MainMenu).continue_(),
             Witness::Win(win_) => win(win_).map_val(|| MainMenu).continue_(),
         },
         Paused(running) => pause(running).map(|pause_output| match pause_output {

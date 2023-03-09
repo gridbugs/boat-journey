@@ -5,6 +5,7 @@ use boat_journey_game::{
 };
 use gridbugs::{
     chargrid::{prelude::*, text},
+    rgb_int::{rgb24, Rgb24},
     visible_area_detection::CellVisibility,
 };
 use rand::Rng;
@@ -26,6 +27,18 @@ impl FadeState {
             boat_fading: false,
             player_fading: false,
         }
+    }
+}
+
+struct NightTint;
+impl Tint for NightTint {
+    fn tint(&self, rgba32: Rgba32) -> Rgba32 {
+        let mean = rgba32
+            .to_rgb24()
+            .weighted_mean_u16(rgb24::WeightsU16::new(1, 1, 1));
+        Rgb24::new_grey(mean)
+            .saturating_scalar_mul_div(3, 4)
+            .to_rgba32(255)
     }
 }
 
@@ -133,6 +146,19 @@ impl GameInstance {
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
+            Tile::Ghost => {
+                return RenderCell {
+                    character: Some('g'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(
+                            Rgba32::new_grey(255)
+                                .with_a(127)
+                                .alpha_composite(colour::MURKY_GREEN.to_rgba32(255)),
+                        )
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
             Tile::Water1 => {
                 if current {
                     '~'
@@ -177,6 +203,11 @@ impl GameInstance {
     }
 
     pub fn render_game(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        let ctx = if self.game.inner_ref().stats().day.is_empty() {
+            ctx.with_tint(&NightTint)
+        } else {
+            ctx
+        };
         let centre_coord_delta =
             self.game.inner_ref().player_coord() - (ctx.bounding_box.size() / 2);
         let boat_opacity = self.fade_state.boat_opacity;
@@ -240,23 +271,56 @@ impl GameInstance {
         }
     }
 
-    fn render_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+    fn render_hints(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         use text::*;
+        let stats = self.game.inner_ref().stats();
         let mut hints = Vec::new();
         if self.game.inner_ref().is_player_on_boat() {
             if self.game.inner_ref().is_driving() {
                 hints.push(StyledString {
-                    string: format!("Press `e' to stop driving the boat"),
+                    string: format!("Press `e' to stop driving the boat\n\n"),
                     style: Style::plain_text(),
                 });
             } else {
                 hints.push(StyledString {
-                    string: format!("Press `e' standing on ░ to drive the boat"),
+                    string: format!("Press `e' standing on ░ to drive the boat\n\n"),
                     style: Style::plain_text(),
                 });
             }
         }
+        if stats.day.current() < 100 && stats.day.current() > 0 {
+            hints.push(StyledString {
+                    string: format!("\"We'd better get inside, 'cause it'll be dark soon, \nand they mostly come at night...mostly\"\n\n"),
+                    style: Style::plain_text(),
+                });
+        }
+        if stats.fuel.current() < 50 {
+            hints.push(StyledString {
+                string: format!("You are almost out of fuel!\n\n"),
+                style: Style::plain_text(),
+            });
+        }
+        if stats.health.current() == 1 {
+            hints.push(StyledString {
+                string: format!("You are barely clinging to consciousness...\n\n"),
+                style: Style::plain_text(),
+            });
+        }
+        if stats.day.current() == 0 {
+            hints.push(StyledString {
+                string: format!("GET INSIDE\n\n"),
+                style: Style::plain_text().with_bold(true),
+            });
+        }
         Text::new(hints).render(&(), ctx, fb);
+    }
+
+    fn render_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        use text::*;
+        if !self.game.inner_ref().has_been_on_boat() {
+            return;
+        }
+        let stats = self.game.inner_ref().stats();
         let activity = if self.game.inner_ref().is_driving() {
             "Driving Boat   "
         } else {
@@ -278,7 +342,6 @@ impl GameInstance {
                 },
             ]
         }
-        let stats = self.game.inner_ref().stats();
         let text = vec![
             vec![activity_text],
             meter_text("Health", &stats.health),
@@ -291,6 +354,7 @@ impl GameInstance {
 
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         self.render_game(ctx, fb);
+        self.render_hints(ctx.add_xy(1, 1), fb);
         self.render_ui(
             ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 4)
                 .add_depth(20),

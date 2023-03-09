@@ -1,4 +1,5 @@
 use crate::game_loop::{AppCF, State};
+use boat_journey_game::GameOverReason;
 use gridbugs::chargrid::{
     control_flow::*,
     prelude::*,
@@ -65,16 +66,23 @@ pub fn win(width: u32) -> AppCF<()> {
         .then(move || win_text(width).press_any_key())
 }
 
-fn game_over_text(width: u32) -> CF<(), State> {
+fn game_over_text(width: u32, reason: GameOverReason) -> CF<(), State> {
     let t = |s: &str| StyledString {
         string: s.to_string(),
         style: Style::plain_text(),
     };
-    text_component(width, vec![t("You fail to reach the ocean.")])
+    let text = match reason {
+        GameOverReason::OutOfFuel => vec![
+            t("You fail to reach the ocean.\n\n"),
+            t("The boat sputters to a halt as the last dregs of fuel are consumed.\n\n"),
+            t("Over time you make a home aboard the stationary boat and hope that one day someone will pick you up and take you to the ocean."),
+        ],
+    };
+    text_component(width, text)
 }
 
-pub fn game_over(width: u32) -> AppCF<()> {
-    game_over_text(width)
+pub fn game_over(width: u32, reason: GameOverReason) -> AppCF<()> {
+    game_over_text(width, reason)
         .delay(Duration::from_secs(2))
-        .then(move || game_over_text(width).press_any_key())
+        .then(move || game_over_text(width, reason).press_any_key())
 }

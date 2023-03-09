@@ -1,4 +1,4 @@
-use crate::{ActionError, Config, GameControlFlow, Input};
+use crate::{ActionError, Config, GameControlFlow, GameOverReason, Input};
 use gridbugs::direction::CardinalDirection;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -43,7 +43,7 @@ pub struct Win(Private);
 #[derive(Debug)]
 pub enum Witness {
     Running(Running),
-    GameOver,
+    GameOver(GameOverReason),
     Win(Win),
 }
 
@@ -125,7 +125,7 @@ impl Game {
         match self.inner_game.handle_input(input, config) {
             Err(e) => (Witness::running(private), Err(e)),
             Ok(None) => (Witness::running(private), Ok(())),
-            Ok(Some(GameControlFlow::GameOver)) => (Witness::GameOver, Ok(())),
+            Ok(Some(GameControlFlow::GameOver(reason))) => (Witness::GameOver(reason), Ok(())),
             Ok(Some(other)) => panic!("unhandled control flow {:?}", other),
         }
     }
@@ -138,7 +138,7 @@ impl Game {
     ) -> Witness {
         match self.inner_game.handle_tick(since_last_tick, config) {
             None => Witness::running(private),
-            Some(GameControlFlow::GameOver) => Witness::GameOver,
+            Some(GameControlFlow::GameOver(reason)) => Witness::GameOver(reason),
             Some(GameControlFlow::Win) => Witness::Win(Win(private)),
         }
     }

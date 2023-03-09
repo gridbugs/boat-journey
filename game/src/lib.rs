@@ -13,7 +13,7 @@ use std::{
     collections::{HashSet, VecDeque},
     time::Duration,
 };
-use vector::{Cartesian, Radians};
+use vector::{Cartesian, Radial, Radians};
 
 pub mod witness;
 mod world;
@@ -56,9 +56,14 @@ impl Default for Config {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum GameOverReason {
+    OutOfFuel,
+}
+
 #[derive(Debug)]
 pub enum GameControlFlow {
-    GameOver,
+    GameOver(GameOverReason),
     Win,
 }
 
@@ -135,6 +140,7 @@ pub struct Game {
     dungeon_state: Option<DungeonState>,
     stats: Stats,
     has_been_on_boat: bool,
+    night_turn_count: u32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -147,10 +153,12 @@ pub struct Stats {
 
 impl Stats {
     fn new() -> Self {
+        let day_max = 1000;
+        let first_day_skip = 997;
         Self {
             health: Meter::new(4, 4),
-            fuel: Meter::new(100, 100),
-            day: Meter::new(200, 200),
+            fuel: Meter::new(400, 400),
+            day: Meter::new(day_max - first_day_skip, day_max),
             crew: Meter::new(0, 2),
         }
     }
@@ -179,6 +187,7 @@ impl Game {
             dungeon_state: None,
             stats: Stats::new(),
             has_been_on_boat: false,
+            night_turn_count: 0,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -190,6 +199,34 @@ impl Game {
             game.driving = true;
         }
         game
+    }
+
+    pub fn spawn_ghost(&mut self) {
+        let angle = Radians(self.rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
+        let length = 10.;
+        let coord = Radial { length, angle }
+            .to_cartesian()
+            .to_coord_round_nearest()
+            + self.player_coord();
+        self.world.spawn_ghost(coord);
+    }
+
+    pub fn pass_time(&mut self) {
+        if self.has_been_on_boat {
+            self.stats.day.decrease(1);
+        }
+        if self.stats.day.is_empty() {
+            if self.night_turn_count % 10 == 0 {
+                self.spawn_ghost();
+            }
+            self.night_turn_count += 1;
+        } else {
+            self.night_turn_count = 0;
+        }
+    }
+
+    pub fn spend_fuel(&mut self) {
+        self.stats.fuel.decrease(1)
     }
 
     pub fn is_player_on_boat(&self) -> bool {
@@ -228,10 +265,15 @@ impl Game {
 
     pub fn update_visibility(&mut self) {
         let update_fn = |data: &mut VisibleCellData, coord| data.update(&self.world, coord);
+        let distance = if self.stats.day.is_empty() {
+            Circle::new_squared(150)
+        } else {
+            Circle::new_squared(500)
+        };
         self.visibility_grid.update_custom(
             Rgb24::new_grey(255),
             &self.world,
-            Circle::new_squared(500),
+            distance,
             self.player_coord(),
             update_fn,
         );
@@ -457,6 +499,7 @@ impl Game {
         let boat_next = boat.add_heading(Radians(delta_radians));
         let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord);
+        self.pass_time();
     }
 
     fn move_boat(&mut self, move_direction: MoveDirection) {
@@ -467,6 +510,8 @@ impl Game {
             MoveDirection::Backward => boat.step_backwards(),
         };
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord + delta);
+        self.pass_time();
+        self.spend_fuel();
     }
 
     // Returns the coordinate of the player character
@@ -566,7 +611,7 @@ impl Game {
         if let Some(&Layers { boat: Some(_), .. }) = layers {
             self.has_been_on_boat = true;
         }
-
+        self.pass_time();
         self.world
             .spatial_table
             .update_coord(self.player_entity, new_player_coord)
@@ -635,6 +680,9 @@ impl Game {
     }
 
     fn check_control_flow(&self) -> Option<GameControlFlow> {
+        if self.stats.fuel.is_empty() {
+            return Some(GameControlFlow::GameOver(GameOverReason::OutOfFuel));
+        }
         None
     }
 

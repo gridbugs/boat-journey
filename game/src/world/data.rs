@@ -36,6 +36,7 @@ pub enum Tile {
     Tree,
     StairsDown,
     StairsUp,
+    Ghost,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,5 +129,8 @@ impl Meter {
     pub fn set_max(&mut self, to: u32) {
         self.max = to;
         self.set_current(self.current);
+    }
+    pub fn is_empty(&self) -> bool {
+        self.current == 0
     }
 }
