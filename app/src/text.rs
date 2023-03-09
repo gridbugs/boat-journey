@@ -72,11 +72,15 @@ fn game_over_text(width: u32, reason: GameOverReason) -> CF<(), State> {
         style: Style::plain_text(),
     };
     let text = match reason {
-        GameOverReason::OutOfFuel => vec![
+        GameOverReason::OutOfFuel => vec! {
             t("You fail to reach the ocean.\n\n"),
             t("The boat sputters to a halt as the last dregs of fuel are consumed.\n\n"),
-            t("Over time you make a home aboard the stationary boat and hope that one day someone will pick you up and take you to the ocean."),
-        ],
+            t("Over time you make a home aboard the stationary boat and hope that one day someone will pick you up and take you to the ocean."),},
+        GameOverReason::KilledByGhost => vec!{
+            t("You fail to reach the ocean.\n\n"),
+            t("At the icy touch of the ghost you lose your corporeal form.\n\n"),
+            t("You lose sight of the boat as an unfamiliar figure drives it into the darkness."),
+        },
     };
     text_component(width, text)
 }

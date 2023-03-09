@@ -5,6 +5,7 @@ pub use gridbugs::{
     line_2d::{coords_between, coords_between_cardinal},
     rgb_int::Rgb24,
     shadowcast::Context as ShadowcastContext,
+    spatial_table::UpdateError,
 };
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
@@ -20,6 +21,7 @@ mod world;
 
 pub use gridbugs::{
     entity_table::{entity_data, entity_update, Entity},
+    line_2d,
     visible_area_detection::{
         vision_distance::Circle, CellVisibility, VisibilityGrid, World as VisibleWorld,
     },
@@ -59,6 +61,7 @@ impl Default for Config {
 #[derive(Debug, Clone, Copy)]
 pub enum GameOverReason {
     OutOfFuel,
+    KilledByGhost,
 }
 
 #[derive(Debug)]
@@ -489,7 +492,7 @@ impl Game {
         self.visibility_grid.get_visibility(coord)
     }
 
-    fn rotate_boat(&mut self, rotate_direction: RotateDirection) {
+    fn rotate_boat(&mut self, rotate_direction: RotateDirection) -> Option<GameControlFlow> {
         let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
         let step_radians = std::f64::consts::FRAC_PI_4;
         let delta_radians = match rotate_direction {
@@ -500,9 +503,10 @@ impl Game {
         let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord);
         self.pass_time();
+        None
     }
 
-    fn move_boat(&mut self, move_direction: MoveDirection) {
+    fn move_boat(&mut self, move_direction: MoveDirection) -> Option<GameControlFlow> {
         let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
         let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
         let (boat_next, delta) = match move_direction {
@@ -512,6 +516,7 @@ impl Game {
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord + delta);
         self.pass_time();
         self.spend_fuel();
+        None
     }
 
     // Returns the coordinate of the player character
@@ -563,7 +568,7 @@ impl Game {
         );
     }
 
-    fn player_walk(&mut self, direction: CardinalDirection) {
+    fn player_walk(&mut self, direction: CardinalDirection) -> Option<GameControlFlow> {
         let player_coord = self.player_coord();
         let new_player_coord = player_coord + direction.coord();
         let layers = self.world.spatial_table.layers_at(new_player_coord);
@@ -575,7 +580,7 @@ impl Game {
             // If the player bumps into a door, open the door
             if let Some(DoorState::Closed) = self.world.components.door_state.get(feature_entity) {
                 self.open_door(feature_entity);
-                return;
+                return None;
             }
             // Don't let the player walk through solid entities
             if self.world.components.solid.contains(feature_entity) {
@@ -584,19 +589,24 @@ impl Game {
                 {
                     self.close_door(open_door_entity);
                 }
-                return;
+                return None;
             }
             if let Some(&dungeon_index) = self.world.components.stairs_down.get(feature_entity) {
-                self.world
+                if let Err(UpdateError::OccupiedBy(entity)) = self
+                    .world
                     .spatial_table
                     .update_coord(self.player_entity, new_player_coord)
-                    .unwrap();
+                {
+                    if self.world.components.ghost.contains(entity) {
+                        return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                    }
+                }
                 self.enter_dungeon(dungeon_index);
-                return;
+                return None;
             }
             if self.world.components.stairs_up.contains(feature_entity) {
                 self.exit_dungeon();
-                return;
+                return None;
             }
         }
         if let Some(&Layers {
@@ -606,16 +616,22 @@ impl Game {
             ..
         }) = layers
         {
-            return;
+            return None;
         }
         if let Some(&Layers { boat: Some(_), .. }) = layers {
             self.has_been_on_boat = true;
         }
-        self.pass_time();
-        self.world
+        if let Err(UpdateError::OccupiedBy(entity)) = self
+            .world
             .spatial_table
             .update_coord(self.player_entity, new_player_coord)
-            .unwrap();
+        {
+            if self.world.components.ghost.contains(entity) {
+                return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+            }
+        }
+        self.pass_time();
+        None
     }
 
     pub fn is_in_dungeon(&self) -> bool {
@@ -686,6 +702,22 @@ impl Game {
         None
     }
 
+    fn npc_turn(&mut self) -> Option<GameControlFlow> {
+        let ghost_entities = self.world.components.ghost.entities().collect::<Vec<_>>();
+        let player_coord = self.player_coord();
+        for entity in ghost_entities {
+            let coord = self.world.spatial_table.coord_of(entity).unwrap();
+            if let Some(dest) = line_2d::coords_between(coord, player_coord).skip(1).next() {
+                if dest == player_coord {
+                    return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                } else {
+                    let _ = self.world.spatial_table.update_coord(entity, dest);
+                }
+            }
+        }
+        None
+    }
+
     #[must_use]
     pub(crate) fn handle_tick(
         &mut self,
@@ -712,14 +744,17 @@ impl Game {
         input: Input,
         _config: &Config,
     ) -> Result<Option<GameControlFlow>, ActionError> {
-        if self.driving {
+        let game_control_flow = if self.driving {
             match input {
                 Input::Walk(CardinalDirection::East) => self.rotate_boat(RotateDirection::Right),
                 Input::Walk(CardinalDirection::West) => self.rotate_boat(RotateDirection::Left),
                 Input::Walk(CardinalDirection::North) => self.move_boat(MoveDirection::Forward),
                 Input::Walk(CardinalDirection::South) => self.move_boat(MoveDirection::Backward),
-                Input::DriveToggle => self.driving = false,
-                _ => (),
+                Input::DriveToggle => {
+                    self.driving = false;
+                    None
+                }
+                _ => None,
             }
         } else {
             match input {
@@ -728,9 +763,17 @@ impl Game {
                     if self.is_player_on_driving_coord() {
                         self.driving = true;
                     }
+                    None
                 }
-                _ => (),
+                _ => None,
             }
+        };
+        if game_control_flow.is_some() {
+            return Ok(game_control_flow);
+        }
+        let game_control_flow = self.npc_turn();
+        if game_control_flow.is_some() {
+            return Ok(game_control_flow);
         }
         self.update_visibility();
         Ok(self.check_control_flow())

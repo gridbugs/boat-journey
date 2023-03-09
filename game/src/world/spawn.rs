@@ -199,6 +199,7 @@ impl World {
             (coord, Layer::Character),
             entity_data! {
                 tile: Tile::Ghost,
+                ghost: (),
             },
         )
     }

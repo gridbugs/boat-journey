@@ -15,6 +15,7 @@ declare_entity_module! {
         ocean: (),
         stairs_down: usize,
         stairs_up: (),
+        ghost: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};

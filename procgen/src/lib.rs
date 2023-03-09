@@ -838,7 +838,7 @@ impl World3 {
         }
         let _spawn = {
             // city
-            if false {
+            {
                 // gate
                 for &c in &world2.gate {
                     let cell = grid.get_checked_mut(c);
