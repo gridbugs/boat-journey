@@ -60,14 +60,24 @@ impl Land {
             / self.cells.width() as f64
     }
     pub fn get_height(&self, coord: Coord) -> Option<f64> {
-        self.cells
-            .get(coord)
-            .map(|land_cell| self.base_height_on_row(coord.x as usize) + land_cell.height)
+        self.cells.get(coord).map(|land_cell| {
+            let mut h = self.base_height_on_row(coord.x as usize) + land_cell.height;
+            if coord.y < 20 || coord.y > self.cells.height() as i32 - 20 {
+                h += 40.;
+            }
+            h
+        })
     }
     pub fn plot_river(&self) -> Vec<Coord> {
+        let mut rows = (0..(self.cells.height() as usize)).collect::<Vec<_>>();
+        rows.sort_by_key(|&i| {
+            let coord = Coord::new(0, i as i32);
+            let h = (self.get_height(coord).unwrap() * 1000.0) as i64;
+            h
+        });
         let mut best_cost = f64::MAX;
         let mut best = Vec::new();
-        for i in 0..self.cells.height() as usize {
+        for i in rows.into_iter().take(4) {
             let (path, cost) = self.plot_river_from_row(i);
             if cost < best_cost {
                 best_cost = cost;
@@ -136,6 +146,9 @@ impl Land {
 }
 
 fn validate_river(river: &[Coord]) -> bool {
+    let _ = river;
+    true
+    /*
     let n = 10;
     'outer: for w in river.windows((2 * n) + 1) {
         let delta_0 = w[1] - w[0];
@@ -156,7 +169,7 @@ fn validate_river(river: &[Coord]) -> bool {
             return false;
         }
     }
-    true
+    true*/
 }
 
 pub fn land_and_river<R: Rng>(spec: &Spec, rng: &mut R) -> (Land, Vec<Coord>) {
@@ -450,7 +463,6 @@ fn make_world_grid2<R: Rng>(
     town_positions: &[Coord],
     rng: &mut R,
 ) -> World2 {
-    println!("a");
     let left_padding = 100;
     let right_land_padding = 50;
     let right_ocean_padding = 50;
@@ -510,8 +522,6 @@ fn make_world_grid2<R: Rng>(
         let town_coord = scale_coord(town_coord_unscaled);
         pool_centres.push(town_coord);
         let radius = town_size / 2;
-        println!("town_size {:?}", town_size);
-        println!("radius {:?}", radius);
         let town_blob = blob(town_coord, radius, rng);
         for &coord in &town_blob.inside {
             *grid.get_checked_mut(coord) = WorldCell2::Water(WaterType::River);
@@ -568,11 +578,21 @@ pub struct WaterDistanceMap {
 
 impl WaterDistanceMap {
     fn new(world2: &Grid<WorldCell2>) -> Self {
+        let max_distance = 25;
         let mut distances = Grid::new_copy(world2.size(), 0);
         let mut seen = HashSet::new();
         let mut to_visit = VecDeque::new();
         for (coord, &cell) in world2.enumerate() {
             if let WorldCell2::Water(_) = cell {
+                if Direction::all().all(|d| {
+                    if let Some(WorldCell2::Water(_)) = world2.get(coord + d.coord()) {
+                        true
+                    } else {
+                        false
+                    }
+                }) {
+                    continue;
+                }
                 seen.insert(coord);
                 to_visit.push_front(coord);
             }
@@ -583,8 +603,10 @@ impl WaterDistanceMap {
                 if let Some(WorldCell2::Land) = world2.get(neighbour_coord) {
                     if seen.insert(neighbour_coord) {
                         let distance = *distances.get_checked(coord) + 1;
-                        *distances.get_checked_mut(neighbour_coord) = distance;
-                        to_visit.push_front(neighbour_coord);
+                        if distance < max_distance {
+                            *distances.get_checked_mut(neighbour_coord) = distance;
+                            to_visit.push_front(neighbour_coord);
+                        }
                     }
                 }
             }
@@ -614,7 +636,6 @@ pub struct World3 {
 
 impl World3 {
     fn from_world2<R: Rng>(world2: &World2, rng: &mut R) -> Option<World3> {
-        println!("x");
         let mut grid = world2.grid.map_ref(|cell| match cell {
             WorldCell2::Land => WorldCell3::Ground,
             WorldCell2::Water(w) => WorldCell3::Water(*w),
@@ -759,7 +780,7 @@ impl World3 {
             }
             // swamp
             let mut num_islands = 0;
-            let num_island_attempts = 2000;
+            let num_island_attempts = 200;
             'outer: for _ in 0..num_island_attempts {
                 let angle = Radians(rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
                 let distance = rng.gen::<f64>() * TOWN_SIZE.width() as f64 * 3. / 2.;
@@ -784,7 +805,7 @@ impl World3 {
                     let size = Size::new(rng.gen_range(3..8), rng.gen_range(3..8));
                     let part = blob(centre, size, rng);
                     for c in part.inside {
-                        *grid.get_checked_mut(c) = WorldCell3::TownGround;
+                        *grid.get_checked_mut(c) = WorldCell3::Ground;
                         island_coords.push(c);
                     }
                 }
@@ -812,13 +833,12 @@ impl World3 {
                 num_islands += 1;
             }
             if num_islands < 0 {
-                println!("not enough islands");
                 return None;
             }
         }
         let _spawn = {
             // city
-            {
+            if false {
                 // gate
                 for &c in &world2.gate {
                     let cell = grid.get_checked_mut(c);
@@ -965,7 +985,7 @@ impl World3 {
                 inn_centre
             }
         };
-        //let spawn = world2.city_centre;
+        //let spawn = world2.swamp_centre;
         //let boat_spawn = spawn + Coord::new(-10, -4);
         //let boat_heading = Radians(0.);
         Some(Self {
@@ -1000,10 +1020,8 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
         world_grid1_widen_river(&mut world1);
         world_grid1_widen_river(&mut world1);
 
-        println!("c");
         let town_candidate_positions = get_town_candidate_positions(&world1, &river);
         if town_candidate_positions.iter().any(|v| v.is_empty()) {
-            println!("xxx");
             continue;
         }
         let (world1, town_positions) = if let Some((world1, town_positions)) =
@@ -1011,11 +1029,9 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
         {
             (world1, town_positions)
         } else {
-            println!("yyy");
             continue;
         };
         if !world_grid1_validate_no_loops(&world1) {
-            println!("zzz");
             continue;
         }
         let world2 = make_world_grid2(spec, &river, &town_positions, rng);

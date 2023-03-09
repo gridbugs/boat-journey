@@ -500,10 +500,14 @@ fn main_menu_loop() -> AppCF<MainMenuOutput> {
         .centre()
         .overlay(background(), 1)
         .repeat_unit(move |entry| match entry {
-            NewGame => on_state(|state: &mut State| MainMenuOutput::NewGame {
-                new_running: state.new_game(),
-            })
-            .break_(),
+            NewGame => text::loading(MAIN_MENU_TEXT_WIDTH)
+                .centre()
+                .then(|| {
+                    on_state(|state: &mut State| MainMenuOutput::NewGame {
+                        new_running: state.new_game(),
+                    })
+                })
+                .break_(),
             Help => text::help(MAIN_MENU_TEXT_WIDTH)
                 .fill(crate::colour::MURKY_GREEN.to_rgba32(255))
                 .centre()
@@ -553,19 +557,28 @@ fn pause_menu_loop(running: witness::Running) -> AppCF<PauseOutput> {
             move |running, entry_or_escape| match entry_or_escape {
                 Ok(entry) => match entry {
                     Resume => break_(PauseOutput::ContinueGame { running }),
-                    SaveQuit => on_state(|state: &mut State| {
-                        state.save_instance(running);
-                        PauseOutput::Quit
-                    })
-                    .break_(),
-                    Save => on_state(|state: &mut State| PauseOutput::ContinueGame {
-                        running: state.save_instance(running),
-                    })
-                    .break_(),
-                    NewGame => on_state(|state: &mut State| PauseOutput::ContinueGame {
-                        running: state.new_game(),
-                    })
-                    .break_(),
+                    SaveQuit => text::saving(MAIN_MENU_TEXT_WIDTH)
+                        .then(|| {
+                            on_state(|state: &mut State| {
+                                state.save_instance(running);
+                                PauseOutput::Quit
+                            })
+                        })
+                        .break_(),
+                    Save => text::saving(MAIN_MENU_TEXT_WIDTH)
+                        .then(|| {
+                            on_state(|state: &mut State| PauseOutput::ContinueGame {
+                                running: state.save_instance(running),
+                            })
+                        })
+                        .break_(),
+                    NewGame => text::loading(MAIN_MENU_TEXT_WIDTH)
+                        .then(|| {
+                            on_state(|state: &mut State| PauseOutput::ContinueGame {
+                                running: state.new_game(),
+                            })
+                        })
+                        .break_(),
                     Help => text::help(text_width).continue_with(running),
                     Clear => on_state(|state: &mut State| {
                         state.clear_saved_game();
