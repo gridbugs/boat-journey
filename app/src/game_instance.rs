@@ -219,11 +219,15 @@ impl GameInstance {
                 .game
                 .inner_ref()
                 .cell_visibility_at_coord(coord + centre_coord_delta);
-            let mist = if self.game.inner_ref().is_in_dungeon() {
+            let mut mist = if self.game.inner_ref().is_in_dungeon() {
                 Rgba32::new(0, 0, 0, 0)
             } else {
                 self.mist.get(coord)
             };
+            if self.game.inner_ref().stats().day.is_empty() {
+                mist.a *= 4;
+            }
+
             let unseen_background = if self.game.inner_ref().is_in_dungeon() {
                 Rgba32::new(0, 0, 0, 255)
             } else {
@@ -310,16 +314,16 @@ impl GameInstance {
                 style: Style::plain_text(),
             });
         }
+        if tiles.contains(&Tile::Ghost) {
+            hints.push(StyledString {
+                string: format!("Ghosts (g) can move diagonally.\n\n"),
+                style: Style::plain_text(),
+            });
+        }
         if stats.day.current() == 0 {
             hints.push(StyledString {
                 string: format!("GET INSIDE\n\n"),
                 style: Style::plain_text().with_bold(true),
-            });
-        }
-        if tiles.contains(&Tile::Ghost) {
-            hints.push(StyledString {
-                string: format!("Ghosts (g) can move diagonally."),
-                style: Style::plain_text(),
             });
         }
         Text::new(hints).render(&(), ctx, fb);
@@ -358,6 +362,7 @@ impl GameInstance {
             meter_text("Fuel", &stats.fuel),
             meter_text("Day", &stats.day),
             meter_text("Crew", &stats.crew),
+            meter_text("Junk", &stats.junk),
         ];
         Text::new(text.concat()).render(&(), ctx, fb);
     }
@@ -385,8 +390,7 @@ impl GameInstance {
             } else {
                 format!("{} (x{})", m, count)
             };
-            let alpha = 255;
-            //            -(i as u8 * 20);
+            let alpha = 255 - (i as u8 * 50);
             let styled_string = StyledString {
                 string,
                 style: Style::plain_text().with_foreground(Rgba32::new_grey(255).with_a(alpha)),
@@ -398,7 +402,7 @@ impl GameInstance {
 
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let tiles = self.render_game(ctx, fb);
-        self.render_hints(ctx.add_xy(1, 1), fb, &tiles);
+        self.render_hints(ctx.add_xy(1, 1).add_depth(20), fb, &tiles);
         self.render_messages(
             ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 7)
                 .add_depth(20),

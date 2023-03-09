@@ -153,17 +153,19 @@ pub struct Stats {
     pub fuel: Meter,
     pub day: Meter,
     pub crew: Meter,
+    pub junk: Meter,
 }
 
 impl Stats {
     fn new() -> Self {
         let day_max = 1000;
-        let first_day_skip = 997;
+        let first_day_skip = 950;
         Self {
             health: Meter::new(4, 4),
             fuel: Meter::new(400, 400),
             day: Meter::new(day_max - first_day_skip, day_max),
-            crew: Meter::new(0, 2),
+            crew: Meter::new(0, 1),
+            junk: Meter::new(0, 5),
         }
     }
 }
