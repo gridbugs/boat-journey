@@ -31,4 +31,4 @@ rand_isaac = { version = "0.3", features = ["serde1"] }
 rand_xorshift = { version = "0.3", features = ["serde1"] }
 maplit = "1.0"
 getrandom = "0.2"
-serde_json = "1.0"
+bincode = "1.3"

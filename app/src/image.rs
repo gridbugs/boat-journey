@@ -18,14 +18,14 @@ enum ImageName {
 }
 
 impl ImageName {
-    const fn str(self) -> &'static str {
+    const fn data(self) -> &'static [u8] {
         match self {
-            Self::Townsfolk1 => include_str!("images/townsfolk1.json"),
+            Self::Townsfolk1 => include_bytes!("images/townsfolk1.bin"),
         }
     }
 
     fn load_grid(self) -> Image {
-        let grid = serde_json::from_str::<Grid<RenderCell>>(self.str()).unwrap();
+        let grid = bincode::deserialize::<Grid<RenderCell>>(self.data()).unwrap();
         Image { grid }
     }
 }

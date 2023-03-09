@@ -259,6 +259,7 @@ dependencies = [
 name = "boat_journey_app"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "boat_journey_game",
  "getrandom",
  "gridbugs",
@@ -268,7 +269,6 @@ dependencies = [
  "rand_isaac",
  "rand_xorshift",
  "serde",
- "serde_json",
 ]
 
 [[package]]
