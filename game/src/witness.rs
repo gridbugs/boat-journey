@@ -72,9 +72,13 @@ pub enum ControlInput {
     Wait,
 }
 
-pub fn new_game<R: Rng>(config: &Config, base_rng: &mut R) -> (Game, Running) {
+pub fn new_game<R: Rng>(
+    config: &Config,
+    victories: Vec<crate::Victory>,
+    base_rng: &mut R,
+) -> (Game, Running) {
     let g = Game {
-        inner_game: crate::Game::new(config, base_rng),
+        inner_game: crate::Game::new(config, victories, base_rng),
     };
     (g, Running(Private))
 }

@@ -6,7 +6,7 @@ use crate::{
 };
 use boat_journey_game::{
     witness::{self, Witness},
-    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice,
+    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice, Victory, VictoryStats,
 };
 use gridbugs::{
     chargrid::{self, border::BorderStyle, control_flow::*, menu, prelude::*},
@@ -16,12 +16,13 @@ use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Config {
     music_volume: f32,
     sfx_volume: f32,
     won: bool,
     first_run: bool,
+    victories: Vec<Victory>,
 }
 
 impl Default for Config {
@@ -31,6 +32,7 @@ impl Default for Config {
             sfx_volume: 0.5,
             won: false,
             first_run: true,
+            victories: Vec::new(),
         }
     }
 }
@@ -262,9 +264,10 @@ impl AppStorage {
 fn new_game(
     rng_seed_source: &mut RngSeedSource,
     game_config: &GameConfig,
+    victories: Vec<Victory>,
 ) -> (GameInstance, witness::Running) {
     let mut rng = Isaac64Rng::seed_from_u64(rng_seed_source.next_seed());
-    GameInstance::new(game_config, &mut rng)
+    GameInstance::new(game_config, victories, &mut rng)
 }
 
 pub struct GameLoopData {
@@ -285,6 +288,7 @@ impl GameLoopData {
         force_new_game: bool,
     ) -> (Self, GameLoopState) {
         let mut rng_seed_source = RngSeedSource::new(initial_rng_seed);
+        let config = storage.load_config().unwrap_or_default();
         let (instance, state) = match storage.load_game() {
             Some(instance) => {
                 let (instance, running) = instance.into_game_instance();
@@ -295,7 +299,8 @@ impl GameLoopData {
             }
             None => {
                 if force_new_game {
-                    let (instance, running) = new_game(&mut rng_seed_source, &game_config);
+                    let (instance, running) =
+                        new_game(&mut rng_seed_source, &game_config, config.victories.clone());
                     (
                         Some(instance),
                         GameLoopState::Playing(running.into_witness()),
@@ -312,7 +317,6 @@ impl GameLoopData {
             storage.save_controls(&controls);
             controls
         };
-        let config = storage.load_config().unwrap_or_default();
         (
             Self {
                 instance,
@@ -340,7 +344,8 @@ impl GameLoopData {
     }
 
     fn new_game(&mut self) -> witness::Running {
-        let (instance, running) = new_game(&mut self.rng_seed_source, &self.game_config);
+        let victories = self.config.victories.clone();
+        let (instance, running) = new_game(&mut self.rng_seed_source, &self.game_config, victories);
         self.instance = Some(instance);
         running
     }
@@ -609,6 +614,10 @@ fn game_instance_component(running: witness::Running) -> AppCF<GameLoopState> {
 }
 
 fn win(win_: witness::Win) -> AppCF<()> {
+    use chargrid::{
+        text::{StyledString, Text},
+        text_field::TextField,
+    };
     // TODO: fading out the player and then the boat shouldn't be hard
     on_state_then(|state: &mut State| {
         if let Some(instance) = state.instance.as_mut() {
@@ -630,7 +639,32 @@ fn win(win_: witness::Win) -> AppCF<()> {
             state.clear_saved_game();
             state.config.won = true;
             state.save_config();
-            text::win(MAIN_MENU_TEXT_WIDTH)
+            cf(TextField::with_initial_string(30, "".to_string()))
+                .border(BorderStyle::default())
+                .ignore_state()
+                .map_side_effect(|mut name: String, state: &mut State| {
+                    if name.is_empty() {
+                        name = "an unknown person".to_string();
+                    }
+                    if let Some(instance) = state.instance.as_ref() {
+                        let stats = instance.game.inner_ref().victory_stats().clone();
+                        let victory = Victory { name, stats };
+                        state.config.victories.push(victory);
+                        state.save_config();
+                    }
+                })
+                .with_title_vertical(
+                    Text::new(vec![StyledString {
+                        string:
+                            "The ocean welcomes your return.\n\nType your name (enter to confirm):"
+                                .to_string(),
+                        style: Style::plain_text(),
+                    }])
+                    .wrap_word()
+                    .cf()
+                    .set_width(MAIN_MENU_TEXT_WIDTH),
+                    1,
+                )
         })
         .centre()
         .overlay(background(), 1)

@@ -25,10 +25,15 @@ pub struct Terrain {
 }
 
 impl Terrain {
-    pub fn generate<R: Rng>(player_data: EntityData, rng: &mut R) -> Self {
+    pub fn generate<R: Rng>(
+        player_data: EntityData,
+        victories: Vec<crate::Victory>,
+        rng: &mut R,
+    ) -> Self {
         let g = generate(
             &Spec {
                 size: Size::new(150, 80),
+                num_graves: victories.len() as u32,
             },
             rng,
         );

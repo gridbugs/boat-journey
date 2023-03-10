@@ -1,7 +1,7 @@
 use crate::{colour, mist::Mist};
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
-    Config, Layer, Meter, Tile,
+    Config, Layer, Meter, Tile, Victory,
 };
 use gridbugs::{
     chargrid::{prelude::*, text},
@@ -50,8 +50,12 @@ pub struct GameInstance {
 }
 
 impl GameInstance {
-    pub fn new<R: Rng>(config: &Config, rng: &mut R) -> (Self, witness::Running) {
-        let (game, running) = witness::new_game(config, rng);
+    pub fn new<R: Rng>(
+        config: &Config,
+        victories: Vec<Victory>,
+        rng: &mut R,
+    ) -> (Self, witness::Running) {
+        let (game, running) = witness::new_game(config, victories, rng);
         let mist = Mist::new(rng);
         (
             GameInstance {

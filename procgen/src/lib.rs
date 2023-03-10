@@ -16,6 +16,7 @@ mod rooms_and_corridors;
 
 pub struct Spec {
     pub size: Size,
+    pub num_graves: u32,
 }
 
 pub struct LandCell {
@@ -464,7 +465,7 @@ fn make_world_grid2<R: Rng>(
     rng: &mut R,
 ) -> World2 {
     let left_padding = 100;
-    let right_land_padding = 50;
+    let right_land_padding = 20;
     let right_ocean_padding = 50;
     let top_padding = 200;
     let bottom_padding = 200;
@@ -848,9 +849,9 @@ impl World3 {
                 return None;
             }
         }
-        let _spawn = {
+        let spawn = {
             // city
-            {
+            if false {
                 // gate
                 for &c in &world2.gate {
                     let cell = grid.get_checked_mut(c);
@@ -885,8 +886,8 @@ impl World3 {
             }
 
             let inn_block_coord = block_coords.pop().unwrap();
+            /*
             let mut stairs_candidates = Vec::new();
-
             for c in block_coords {
                 let padding = rng.gen_range(3..6);
                 let coord = Coord {
@@ -966,7 +967,7 @@ impl World3 {
             for c in stairs_candidates.into_iter().take(4) {
                 let cell = grid.get_checked_mut(c);
                 *cell = WorldCell3::StairsDown;
-            }
+            }*/
             {
                 // inn
                 let inn_coord = Coord::new(
@@ -993,13 +994,14 @@ impl World3 {
                 }
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let inn_centre = building_coord + Coord::new(2, 4);
-                *grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
+                //*grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
                 inn_centre
             }
         };
+        let spawn = Coord { x: 567, y: 274 };
         //let spawn = world2.swamp_centre;
-        //let boat_spawn = spawn + Coord::new(-10, -4);
-        //let boat_heading = Radians(0.);
+        let boat_spawn = spawn; // + Coord::new(-10, -4);
+                                //let boat_heading = Radians(0.);
         Some(Self {
             grid,
             spawn,

@@ -58,6 +58,23 @@ impl Default for Config {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Victory {
+    pub name: String,
+    pub stats: VictoryStats,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VictoryStats {
+    pub num_turns: u64,
+}
+
+impl VictoryStats {
+    pub fn new() -> Self {
+        Self { num_turns: 0 }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum GameOverReason {
     OutOfFuel,
@@ -158,6 +175,7 @@ pub struct Game {
     has_crossed_threshold: bool,
     night_turn_count: u32,
     messages: Vec<String>,
+    victory_stats: VictoryStats,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -186,13 +204,13 @@ impl Stats {
 pub enum ActionError {}
 
 impl Game {
-    pub fn new<R: Rng>(_config: &Config, base_rng: &mut R) -> Self {
+    pub fn new<R: Rng>(_config: &Config, victories: Vec<Victory>, base_rng: &mut R) -> Self {
         let mut rng = Isaac64Rng::seed_from_u64(base_rng.gen());
         let Terrain {
             world,
             player_entity,
             num_dungeons,
-        } = Terrain::generate(world::spawn::make_player(), &mut rng);
+        } = Terrain::generate(world::spawn::make_player(), victories, &mut rng);
         let dungeons = (0..num_dungeons)
             .map(|_| Some(Dungeon::generate(&mut rng)))
             .collect::<Vec<_>>();
@@ -209,6 +227,7 @@ impl Game {
             has_crossed_threshold: false,
             night_turn_count: 0,
             messages: Vec::new(),
+            victory_stats: VictoryStats::new(),
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -222,6 +241,10 @@ impl Game {
         game
     }
 
+    pub fn victory_stats(&self) -> &VictoryStats {
+        &self.victory_stats
+    }
+
     pub fn spawn_ghost(&mut self) {
         let angle = Radians(self.rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
         let length = 10.;
@@ -233,6 +256,7 @@ impl Game {
     }
 
     pub fn pass_time(&mut self) {
+        self.victory_stats.num_turns += 1;
         if self.has_been_on_boat {
             self.stats.day.decrease(1);
         }
@@ -545,6 +569,7 @@ impl Game {
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord + delta);
         self.pass_time();
         self.spend_fuel();
+        println!("moved boat to {:?}", self.player_coord());
         None
     }
 
