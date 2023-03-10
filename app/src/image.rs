@@ -1,4 +1,4 @@
-use boat_journey_game::MenuImage;
+use boat_journey_game::{MenuImage, Npc};
 use gridbugs::{chargrid::prelude::*, grid_2d::Grid};
 
 pub struct Image {
@@ -19,6 +19,8 @@ enum ImageName {
     Grave,
     Ocean,
     Boat,
+    Soldier,
+    Physicist,
 }
 
 impl ImageName {
@@ -28,6 +30,8 @@ impl ImageName {
             Self::Grave => include_bytes!("images/grave.bin"),
             Self::Ocean => include_bytes!("images/ocean.bin"),
             Self::Boat => include_bytes!("images/boat.bin"),
+            Self::Soldier => include_bytes!("images/soldier.bin"),
+            Self::Physicist => include_bytes!("images/physicist.bin"),
         }
     }
 
@@ -42,6 +46,8 @@ pub struct Images {
     pub grave: Image,
     pub ocean: Image,
     pub boat: Image,
+    pub soldier: Image,
+    pub physicist: Image,
 }
 
 impl Images {
@@ -51,6 +57,8 @@ impl Images {
             grave: ImageName::Grave.load_grid(),
             ocean: ImageName::Ocean.load_grid(),
             boat: ImageName::Boat.load_grid(),
+            soldier: ImageName::Soldier.load_grid(),
+            physicist: ImageName::Physicist.load_grid(),
         }
     }
 
@@ -58,6 +66,8 @@ impl Images {
         match menu_image {
             MenuImage::Townsperson => &self.townsfolk1,
             MenuImage::Grave => &self.grave,
+            MenuImage::Npc(Npc::Soldier) => &self.soldier,
+            MenuImage::Npc(Npc::Physicist) => &self.physicist,
         }
     }
 }

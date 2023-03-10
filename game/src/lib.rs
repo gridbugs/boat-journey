@@ -26,7 +26,7 @@ pub use gridbugs::{
         vision_distance::Circle, CellVisibility, VisibilityGrid, World as VisibleWorld,
     },
 };
-pub use world::data::{Boat, Layer, Location, Meter, Tile};
+pub use world::data::{Boat, Layer, Location, Meter, Npc, Tile};
 use world::{
     data::{DoorState, EntityData, EntityUpdate},
     spatial::{LayerTable, Layers},
@@ -94,12 +94,15 @@ pub enum GameOverReason {
 pub enum MenuChoice {
     SayNothing,
     Leave,
+    AddNpcToPassengers(Entity),
+    DontAddNpcToPassengers,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum MenuImage {
     Townsperson,
     Grave,
+    Npc(Npc),
 }
 
 #[derive(Debug, Clone)]
@@ -190,9 +193,13 @@ pub struct Game {
     stats: Stats,
     has_been_on_boat: bool,
     has_crossed_threshold: bool,
+    has_talked_to_npc: bool,
     night_turn_count: u32,
     messages: Vec<String>,
     victory_stats: VictoryStats,
+    passengers: Vec<Npc>,
+    num_seats: u32,
+    seat_rng_seed: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -200,7 +207,6 @@ pub struct Stats {
     pub health: Meter,
     pub fuel: Meter,
     pub day: Meter,
-    pub crew: Meter,
     pub junk: Meter,
 }
 
@@ -212,7 +218,6 @@ impl Stats {
             health: Meter::new(4, 4),
             fuel: Meter::new(400, 400),
             day: Meter::new(day_max - first_day_skip, day_max),
-            crew: Meter::new(0, 1),
             junk: Meter::new(0, 5),
         }
     }
@@ -232,6 +237,7 @@ impl Game {
             .map(|_| Some(Dungeon::generate(&mut rng)))
             .collect::<Vec<_>>();
         let mut game = Self {
+            seat_rng_seed: rng.gen(),
             rng,
             visibility_grid: VisibilityGrid::new(world.spatial_table.grid_size()),
             world,
@@ -242,9 +248,12 @@ impl Game {
             stats: Stats::new(),
             has_been_on_boat: false,
             has_crossed_threshold: false,
+            has_talked_to_npc: false,
             night_turn_count: 0,
             messages: Vec::new(),
             victory_stats: VictoryStats::new(),
+            passengers: vec![Npc::Soldier],
+            num_seats: 1,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -256,6 +265,18 @@ impl Game {
             game.driving = true;
         }
         game
+    }
+
+    pub fn num_seats(&self) -> u32 {
+        self.num_seats
+    }
+
+    pub fn passengers(&self) -> &[Npc] {
+        &self.passengers
+    }
+
+    fn num_empty_seats(&self) -> u32 {
+        self.num_seats - self.passengers.len() as u32
     }
 
     pub fn victory_stats(&self) -> &VictoryStats {
@@ -331,6 +352,9 @@ impl Game {
     pub fn has_crossed_threshold(&self) -> bool {
         self.has_crossed_threshold
     }
+    pub fn has_talked_to_npc(&self) -> bool {
+        self.has_talked_to_npc
+    }
 
     pub fn is_driving(&self) -> bool {
         self.driving
@@ -341,7 +365,7 @@ impl Game {
         let distance = if self.stats.day.is_empty() {
             Circle::new_squared(150)
         } else {
-            Circle::new_squared(500)
+            Circle::new_squared(700)
         };
         self.visibility_grid.update_custom(
             Rgb24::new_grey(255),
@@ -366,7 +390,7 @@ impl Game {
         //    #       #
         //    ##     ##
         //     #######
-
+        let mut local_rng = Isaac64Rng::seed_from_u64(self.seat_rng_seed);
         let boat_width1 = 3;
         let boat_width2 = 3;
         let boat_width3 = 2;
@@ -484,7 +508,7 @@ impl Game {
             self.world.spawn_boat_edge(coord + boat_coord);
         }
         boat_floor.remove(&Coord::new(0, 0));
-        for coord in boat_floor {
+        for &coord in &boat_floor {
             self.world.spawn_boat_floor(coord + boat_coord);
         }
         self.world.spawn_boat_controls(boat_coord);
@@ -498,6 +522,16 @@ impl Game {
                 .world
                 .spatial_table
                 .update_coord(self.player_entity, boat_coord);
+        }
+        let mut boat_floor = boat_floor.into_iter().collect::<Vec<_>>();
+        boat_floor.sort();
+        boat_floor.shuffle(&mut local_rng);
+        for &npc in &self.passengers {
+            if let Some(coord) = boat_floor.pop() {
+                let e = self.world.spawn_npc(coord + boat_coord, npc);
+                self.world.components.part_of_boat.insert(e, ());
+                let _ = self.world.spatial_table.update_layer(e, Layer::Feature);
+            }
         }
         if false {
             // the cabin is tricky to get right when the boat is not facing a cardinal direction
@@ -738,6 +772,37 @@ impl Game {
                     image: MenuImage::Townsperson,
                 }));
             }
+            if !self.world.components.part_of_boat.contains(entity) {
+                if let Some(&npc) = self.world.components.npc.get(entity) {
+                    self.has_talked_to_npc = true;
+                    let num_empty_seats = self.num_empty_seats();
+                    let (text, choices) =
+                        if num_empty_seats == 0 {
+                            (
+                        format!("I see that there is currently no room on your boat for me...\n\n"),
+                        vec![MenuChoice::Leave],
+                    )
+                        } else {
+                            (
+                                format!(
+                                    "{}\n\nThere are currently {} empty seats on your boat.\n\n",
+                                    npc.text(),
+                                    num_empty_seats
+                                ),
+                                vec![
+                                    MenuChoice::AddNpcToPassengers(entity),
+                                    MenuChoice::DontAddNpcToPassengers,
+                                ],
+                            )
+                        };
+                    let image = MenuImage::Npc(npc);
+                    return Some(GameControlFlow::Menu(Menu {
+                        choices,
+                        text,
+                        image,
+                    }));
+                }
+            }
         }
         self.pass_time();
         None
@@ -837,6 +902,13 @@ impl Game {
         ));
     }
 
+    fn add_npc_to_passengers(&mut self, entity: Entity) {
+        let entity_data = self.world.components.remove_entity_data(entity);
+        self.world.spatial_table.remove(entity);
+        let npc = entity_data.npc.unwrap();
+        self.passengers.push(npc);
+    }
+
     #[must_use]
     pub(crate) fn handle_tick(
         &mut self,
@@ -902,5 +974,18 @@ impl Game {
         }
         self.update_visibility();
         Ok(self.check_control_flow())
+    }
+
+    pub(crate) fn handle_choice(&mut self, choice: MenuChoice) {
+        match choice {
+            MenuChoice::DontAddNpcToPassengers | MenuChoice::Leave | MenuChoice::SayNothing => (),
+            MenuChoice::AddNpcToPassengers(entity) => self.add_npc_to_passengers(entity),
+        }
+        let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
+        let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
+        if !self.try_rasterize_boat(boat_entity, boat.clone(), boat_coord) {
+            panic!("failed to create the boat");
+        }
+        self.update_visibility();
     }
 }

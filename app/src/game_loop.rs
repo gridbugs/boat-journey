@@ -515,6 +515,7 @@ fn main_menu_loop() -> AppCF<MainMenuOutput> {
         .repeat_unit(move |entry| match entry {
             NewGame => text::loading(MAIN_MENU_TEXT_WIDTH)
                 .centre()
+                .overlay(background(), 1)
                 .then(|| {
                     on_state(|state: &mut State| MainMenuOutput::NewGame {
                         new_running: state.new_game(),
@@ -702,6 +703,8 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
         match choice {
             GameMenuChoice::SayNothing => add_item(choice.clone(), "Say nothing...", ch),
             GameMenuChoice::Leave => add_item(choice.clone(), "Leave...", ch),
+            GameMenuChoice::AddNpcToPassengers(_) => add_item(choice.clone(), "Welcome aboard", ch),
+            GameMenuChoice::DontAddNpcToPassengers => add_item(choice.clone(), "Perhaps later", ch),
         }
     }
     let title = {
@@ -733,7 +736,16 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
             }),
             1,
         );
-    menu_cf.map(|x| menu_witness.cancel())
+    menu_cf.map_side_effect(|result, state: &mut State| match result {
+        Err(Close) => menu_witness.cancel(),
+        Ok(choice) => {
+            if let Some(instance) = state.instance.as_mut() {
+                menu_witness.commit(&mut instance.game, choice)
+            } else {
+                menu_witness.cancel()
+            }
+        }
+    })
 }
 
 pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {

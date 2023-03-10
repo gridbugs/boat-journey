@@ -65,6 +65,11 @@ impl Menu {
         let Self { private, .. } = self;
         Witness::running(private)
     }
+    pub fn commit(self, game: &mut Game, choice: crate::MenuChoice) -> Witness {
+        game.inner_game.handle_choice(choice);
+        let Self { private, .. } = self;
+        Witness::running(private)
+    }
 }
 
 pub enum ControlInput {

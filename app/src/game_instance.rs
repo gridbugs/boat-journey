@@ -1,7 +1,7 @@
 use crate::{colour, mist::Mist};
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
-    Config, Layer, Meter, Tile, Victory,
+    Config, Layer, Meter, Npc, Tile, Victory,
 };
 use gridbugs::{
     chargrid::{prelude::*, text},
@@ -47,6 +47,14 @@ pub struct GameInstance {
     pub game: Game,
     pub mist: Mist,
     pub fade_state: FadeState,
+}
+
+fn npc_colour(npc: Npc) -> Rgb24 {
+    let hex = match npc {
+        Npc::Physicist => 0x5bcdcd, // cyan
+        Npc::Soldier => 0x628139,
+    };
+    Rgb24::hex(hex)
 }
 
 impl GameInstance {
@@ -215,6 +223,15 @@ impl GameInstance {
                     style: Style::new()
                         .with_bold(true)
                         .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
+            Tile::Npc(npc) => {
+                return RenderCell {
+                    character: Some('@'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(npc_colour(npc).to_rgba32(player_opacity))
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
@@ -392,7 +409,6 @@ impl GameInstance {
             meter_text("Health", &stats.health),
             meter_text("Fuel", &stats.fuel),
             meter_text("Day", &stats.day),
-            meter_text("Crew", &stats.crew),
             meter_text("Junk", &stats.junk),
         ];
         Text::new(text.concat()).render(&(), ctx, fb);
@@ -431,6 +447,35 @@ impl GameInstance {
         }
     }
 
+    pub fn render_side_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        use text::*;
+        if !self.game.inner_ref().has_talked_to_npc() {
+            return;
+        }
+        let mut text_parts = vec![StyledString {
+            string: format!("Passengers:\n\n"),
+            style: Style::plain_text().with_bold(true),
+        }];
+        let passengers = self.game.inner_ref().passengers();
+        for (i, &npc) in passengers.iter().enumerate() {
+            let i = i + 1;
+            let name = npc.name();
+            let ability_name = npc.ability_name();
+            text_parts.push(StyledString {
+                string: format!("{i}. {name}\n   ({ability_name})\n\n"),
+                style: Style::plain_text(),
+            });
+        }
+        for i in passengers.len()..(self.game.inner_ref().num_seats() as usize) {
+            let i = i + 1;
+            text_parts.push(StyledString {
+                string: format!("{i}. (empty)\n\n\n"),
+                style: Style::plain_text(),
+            });
+        }
+        Text::new(text_parts).render(&(), ctx, fb);
+    }
+
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let tiles = self.render_game(ctx, fb);
         self.render_hints(ctx.add_xy(1, 1).add_depth(20), fb, &tiles);
@@ -441,6 +486,11 @@ impl GameInstance {
         );
         self.render_ui(
             ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 2)
+                .add_depth(20),
+            fb,
+        );
+        self.render_side_ui(
+            ctx.add_xy(ctx.bounding_box.size().width() as i32 - 15, 1)
                 .add_depth(20),
             fb,
         );

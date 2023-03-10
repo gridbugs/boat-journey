@@ -639,10 +639,12 @@ pub struct World3 {
     pub your_door: Coord,
     pub unimportant_npc_spawns: HashSet<Coord>,
     pub grave_pool: Vec<Coord>,
+    pub npc_spawns: Vec<Coord>,
 }
 
 impl World3 {
     fn from_world2<R: Rng>(world2: &World2, num_graves: u32, rng: &mut R) -> Option<World3> {
+        let mut npc_spawns = Vec::new();
         let mut grid = world2.grid.map_ref(|cell| match cell {
             WorldCell2::Land => WorldCell3::Ground,
             WorldCell2::Water(w) => WorldCell3::Water(*w),
@@ -668,6 +670,8 @@ impl World3 {
                 *grid.get_checked_mut(c - Coord::new(1, 0)) = WorldCell3::Floor;
                 c -= Coord::new(0, 1);
             }
+            npc_spawns.push(lake_bottom - Coord::new(0, pier_length - 3));
+            npc_spawns.push(lake_bottom - Coord::new(1, pier_length - 3));
         }
         let boat_spawn = lake_bottom - Coord::new(0, pier_length + 2);
         let boat_heading = Radians(std::f64::consts::FRAC_PI_2);
@@ -1034,9 +1038,9 @@ impl World3 {
                 inn_centre
             }
         };
-        //let spawn = Coord { x: 567, y: 274 };
         //let spawn = world2.swamp_centre;
-        //let boat_spawn = spawn; // + Coord::new(-10, -4);
+        let spawn = Coord { x: 567, y: 274 };
+        let boat_spawn = spawn; // + Coord::new(-10, -4);
         Some(Self {
             grid,
             spawn,
@@ -1045,6 +1049,7 @@ impl World3 {
             your_door,
             unimportant_npc_spawns,
             grave_pool,
+            npc_spawns,
         })
     }
 }

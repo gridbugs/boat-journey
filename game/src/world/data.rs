@@ -19,6 +19,7 @@ declare_entity_module! {
         unimportant_npc: (),
         threshold: (),
         grave: crate::Victory,
+        npc: Npc,
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -43,6 +44,7 @@ pub enum Tile {
     Ghost,
     UnimportantNpc,
     Grave,
+    Npc(Npc),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,5 +140,36 @@ impl Meter {
     }
     pub fn is_empty(&self) -> bool {
         self.current == 0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub enum Npc {
+    Soldier,
+    Physicist,
+}
+
+impl Npc {
+    pub fn all() -> Vec<Self> {
+        vec![Self::Soldier, Self::Physicist]
+    }
+    pub fn name(self) -> String {
+        match self {
+            Self::Soldier => format!("Soldier"),
+            Self::Physicist => format!("Physicist"),
+        }
+    }
+    pub fn ability_name(self) -> String {
+        match self {
+            Self::Soldier => format!("Destroy"),
+            Self::Physicist => format!("Blink"),
+        }
+    }
+    pub fn text(self) -> String {
+        let name = self.name();
+        match self {
+            Self::Soldier => format!("{name}:\n\nDuty has called me to the ocean. Will you take me there? I can help you defeat your enemies or clear a path through the trees."),
+            Self::Physicist => format!("{name}:\n\nMy studies necessitate that I visit the ocean. Will you take me? If you take me on your boat I will let you borrow my experimental teleportation device."),
+        }
     }
 }

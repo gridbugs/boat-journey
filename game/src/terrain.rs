@@ -1,6 +1,6 @@
 use crate::{
     world::{
-        data::{Boat, EntityData},
+        data::{Boat, EntityData, Npc},
         spatial::{Layer, Location},
         World,
     },
@@ -14,7 +14,7 @@ use procgen::{
     generate, generate_dungeon, Dungeon as DungeonGen, DungeonCell, Spec, WaterType, WorldCell2,
     WorldCell3,
 };
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 use serde::{Deserialize, Serialize};
 use vector::Radians;
 
@@ -149,6 +149,13 @@ impl Terrain {
         }
         for &coord in g.world3.unimportant_npc_spawns.iter() {
             world.spawn_unimportant_npc(coord);
+        }
+        let mut all_npcs = Npc::all();
+        all_npcs.shuffle(rng);
+        for &coord in g.world3.npc_spawns.iter() {
+            if let Some(npc) = all_npcs.pop() {
+                world.spawn_npc(coord, npc);
+            }
         }
         Self {
             world,
