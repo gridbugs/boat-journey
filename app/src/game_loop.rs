@@ -457,7 +457,7 @@ enum MainMenuEntry {
 
 fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
     let decoration = {
-        let style = Style::default();
+        let style = Style::plain_text();
         gridbugs::chargrid::many![styled_string(
             "Boat Journey".to_string(),
             style.with_bold(true)
@@ -506,8 +506,12 @@ fn background() -> CF<(), State> {
 fn main_menu_loop() -> AppCF<MainMenuOutput> {
     use MainMenuEntry::*;
     title_decorate(main_menu())
-        .centre()
-        .overlay(background(), 1)
+        .add_x(12)
+        .add_y(12)
+        .overlay(
+            render_state(|state: &State, ctx, fb| state.images.boat.render(ctx, fb)),
+            1,
+        )
         .repeat_unit(move |entry| match entry {
             NewGame => text::loading(MAIN_MENU_TEXT_WIDTH)
                 .centre()
@@ -668,7 +672,10 @@ fn win(win_: witness::Win) -> AppCF<()> {
                 )
         })
         .centre()
-        .overlay(background(), 1)
+        .overlay(
+            render_state(|state: &State, ctx, fb| state.images.ocean.render(ctx, fb)),
+            1,
+        )
     })
 }
 
