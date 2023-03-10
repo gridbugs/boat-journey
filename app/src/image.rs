@@ -1,3 +1,4 @@
+use boat_journey_game::MenuImage;
 use gridbugs::{chargrid::prelude::*, grid_2d::Grid};
 
 pub struct Image {
@@ -38,6 +39,13 @@ impl Images {
     pub fn new() -> Self {
         Self {
             townsfolk1: ImageName::Townsfolk1.load_grid(),
+        }
+    }
+
+    pub fn image_from_menu_image(&self, menu_image: MenuImage) -> &Image {
+        match menu_image {
+            MenuImage::Townsperson => &self.townsfolk1,
+            MenuImage::Grave => &self.townsfolk1,
         }
     }
 }

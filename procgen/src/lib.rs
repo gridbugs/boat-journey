@@ -579,7 +579,7 @@ pub struct WaterDistanceMap {
 
 impl WaterDistanceMap {
     fn new(world2: &Grid<WorldCell2>) -> Self {
-        let max_distance = 25;
+        let max_distance = 30;
         let mut distances = Grid::new_copy(world2.size(), 0);
         let mut seen = HashSet::new();
         let mut to_visit = VecDeque::new();
@@ -596,6 +596,8 @@ impl WaterDistanceMap {
                 }
                 seen.insert(coord);
                 to_visit.push_front(coord);
+            } else {
+                *distances.get_checked_mut(coord) = std::u32::MAX;
             }
         }
         while let Some(coord) = to_visit.pop_back() {
@@ -626,6 +628,7 @@ pub enum WorldCell3 {
     Door,
     StairsDown,
     StairsUp,
+    Grave,
 }
 
 pub struct World3 {
@@ -635,10 +638,11 @@ pub struct World3 {
     pub boat_heading: Radians,
     pub your_door: Coord,
     pub unimportant_npc_spawns: HashSet<Coord>,
+    pub grave_pool: Vec<Coord>,
 }
 
 impl World3 {
-    fn from_world2<R: Rng>(world2: &World2, rng: &mut R) -> Option<World3> {
+    fn from_world2<R: Rng>(world2: &World2, num_graves: u32, rng: &mut R) -> Option<World3> {
         let mut grid = world2.grid.map_ref(|cell| match cell {
             WorldCell2::Land => WorldCell3::Ground,
             WorldCell2::Water(w) => WorldCell3::Water(*w),
@@ -668,6 +672,39 @@ impl World3 {
         let boat_spawn = lake_bottom - Coord::new(0, pier_length + 2);
         let boat_heading = Radians(std::f64::consts::FRAC_PI_2);
         let mut unimportant_npc_spawns = HashSet::new();
+        let grave_pool = {
+            // graveyard
+            let distance_from_town = 30;
+            if num_graves > 0 {
+                for i in 0..distance_from_town {
+                    let c = lake_bottom + Coord::new(0, i);
+                    *grid.get_checked_mut(c) = WorldCell3::Floor;
+                }
+            }
+            let centre = lake_bottom + Coord::new(0, distance_from_town);
+            let clear_blob = blob(centre, Size::new(8, 8), rng);
+            for c in clear_blob.inside {
+                *grid.get_checked_mut(c) = WorldCell3::Floor;
+            }
+            let pool_blob = blob(centre, Size::new(4, 4), rng);
+            let mut grave_pool = Vec::new();
+            for c in pool_blob.inside {
+                *grid.get_checked_mut(c) = WorldCell3::Water(WaterType::Ocean);
+                grave_pool.push(c);
+            }
+            let grave_blob = blob(centre, Size::new(6, 6), rng);
+            let mut grave_candidates = Vec::new();
+            for c in grave_blob.inside {
+                if *grid.get_checked(c) == WorldCell3::Floor && c.x % 2 == 0 {
+                    grave_candidates.push(c);
+                }
+            }
+            grave_candidates.shuffle(rng);
+            for c in grave_candidates.into_iter().take(num_graves as usize) {
+                *grid.get_checked_mut(c) = WorldCell3::Grave;
+            }
+            grave_pool
+        };
         let (spawn, your_door) = {
             // lake town
             let lake_town_area = blob(lake_bottom, Size::new(30, 10), rng);
@@ -849,9 +886,9 @@ impl World3 {
                 return None;
             }
         }
-        let spawn = {
+        let _spawn = {
             // city
-            if false {
+            {
                 // gate
                 for &c in &world2.gate {
                     let cell = grid.get_checked_mut(c);
@@ -886,7 +923,6 @@ impl World3 {
             }
 
             let inn_block_coord = block_coords.pop().unwrap();
-            /*
             let mut stairs_candidates = Vec::new();
             for c in block_coords {
                 let padding = rng.gen_range(3..6);
@@ -967,7 +1003,7 @@ impl World3 {
             for c in stairs_candidates.into_iter().take(4) {
                 let cell = grid.get_checked_mut(c);
                 *cell = WorldCell3::StairsDown;
-            }*/
+            }
             {
                 // inn
                 let inn_coord = Coord::new(
@@ -998,10 +1034,9 @@ impl World3 {
                 inn_centre
             }
         };
-        let spawn = Coord { x: 567, y: 274 };
+        //let spawn = Coord { x: 567, y: 274 };
         //let spawn = world2.swamp_centre;
-        let boat_spawn = spawn; // + Coord::new(-10, -4);
-                                //let boat_heading = Radians(0.);
+        //let boat_spawn = spawn; // + Coord::new(-10, -4);
         Some(Self {
             grid,
             spawn,
@@ -1009,6 +1044,7 @@ impl World3 {
             boat_heading,
             your_door,
             unimportant_npc_spawns,
+            grave_pool,
         })
     }
 }
@@ -1050,14 +1086,17 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
         if !world_grid1_validate_no_loops(&world1) {
             continue;
         }
-        let world2 = make_world_grid2(spec, &river, &town_positions, rng);
-        let water_distance_map = WaterDistanceMap::new(&world2.grid);
+        let mut world2 = make_world_grid2(spec, &river, &town_positions, rng);
         let viz_size = Size::new(200, 160);
-        let world3 = if let Some(world3) = World3::from_world2(&world2, rng) {
+        let world3 = if let Some(world3) = World3::from_world2(&world2, spec.num_graves, rng) {
             world3
         } else {
             continue;
         };
+        for &c in world3.grave_pool.iter() {
+            *world2.grid.get_checked_mut(c) = WorldCell2::Water(WaterType::River);
+        }
+        let water_distance_map = WaterDistanceMap::new(&world2.grid);
         let viz_coord = world3.spawn - (viz_size.to_coord().unwrap() / 2);
         break Terrain {
             land,

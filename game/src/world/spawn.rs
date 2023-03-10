@@ -226,4 +226,14 @@ impl World {
             },
         )
     }
+
+    pub fn spawn_grave(&mut self, coord: Coord, victory: crate::Victory) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Grave,
+                grave: victory,
+            },
+        )
+    }
 }

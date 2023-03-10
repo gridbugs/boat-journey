@@ -64,6 +64,15 @@ pub struct Victory {
     pub stats: VictoryStats,
 }
 
+impl Victory {
+    fn text(&self) -> String {
+        format!(
+            "Here lies {}.\n\n\nThey reached the ocean after {} turns.",
+            self.name, self.stats.num_turns
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VictoryStats {
     pub num_turns: u64,
@@ -84,12 +93,20 @@ pub enum GameOverReason {
 #[derive(Debug, Clone)]
 pub enum MenuChoice {
     SayNothing,
+    Leave,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum MenuImage {
+    Townsperson,
+    Grave,
 }
 
 #[derive(Debug, Clone)]
 pub struct Menu {
     pub choices: Vec<MenuChoice>,
     pub text: String,
+    pub image: MenuImage,
 }
 
 #[derive(Debug)]
@@ -687,6 +704,13 @@ impl Game {
             if self.world.components.threshold.contains(feature) {
                 self.has_crossed_threshold = true;
             }
+            if let Some(victory) = self.world.components.grave.get(feature) {
+                return Some(GameControlFlow::Menu(Menu {
+                    choices: vec![MenuChoice::Leave],
+                    text: victory.text(),
+                    image: MenuImage::Grave,
+                }));
+            }
         }
         if let Err(UpdateError::OccupiedBy(entity)) = self
             .world
@@ -707,9 +731,11 @@ impl Game {
                     "It's time for you to head to the ocean.",
                 ];
                 let text_str = text_options.choose(&mut self.rng).unwrap();
+                let text = format!("Townsperson:\n\n{}", text_str);
                 return Some(GameControlFlow::Menu(Menu {
                     choices: vec![MenuChoice::SayNothing],
-                    text: text_str.to_string(),
+                    text,
+                    image: MenuImage::Townsperson,
                 }));
             }
         }

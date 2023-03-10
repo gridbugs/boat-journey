@@ -6,7 +6,8 @@ use crate::{
 };
 use boat_journey_game::{
     witness::{self, Witness},
-    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice, Victory, VictoryStats,
+    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice, MenuImage, Victory,
+    VictoryStats,
 };
 use gridbugs::{
     chargrid::{self, border::BorderStyle, control_flow::*, menu, prelude::*},
@@ -693,6 +694,7 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
         let ch = std::char::from_digit(i as u32 + 1, 10).unwrap();
         match choice {
             GameMenuChoice::SayNothing => add_item(choice.clone(), "Say nothing...", ch),
+            GameMenuChoice::Leave => add_item(choice.clone(), "Leave...", ch),
         }
     }
     let title = {
@@ -716,7 +718,12 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
         })
         .add_x(4)
         .overlay(
-            render_state(|state: &State, ctx, fb| state.images.townsfolk1.render(ctx, fb)),
+            render_state(move |state: &State, ctx, fb| {
+                state
+                    .images
+                    .image_from_menu_image(menu_witness.menu.image)
+                    .render(ctx, fb)
+            }),
             1,
         );
     menu_cf.map(|x| menu_witness.cancel())

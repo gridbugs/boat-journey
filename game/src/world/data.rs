@@ -18,6 +18,7 @@ declare_entity_module! {
         ghost: (),
         unimportant_npc: (),
         threshold: (),
+        grave: crate::Victory,
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -41,6 +42,7 @@ pub enum Tile {
     StairsUp,
     Ghost,
     UnimportantNpc,
+    Grave,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

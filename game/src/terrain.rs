@@ -27,7 +27,7 @@ pub struct Terrain {
 impl Terrain {
     pub fn generate<R: Rng>(
         player_data: EntityData,
-        victories: Vec<crate::Victory>,
+        mut victories: Vec<crate::Victory>,
         rng: &mut R,
     ) -> Self {
         let g = generate(
@@ -70,7 +70,7 @@ impl Terrain {
                     WorldCell3::Ground => {
                         if coord.x > g.world2.ocean_x_ofset as i32 - 5 {
                             if rng.gen::<f64>() < rock_chance1 {
-                                world.spawn_rock(coord);
+                                world.spawn_floor(coord);
                             } else {
                                 world.spawn_floor(coord);
                             }
@@ -81,7 +81,7 @@ impl Terrain {
                                 if rng.gen::<f64>() < tree_chance2 {
                                     world.spawn_tree(coord);
                                 } else if rng.gen::<f64>() < rock_chance1 {
-                                    world.spawn_rock(coord);
+                                    world.spawn_floor(coord);
                                 } else {
                                     world.spawn_floor(coord);
                                 }
@@ -89,7 +89,7 @@ impl Terrain {
                                 if rng.gen::<f64>() < tree_chance1 {
                                     world.spawn_tree(coord);
                                 } else if rng.gen::<f64>() < rock_chance2 {
-                                    world.spawn_rock(coord);
+                                    world.spawn_floor(coord);
                                 } else {
                                     world.spawn_floor(coord);
                                 }
@@ -136,6 +136,13 @@ impl Terrain {
                     }
                     WorldCell3::StairsUp => {
                         world.spawn_stairs_up(coord);
+                    }
+                    WorldCell3::Grave => {
+                        if let Some(victory) = victories.pop() {
+                            world.spawn_grave(coord, victory);
+                        } else {
+                            world.spawn_floor(coord);
+                        }
                     }
                 }
             }
