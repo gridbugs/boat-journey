@@ -642,6 +642,7 @@ pub struct World3 {
     pub grave_pool: Vec<Coord>,
     pub npc_spawns: Vec<Coord>,
     pub junk_spawns: Vec<Coord>,
+    pub island_coords: Vec<Coord>,
     pub inside_coords: Vec<Coord>,
     pub shop_coords: Vec<Coord>,
 }
@@ -656,6 +657,7 @@ impl World3 {
         let mut junk_spawns = Vec::new();
         let mut inside_coords = Vec::new();
         let mut shop_coords = Vec::new();
+        let mut island_coords_set = HashSet::new();
         let lake_bottom = {
             let mut c = world2.lake_centre;
             let c = loop {
@@ -847,10 +849,13 @@ impl World3 {
                 junk_spawns.push(building_coord + Coord::new(-1, 5));
                 junk_spawns.push(building_coord + Coord::new(-1, 6));
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
+                let npc_coord = platform_coord + Coord::new(-8, 4);
+                npc_spawns.push(npc_coord);
             }
             // swamp
             let mut num_islands = 0;
             let num_island_attempts = 200;
+            let mut npc_candidates = Vec::new();
             'outer: for _ in 0..num_island_attempts {
                 let angle = Radians(rng.gen::<f64>() * (2.0 * std::f64::consts::PI));
                 let distance = rng.gen::<f64>() * TOWN_SIZE.width() as f64 * 3. / 2.;
@@ -877,9 +882,10 @@ impl World3 {
                     for c in part.inside {
                         *grid.get_checked_mut(c) = WorldCell3::Ground;
                         island_coords.push(c);
+                        island_coords_set.insert(c);
                     }
                 }
-                for _ in 0..rng.gen_range(1..=2) {
+                for _ in 0..rng.gen_range(1..=1) {
                     let beach_coords = island_coords
                         .iter()
                         .cloned()
@@ -898,6 +904,8 @@ impl World3 {
                     for c in beach_coords {
                         let cell = grid.get_checked_mut(c);
                         *cell = WorldCell3::Floor;
+                        npc_candidates.push(c);
+                        island_coords_set.remove(&c);
                     }
                 }
                 num_islands += 1;
@@ -905,8 +913,10 @@ impl World3 {
             if num_islands < 0 {
                 return None;
             }
+            let npc_coord = *npc_candidates.choose(rng).unwrap();
+            npc_spawns.push(npc_coord);
         }
-        let spawn = {
+        let _spawn = {
             // city
             {
                 // gate
@@ -1055,7 +1065,7 @@ impl World3 {
                 }
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let inn_centre = building_coord + Coord::new(2, 4);
-                *grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
+                //*grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
                 inn_centre
             }
         };
@@ -1074,6 +1084,7 @@ impl World3 {
             junk_spawns,
             inside_coords,
             shop_coords,
+            island_coords: island_coords_set.into_iter().collect(),
         })
     }
 }

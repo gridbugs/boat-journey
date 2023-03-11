@@ -238,8 +238,8 @@ pub struct Stats {
 
 impl Stats {
     fn new() -> Self {
-        let day_max = 1000;
-        let first_day_skip = 100;
+        let day_max = 800;
+        let first_day_skip = 50;
         Self {
             health: Meter::new(4, 4),
             fuel: Meter::new(400, 800),
@@ -256,6 +256,7 @@ pub struct EffectTimeouts {
     pub sneak: u32,
     pub phase: u32,
     pub fear: u32,
+    pub telescope: u32,
 }
 
 impl Game {
@@ -291,7 +292,7 @@ impl Game {
             npc_actions: Default::default(),
             effect_timeouts: Default::default(),
         };
-        let debug = true;
+        let debug = false;
         if debug {
             game.has_crossed_threshold = true;
             game.has_talked_to_npc = true;
@@ -326,6 +327,9 @@ impl Game {
     }
     fn is_phase(&self) -> bool {
         self.effect_timeouts.phase > 0
+    }
+    fn is_telescope(&self) -> bool {
+        self.effect_timeouts.telescope > 0
     }
 
     pub fn current_day(&self) -> u32 {
@@ -393,9 +397,14 @@ impl Game {
             self.messages
                 .push(format!("You are no longer undetectable by beasts."));
         }
+        if self.effect_timeouts.telescope == 1 {
+            self.messages
+                .push(format!("You give the surveyor back their telescope."));
+        }
         self.effect_timeouts.phase = self.effect_timeouts.phase.saturating_sub(1);
         self.effect_timeouts.fear = self.effect_timeouts.fear.saturating_sub(1);
         self.effect_timeouts.sneak = self.effect_timeouts.sneak.saturating_sub(1);
+        self.effect_timeouts.telescope = self.effect_timeouts.telescope.saturating_sub(1);
     }
 
     pub fn pass_time(&mut self) {
@@ -494,7 +503,11 @@ impl Game {
         let distance = if self.stats.day.is_empty() {
             Circle::new_squared(150)
         } else {
-            Circle::new_squared(700)
+            if self.is_telescope() {
+                Circle::new_squared(3000)
+            } else {
+                Circle::new_squared(500)
+            }
         };
         self.visibility_grid.update_custom(
             Rgb24::new_grey(255),
@@ -950,33 +963,32 @@ impl Game {
                 if let Some(&npc) = self.world.components.npc.get(entity) {
                     self.has_talked_to_npc = true;
                     let num_empty_seats = self.num_empty_seats();
-                    let (text, choices) =
-                        if num_empty_seats == 0 {
-                            (
-                        format!("I see that there is currently no room on your boat for me...\n\n"),
+                    let (text, choices) = if num_empty_seats == 0 {
+                        (
+                        format!("{}:\n\nI see that there is currently no room on your boat for me...\n\n", npc.name()),
                         vec![MenuChoice::Leave],
                     )
+                    } else {
+                        let text = if num_empty_seats == 1 {
+                            format!(
+                                "{}\n\n\nThere is currently 1 empty seat on your boat.\n\n",
+                                npc.text()
+                            )
                         } else {
-                            let text = if num_empty_seats == 1 {
-                                format!(
-                                    "{}\n\n\nThere is currently 1 empty seat on your boat.\n\n",
-                                    npc.text()
-                                )
-                            } else {
-                                format!(
-                                    "{}\n\n\nThere are currently {} empty seats on your boat.\n\n",
-                                    npc.text(),
-                                    num_empty_seats
-                                )
-                            };
-                            (
-                                text,
-                                vec![
-                                    MenuChoice::AddNpcToPassengers(entity),
-                                    MenuChoice::DontAddNpcToPassengers,
-                                ],
+                            format!(
+                                "{}\n\n\nThere are currently {} empty seats on your boat.\n\n",
+                                npc.text(),
+                                num_empty_seats
                             )
                         };
+                        (
+                            text,
+                            vec![
+                                MenuChoice::AddNpcToPassengers(entity),
+                                MenuChoice::DontAddNpcToPassengers,
+                            ],
+                        )
+                    };
                     let image = MenuImage::Npc(npc);
                     return Some(GameControlFlow::Menu(Menu {
                         choices,
@@ -1126,12 +1138,22 @@ impl Game {
             }
             impl<'a> distance_map::CanEnter for C<'a> {
                 fn can_enter(&self, coord: Coord) -> bool {
-                    if let Some(&Layers {
-                        feature: Some(feature),
-                        ..
-                    }) = self.spatial_table.layers_at(coord)
-                    {
-                        if self.components.solid.contains(feature) {
+                    if let Some(&layers) = self.spatial_table.layers_at(coord) {
+                        if let Layers {
+                            feature: Some(feature),
+                            ..
+                        } = layers
+                        {
+                            if self.components.solid.contains(feature) {
+                                return false;
+                            }
+                        }
+                        if let Layers {
+                            water: Some(_),
+                            floor: None,
+                            ..
+                        } = layers
+                        {
                             return false;
                         }
                     }
@@ -1268,6 +1290,13 @@ impl Game {
             "Enemies will not react to you for the next {turns} turns."
         ));
     }
+    fn action_surveyor(&mut self) {
+        let turns = 30;
+        self.effect_timeouts.telescope += turns + 1;
+        self.messages.push(format!(
+            "You borrow the surveyor's telescope for {turns} turns"
+        ));
+    }
 
     fn handle_ability(&mut self, index: u8) -> Option<GameControlFlow> {
         let passenger_index = index as usize - 1;
@@ -1279,6 +1308,7 @@ impl Game {
                     Npc::Ghost => self.action_ghost(),
                     Npc::Surgeon => self.action_surgeon(),
                     Npc::Thief => self.action_thief(),
+                    Npc::Surveyor => self.action_surveyor(),
                 };
                 self.npc_spend_action(npc);
                 self.pass_time();
@@ -1419,7 +1449,7 @@ impl Game {
                         to_remove.push(character);
                     }
                 }
-                if let Some(feature) = layers.character {
+                if let Some(feature) = layers.feature {
                     if self.world.components.destructible.contains(feature) {
                         to_remove.push(feature);
                     }

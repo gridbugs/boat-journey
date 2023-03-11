@@ -180,6 +180,24 @@ impl Terrain {
         for (i, &coord) in g.world3.shop_coords.iter().enumerate() {
             world.spawn_shop(coord, i);
         }
+        let mut island_coords = g
+            .world3
+            .island_coords
+            .iter()
+            .cloned()
+            .filter(|&c| world.spatial_table.layers_at_checked(c).feature.is_none())
+            .collect::<Vec<_>>();
+        island_coords.shuffle(rng);
+        for _ in 0..10 {
+            if let Some(c) = island_coords.pop() {
+                world.spawn_junk(c, *all_junk.choose(rng).unwrap());
+            }
+        }
+        for _ in 0..20 {
+            if let Some(c) = island_coords.pop() {
+                world.spawn_beast(c);
+            }
+        }
         Self {
             world,
             player_entity,

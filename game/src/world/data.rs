@@ -204,6 +204,7 @@ pub enum Npc {
     Ghost,
     Surgeon,
     Thief,
+    Surveyor,
 }
 
 impl Npc {
@@ -215,6 +216,7 @@ impl Npc {
             Self::Ghost,
             Self::Surgeon,
             Self::Thief,
+            Self::Surveyor,
         ]
     }
     pub fn name(self) -> String {
@@ -225,6 +227,7 @@ impl Npc {
             Self::Ghost => format!("Ghost"),
             Self::Surgeon => format!("Surgeon"),
             Self::Thief => format!("Thief"),
+            Self::Surveyor => format!("Surveyor"),
         }
     }
     pub fn ability_name(self) -> String {
@@ -235,6 +238,7 @@ impl Npc {
             Self::Ghost => format!("Phase"),
             Self::Surgeon => format!("Heal"),
             Self::Thief => format!("Sneak"),
+            Self::Surveyor => format!("Telescope"),
         }
     }
     pub fn ability_uses(self) -> u32 {
@@ -245,6 +249,7 @@ impl Npc {
             Self::Ghost => 2,
             Self::Surgeon => 2,
             Self::Thief => 2,
+            Self::Surveyor => 2,
         }
     }
     pub fn text(self) -> String {
@@ -278,6 +283,11 @@ impl Npc {
                 I'm trying to escape to the ocean. \
                 Will you help me get there? \
                 With me you can sneak past your enemies."),
+            Self::Surveyor => format!(
+                "{name}:\n\n\
+                I wish to go to the ocean to map the coastline. \
+                Can I travel on your boat? \
+                I'll let you borrow my telescope."),
         }
     }
 }

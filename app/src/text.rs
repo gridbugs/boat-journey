@@ -110,6 +110,6 @@ fn sleep_text(width: u32, i: u32) -> CF<(), State> {
 
 pub fn sleep(width: u32, i: u32) -> AppCF<()> {
     sleep_text(width, i)
-        .delay(Duration::from_secs(1))
+        .delay(Duration::from_millis(100))
         .then(move || sleep_text(width, i).press_any_key())
 }

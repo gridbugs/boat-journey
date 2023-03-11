@@ -25,6 +25,7 @@ enum ImageName {
     Ghost,
     Surgeon,
     Thief,
+    Surveyor,
     Shop,
 }
 
@@ -41,6 +42,7 @@ impl ImageName {
             Self::Ghost => include_bytes!("images/ghost.bin"),
             Self::Surgeon => include_bytes!("images/surgeon.bin"),
             Self::Thief => include_bytes!("images/thief.bin"),
+            Self::Surveyor => include_bytes!("images/surveyor.bin"),
             Self::Shop => include_bytes!("images/innkeeper.bin"),
         }
     }
@@ -62,6 +64,7 @@ pub struct Images {
     pub ghost: Image,
     pub surgeon: Image,
     pub thief: Image,
+    pub surveyor: Image,
     pub shop: Image,
 }
 
@@ -78,6 +81,7 @@ impl Images {
             ghost: ImageName::Ghost.load_grid(),
             surgeon: ImageName::Surgeon.load_grid(),
             thief: ImageName::Thief.load_grid(),
+            surveyor: ImageName::Surveyor.load_grid(),
             shop: ImageName::Shop.load_grid(),
         }
     }
@@ -92,6 +96,7 @@ impl Images {
             MenuImage::Npc(Npc::Beast) => &self.beast,
             MenuImage::Npc(Npc::Ghost) => &self.ghost,
             MenuImage::Npc(Npc::Surgeon) => &self.surgeon,
+            MenuImage::Npc(Npc::Surveyor) => &self.surveyor,
             MenuImage::Npc(Npc::Thief) => &self.thief,
         }
     }

@@ -78,6 +78,9 @@ fn app(terrain: Terrain) -> App {
                     WorldCell3::Ground => RenderCell::default()
                         .with_character('.')
                         .with_background(Rgba32::new(0, 127, 0, 255)),
+                    WorldCell3::Grave => RenderCell::default()
+                        .with_character('!')
+                        .with_background(Rgba32::new(127, 127, 127, 255)),
                     WorldCell3::TownGround => RenderCell::default()
                         .with_character('.')
                         .with_background(Rgba32::new(87, 127, 0, 255)),
@@ -87,7 +90,9 @@ fn app(terrain: Terrain) -> App {
                     WorldCell3::Water(_) => RenderCell::default()
                         .with_character('~')
                         .with_background(Rgba32::new_rgb(0, 0, 255)),
-                    WorldCell3::Wall => RenderCell::default().with_character('#'),
+                    WorldCell3::Wall | WorldCell3::Gate => {
+                        RenderCell::default().with_character('#')
+                    }
                     WorldCell3::Door => RenderCell::default().with_character('+'),
                     WorldCell3::StairsDown => RenderCell::default().with_character('>'),
                     WorldCell3::StairsUp => RenderCell::default().with_character('<'),
@@ -113,7 +118,10 @@ fn run(terrain: Terrain) {
 fn main() {
     use meap::Parser;
     let Args { size, mut rng } = Args::parser().with_help_default().parse_env_or_exit();
-    let spec = Spec { size };
+    let spec = Spec {
+        size,
+        num_graves: 2,
+    };
     let terrain = generate(&spec, &mut rng);
     run(terrain);
 }
