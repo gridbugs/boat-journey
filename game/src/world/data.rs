@@ -20,9 +20,44 @@ declare_entity_module! {
         threshold: (),
         grave: crate::Victory,
         npc: Npc,
+        junk: Junk,
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum Junk {
+    RotaryPhone,
+    BrokenTypewriter,
+    PolaroidCamera,
+    VhsTape,
+    VinylRecord,
+    CassettePlayer,
+}
+
+impl Junk {
+    pub fn name(self) -> String {
+        let s = match self {
+            Self::RotaryPhone => "rotary telephone",
+            Self::BrokenTypewriter => "broken typewriter",
+            Self::PolaroidCamera => "polaroid camera",
+            Self::VhsTape => "VHS tape",
+            Self::VinylRecord => "vinyl record",
+            Self::CassettePlayer => "cassette player",
+        };
+        s.to_string()
+    }
+    pub fn all() -> Vec<Junk> {
+        vec![
+            Junk::RotaryPhone,
+            Junk::BrokenTypewriter,
+            Junk::PolaroidCamera,
+            Junk::VhsTape,
+            Junk::VinylRecord,
+            Junk::CassettePlayer,
+        ]
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum Tile {
@@ -45,6 +80,7 @@ pub enum Tile {
     UnimportantNpc,
     Grave,
     Npc(Npc),
+    Junk,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -140,6 +176,9 @@ impl Meter {
     }
     pub fn is_empty(&self) -> bool {
         self.current == 0
+    }
+    pub fn is_full(&self) -> bool {
+        self.current == self.max
     }
 }
 

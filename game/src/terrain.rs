@@ -1,6 +1,6 @@
 use crate::{
     world::{
-        data::{Boat, EntityData, Npc},
+        data::{Boat, EntityData, Junk, Npc},
         spatial::{Layer, Location},
         World,
     },
@@ -156,6 +156,10 @@ impl Terrain {
             if let Some(npc) = all_npcs.pop() {
                 world.spawn_npc(coord, npc);
             }
+        }
+        let all_junk = Junk::all();
+        for &coord in &g.world3.junk_spawns {
+            world.spawn_junk(coord, *all_junk.choose(rng).unwrap());
         }
         Self {
             world,

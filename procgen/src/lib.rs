@@ -640,6 +640,7 @@ pub struct World3 {
     pub unimportant_npc_spawns: HashSet<Coord>,
     pub grave_pool: Vec<Coord>,
     pub npc_spawns: Vec<Coord>,
+    pub junk_spawns: Vec<Coord>,
 }
 
 impl World3 {
@@ -649,6 +650,7 @@ impl World3 {
             WorldCell2::Land => WorldCell3::Ground,
             WorldCell2::Water(w) => WorldCell3::Water(*w),
         });
+        let mut junk_spawns = Vec::new();
         let lake_bottom = {
             let mut c = world2.lake_centre;
             let c = loop {
@@ -824,12 +826,16 @@ impl World3 {
                 for c in building_grid.edge_coord_iter() {
                     *grid.get_checked_mut(c + building_coord) = WorldCell3::Wall;
                 }
+
+                // in pier
                 for i in 1..10 {
                     let c = Coord::new(-i, 3) + platform_coord;
                     *grid.get_checked_mut(c) = WorldCell3::Floor;
                     let c = Coord::new(-i, 4) + platform_coord;
                     *grid.get_checked_mut(c) = WorldCell3::Floor;
                 }
+                let junk_coord = building_coord + Coord::new(-1, 5);
+                junk_spawns.push(junk_coord);
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
             }
             // swamp
@@ -1039,8 +1045,8 @@ impl World3 {
             }
         };
         //let spawn = world2.swamp_centre;
-        let spawn = Coord { x: 567, y: 274 };
-        let boat_spawn = spawn; // + Coord::new(-10, -4);
+        //let spawn = Coord { x: 567, y: 274 };
+        //let boat_spawn = spawn; // + Coord::new(-10, -4);
         Some(Self {
             grid,
             spawn,
@@ -1050,6 +1056,7 @@ impl World3 {
             unimportant_npc_spawns,
             grave_pool,
             npc_spawns,
+            junk_spawns,
         })
     }
 }

@@ -252,7 +252,7 @@ impl Game {
             night_turn_count: 0,
             messages: Vec::new(),
             victory_stats: VictoryStats::new(),
-            passengers: vec![Npc::Soldier],
+            passengers: vec![],
             num_seats: 1,
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
@@ -783,12 +783,20 @@ impl Game {
                         vec![MenuChoice::Leave],
                     )
                         } else {
-                            (
+                            let text = if num_empty_seats == 1 {
+                                format!(
+                                    "{}\n\nThere is currently 1 empty seat on your boat.\n\n",
+                                    npc.text()
+                                )
+                            } else {
                                 format!(
                                     "{}\n\nThere are currently {} empty seats on your boat.\n\n",
                                     npc.text(),
                                     num_empty_seats
-                                ),
+                                )
+                            };
+                            (
+                                text,
                                 vec![
                                     MenuChoice::AddNpcToPassengers(entity),
                                     MenuChoice::DontAddNpcToPassengers,
@@ -801,6 +809,20 @@ impl Game {
                         text,
                         image,
                     }));
+                }
+            }
+        }
+        if let Layers {
+            item: Some(item), ..
+        } = self.world.spatial_table.layers_at_checked(new_player_coord)
+        {
+            if !self.stats.junk.is_full() {
+                self.stats.junk.increase(1);
+                let entity_data = self.world.components.remove_entity_data(*item);
+                self.world.spatial_table.remove(*item);
+                if let Some(junk) = entity_data.junk {
+                    let name = junk.name();
+                    self.messages.push(format!("You pick up the {name}"));
                 }
             }
         }

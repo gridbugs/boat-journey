@@ -226,6 +226,15 @@ impl GameInstance {
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
+            Tile::Junk => {
+                return RenderCell {
+                    character: Some('*'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
             Tile::Npc(npc) => {
                 return RenderCell {
                     character: Some('@'),

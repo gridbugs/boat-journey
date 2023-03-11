@@ -1,6 +1,6 @@
 use crate::{
     world::{
-        data::{DoorState, EntityData, Layer, Location, Npc, Tile},
+        data::{DoorState, EntityData, Junk, Layer, Location, Npc, Tile},
         World,
     },
     Entity,
@@ -243,6 +243,16 @@ impl World {
             entity_data! {
                 tile: Tile::Npc(npc),
                 npc,
+            },
+        )
+    }
+
+    pub fn spawn_junk(&mut self, coord: Coord, junk: Junk) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Item),
+            entity_data! {
+                tile: Tile::Junk,
+                junk,
             },
         )
     }
