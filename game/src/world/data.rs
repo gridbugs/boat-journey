@@ -22,7 +22,7 @@ declare_entity_module! {
         npc: Npc,
         junk: Junk,
         inside: (),
-        shop: (),
+        shop: usize,
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};

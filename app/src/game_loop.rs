@@ -701,10 +701,31 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
     for (i, choice) in menu_witness.menu.choices.iter().enumerate() {
         let ch = std::char::from_digit(i as u32 + 1, 10).unwrap();
         match choice {
-            GameMenuChoice::SayNothing => add_item(choice.clone(), "Say nothing...", ch),
-            GameMenuChoice::Leave => add_item(choice.clone(), "Leave...", ch),
-            GameMenuChoice::AddNpcToPassengers(_) => add_item(choice.clone(), "Welcome aboard", ch),
-            GameMenuChoice::DontAddNpcToPassengers => add_item(choice.clone(), "Perhaps later", ch),
+            GameMenuChoice::SayNothing => {
+                add_item(choice.clone(), "Say nothing...".to_string(), ch)
+            }
+            GameMenuChoice::Leave => add_item(choice.clone(), "Leave...".to_string(), ch),
+            GameMenuChoice::AddNpcToPassengers(_) => {
+                add_item(choice.clone(), "Welcome aboard".to_string(), ch)
+            }
+            GameMenuChoice::DontAddNpcToPassengers => {
+                add_item(choice.clone(), "Perhaps later".to_string(), ch)
+            }
+            GameMenuChoice::BuyCrewCapacity(cost) => add_item(
+                choice.clone(),
+                format!("Buy passenger space ({cost} junk)"),
+                ch,
+            ),
+            GameMenuChoice::BuyFuel { amount, cost } => add_item(
+                choice.clone(),
+                format!("Buy {amount} fuel ({cost} junk)"),
+                ch,
+            ),
+            GameMenuChoice::SleepUntilMorning => add_item(
+                choice.clone(),
+                "Rest until morning (no charge)".to_string(),
+                ch,
+            ),
         }
     }
     let title = {

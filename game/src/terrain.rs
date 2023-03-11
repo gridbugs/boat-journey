@@ -169,8 +169,8 @@ impl Terrain {
                 world.components.inside.insert(*floor, ());
             }
         }
-        for &coord in &g.world3.shop_coords {
-            world.spawn_shop(coord);
+        for (i, &coord) in g.world3.shop_coords.iter().enumerate() {
+            world.spawn_shop(coord, i);
         }
         Self {
             world,

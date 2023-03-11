@@ -96,12 +96,16 @@ pub enum MenuChoice {
     Leave,
     AddNpcToPassengers(Entity),
     DontAddNpcToPassengers,
+    BuyFuel { cost: u32, amount: u32 },
+    BuyCrewCapacity(u32),
+    SleepUntilMorning,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum MenuImage {
     Townsperson,
     Grave,
+    Shop,
     Npc(Npc),
 }
 
@@ -218,7 +222,7 @@ impl Stats {
             health: Meter::new(4, 4),
             fuel: Meter::new(400, 400),
             day: Meter::new(day_max - first_day_skip, day_max),
-            junk: Meter::new(0, 5),
+            junk: Meter::new(0, 10),
         }
     }
 }
@@ -835,6 +839,34 @@ impl Game {
                     }));
                 }
             }
+            if let Some(&shop_i) = self.world.components.shop.get(entity) {
+                let description = if shop_i == 0 {
+                    "Welcome to the swamp. There is a city far to the east. You will need lots of fuel to make it \
+                    there in your boat. Bring me junk from the nearby islands and I'll give you the fuel you need."
+                } else {
+                    "Long ago a gate was built to keep the water out of the city. As you can see it didn't work \
+                    but while the gate is shut you won't be able to reach the ocean in your boat. Some of these old \
+                    buildings have basements and I think the gate controls are down there somewhere."
+                };
+                let junk = self.stats.junk.current();
+                let text =
+                    format!("Innkeeper:\n\n{description}\n\nYou currently have {junk} junk.");
+                let image = MenuImage::Shop;
+                let choices = vec![
+                    MenuChoice::BuyFuel {
+                        cost: 2,
+                        amount: 200,
+                    },
+                    MenuChoice::BuyCrewCapacity(self.passengers.len() as u32),
+                    MenuChoice::SleepUntilMorning,
+                    MenuChoice::Leave,
+                ];
+                return Some(GameControlFlow::Menu(Menu {
+                    choices,
+                    text,
+                    image,
+                }));
+            }
         }
         if let Layers {
             item: Some(item), ..
@@ -1028,6 +1060,7 @@ impl Game {
         match choice {
             MenuChoice::DontAddNpcToPassengers | MenuChoice::Leave | MenuChoice::SayNothing => (),
             MenuChoice::AddNpcToPassengers(entity) => self.add_npc_to_passengers(entity),
+            _ => (),
         }
         let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
         let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();

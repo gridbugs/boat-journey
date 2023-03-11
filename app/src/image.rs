@@ -21,6 +21,7 @@ enum ImageName {
     Boat,
     Soldier,
     Physicist,
+    Shop,
 }
 
 impl ImageName {
@@ -32,6 +33,7 @@ impl ImageName {
             Self::Boat => include_bytes!("images/boat.bin"),
             Self::Soldier => include_bytes!("images/soldier.bin"),
             Self::Physicist => include_bytes!("images/physicist.bin"),
+            Self::Shop => include_bytes!("images/innkeeper.bin"),
         }
     }
 
@@ -48,6 +50,7 @@ pub struct Images {
     pub boat: Image,
     pub soldier: Image,
     pub physicist: Image,
+    pub shop: Image,
 }
 
 impl Images {
@@ -59,6 +62,7 @@ impl Images {
             boat: ImageName::Boat.load_grid(),
             soldier: ImageName::Soldier.load_grid(),
             physicist: ImageName::Physicist.load_grid(),
+            shop: ImageName::Shop.load_grid(),
         }
     }
 
@@ -66,6 +70,7 @@ impl Images {
         match menu_image {
             MenuImage::Townsperson => &self.townsfolk1,
             MenuImage::Grave => &self.grave,
+            MenuImage::Shop => &self.shop,
             MenuImage::Npc(Npc::Soldier) => &self.soldier,
             MenuImage::Npc(Npc::Physicist) => &self.physicist,
         }
