@@ -642,6 +642,7 @@ pub struct World3 {
     pub npc_spawns: Vec<Coord>,
     pub junk_spawns: Vec<Coord>,
     pub inside_coords: Vec<Coord>,
+    pub shop_coords: Vec<Coord>,
 }
 
 impl World3 {
@@ -653,6 +654,7 @@ impl World3 {
         });
         let mut junk_spawns = Vec::new();
         let mut inside_coords = Vec::new();
+        let mut shop_coords = Vec::new();
         let lake_bottom = {
             let mut c = world2.lake_centre;
             let c = loop {
@@ -826,6 +828,7 @@ impl World3 {
                         inside_coords.push(coord);
                     }
                 }
+                shop_coords.push(Coord::new(8, 8) + platform_coord);
                 let building_size = platform_size - Size::new(2, 0);
                 let building_coord = platform_coord + Coord::new(2, 0);
                 let building_grid = Grid::new_copy(building_size, ());
@@ -1036,6 +1039,7 @@ impl World3 {
                         inside_coords.push(coord);
                     }
                 }
+                shop_coords.push(Coord::new(8, 8) + platform_coord);
                 let building_size = platform_size - Size::new(2, 0);
                 let building_coord = platform_coord + Coord::new(2, 0);
                 let building_grid = Grid::new_copy(building_size, ());
@@ -1068,6 +1072,7 @@ impl World3 {
             npc_spawns,
             junk_spawns,
             inside_coords,
+            shop_coords,
         })
     }
 }

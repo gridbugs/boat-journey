@@ -22,6 +22,7 @@ declare_entity_module! {
         npc: Npc,
         junk: Junk,
         inside: (),
+        shop: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -82,6 +83,7 @@ pub enum Tile {
     Grave,
     Npc(Npc),
     Junk,
+    Shop,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

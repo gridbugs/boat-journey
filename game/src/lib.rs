@@ -545,14 +545,16 @@ impl Game {
                 .spatial_table
                 .update_coord(self.player_entity, boat_coord);
         }
-        let mut boat_floor = boat_floor.into_iter().collect::<Vec<_>>();
-        boat_floor.sort();
-        boat_floor.shuffle(&mut local_rng);
-        for &npc in &self.passengers {
-            if let Some(coord) = boat_floor.pop() {
-                let e = self.world.spawn_npc(coord + boat_coord, npc);
-                self.world.components.part_of_boat.insert(e, ());
-                let _ = self.world.spatial_table.update_layer(e, Layer::Feature);
+        if !self.stats.day.is_empty() {
+            let mut boat_floor = boat_floor.into_iter().collect::<Vec<_>>();
+            boat_floor.sort();
+            boat_floor.shuffle(&mut local_rng);
+            for &npc in &self.passengers {
+                if let Some(coord) = boat_floor.pop() {
+                    let e = self.world.spawn_npc(coord + boat_coord, npc);
+                    self.world.components.part_of_boat.insert(e, ());
+                    let _ = self.world.spatial_table.update_layer(e, Layer::Feature);
+                }
             }
         }
         if false {

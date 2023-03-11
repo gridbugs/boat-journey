@@ -202,7 +202,7 @@ impl GameInstance {
             Tile::Tree => '♣',
             Tile::UnimportantNpc => {
                 return RenderCell {
-                    character: Some('@'),
+                    character: Some('&'),
                     style: Style::new()
                         .with_foreground(Rgba32::new_grey(255))
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
@@ -235,12 +235,21 @@ impl GameInstance {
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
-            Tile::Npc(npc) => {
+            Tile::Shop => {
+                return RenderCell {
+                    character: Some('$'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
+            Tile::Npc(_npc) => {
                 return RenderCell {
                     character: Some('@'),
                     style: Style::new()
-                        .with_bold(true)
-                        .with_foreground(npc_colour(npc).to_rgba32(player_opacity))
+                        .with_foreground(Rgb24::new_grey(255).to_rgba32(player_opacity))
+                        //.with_foreground(npc_colour(npc).to_rgba32(player_opacity))
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
@@ -355,7 +364,13 @@ impl GameInstance {
         }
         if tiles.contains(&Tile::UnimportantNpc) {
             hints.push(StyledString {
-                string: format!("Walk into friendly characters (@) to converse.\n\n"),
+                string: format!("Walk into friendly characters (&) to converse.\n\n"),
+                style: Style::plain_text(),
+            });
+        }
+        if tiles.contains(&Tile::Shop) {
+            hints.push(StyledString {
+                string: format!("Walk into innkeeper ($) to converse.\n\n"),
                 style: Style::plain_text(),
             });
         }

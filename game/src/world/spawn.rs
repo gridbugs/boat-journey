@@ -256,4 +256,14 @@ impl World {
             },
         )
     }
+
+    pub fn spawn_shop(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Item),
+            entity_data! {
+                tile: Tile::Shop,
+                shop: (),
+            },
+        )
+    }
 }
