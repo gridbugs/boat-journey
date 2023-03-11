@@ -21,6 +21,10 @@ enum ImageName {
     Boat,
     Soldier,
     Physicist,
+    Beast,
+    Ghost,
+    Surgeon,
+    Thief,
     Shop,
 }
 
@@ -33,6 +37,10 @@ impl ImageName {
             Self::Boat => include_bytes!("images/boat.bin"),
             Self::Soldier => include_bytes!("images/soldier.bin"),
             Self::Physicist => include_bytes!("images/physicist.bin"),
+            Self::Beast => include_bytes!("images/beast.bin"),
+            Self::Ghost => include_bytes!("images/ghost.bin"),
+            Self::Surgeon => include_bytes!("images/surgeon.bin"),
+            Self::Thief => include_bytes!("images/thief.bin"),
             Self::Shop => include_bytes!("images/innkeeper.bin"),
         }
     }
@@ -50,6 +58,10 @@ pub struct Images {
     pub boat: Image,
     pub soldier: Image,
     pub physicist: Image,
+    pub beast: Image,
+    pub ghost: Image,
+    pub surgeon: Image,
+    pub thief: Image,
     pub shop: Image,
 }
 
@@ -62,6 +74,10 @@ impl Images {
             boat: ImageName::Boat.load_grid(),
             soldier: ImageName::Soldier.load_grid(),
             physicist: ImageName::Physicist.load_grid(),
+            beast: ImageName::Beast.load_grid(),
+            ghost: ImageName::Ghost.load_grid(),
+            surgeon: ImageName::Surgeon.load_grid(),
+            thief: ImageName::Thief.load_grid(),
             shop: ImageName::Shop.load_grid(),
         }
     }
@@ -73,10 +89,10 @@ impl Images {
             MenuImage::Shop => &self.shop,
             MenuImage::Npc(Npc::Soldier) => &self.soldier,
             MenuImage::Npc(Npc::Physicist) => &self.physicist,
-            MenuImage::Npc(Npc::Beast) => &self.physicist,
-            MenuImage::Npc(Npc::Ghost) => &self.physicist,
-            MenuImage::Npc(Npc::Surgeon) => &self.physicist,
-            MenuImage::Npc(Npc::Thief) => &self.physicist,
+            MenuImage::Npc(Npc::Beast) => &self.beast,
+            MenuImage::Npc(Npc::Ghost) => &self.ghost,
+            MenuImage::Npc(Npc::Surgeon) => &self.surgeon,
+            MenuImage::Npc(Npc::Thief) => &self.thief,
         }
     }
 }
