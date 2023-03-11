@@ -68,8 +68,8 @@ pub struct Victory {
 impl Victory {
     fn text(&self) -> String {
         format!(
-            "Here lies {}.\n\n\nThey reached the ocean after {} turns over {} days.",
-            self.name, self.stats.num_turns, self.stats.num_days
+            "Here lies {}.\n\n\nThey reached the ocean after {} turns over {} days with {} passengers on board.",
+            self.name, self.stats.num_turns, self.stats.num_days, self.stats.num_passengers
         )
     }
 }
@@ -78,6 +78,7 @@ impl Victory {
 pub struct VictoryStats {
     pub num_turns: u64,
     pub num_days: u64,
+    pub num_passengers: u64,
 }
 
 impl VictoryStats {
@@ -85,6 +86,7 @@ impl VictoryStats {
         Self {
             num_turns: 0,
             num_days: 1,
+            num_passengers: 0,
         }
     }
 }
@@ -238,7 +240,7 @@ pub struct Stats {
 
 impl Stats {
     fn new() -> Self {
-        let day_max = 800;
+        let day_max = 1000;
         let first_day_skip = 50;
         Self {
             health: Meter::new(4, 4),
@@ -292,7 +294,7 @@ impl Game {
             npc_actions: Default::default(),
             effect_timeouts: Default::default(),
         };
-        let debug = false;
+        let debug = true;
         if debug {
             game.has_crossed_threshold = true;
             game.has_talked_to_npc = true;
@@ -303,6 +305,8 @@ impl Game {
             game.add_npc_to_passengers_(Npc::Ghost);
             game.add_npc_to_passengers_(Npc::Surgeon);
             game.add_npc_to_passengers_(Npc::Thief);
+            game.add_npc_to_passengers_(Npc::Surveyor);
+            game.num_seats = 8;
         }
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -666,7 +670,10 @@ impl Game {
                 .update_coord(self.player_entity, boat_coord);
         }
         if !self.stats.day.is_empty() {
-            let mut boat_floor = boat_floor.into_iter().collect::<Vec<_>>();
+            let mut boat_floor = boat_floor
+                .into_iter()
+                .filter(|c| *c + boat_coord != self.player_coord())
+                .collect::<Vec<_>>();
             boat_floor.sort();
             boat_floor.shuffle(&mut local_rng);
             for &npc in &self.passengers {
@@ -819,6 +826,9 @@ impl Game {
     fn player_walk(&mut self, direction: CardinalDirection) -> Option<GameControlFlow> {
         let player_coord = self.player_coord();
         let new_player_coord = player_coord + direction.coord();
+        if !new_player_coord.is_valid(self.world.size()) {
+            return None;
+        }
         let layers = self
             .world
             .spatial_table
@@ -847,19 +857,23 @@ impl Game {
                 }
                 return None;
             }
-            // If the player bumps into a door, open the door
-            if let Some(DoorState::Closed) = self.world.components.door_state.get(feature_entity) {
-                self.open_door(feature_entity);
-                return None;
-            }
-            // Don't let the player walk through solid entities
-            if self.world.components.solid.contains(feature_entity) {
-                if let Some(open_door_entity) =
-                    self.open_door_entity_adjacent_to_coord(player_coord)
+            if !self.is_phase() {
+                // If the player bumps into a door, open the door
+                if let Some(DoorState::Closed) =
+                    self.world.components.door_state.get(feature_entity)
                 {
-                    self.close_door(open_door_entity);
+                    self.open_door(feature_entity);
+                    return None;
                 }
-                return None;
+                // Don't let the player walk through solid entities
+                if self.world.components.solid.contains(feature_entity) {
+                    if let Some(open_door_entity) =
+                        self.open_door_entity_adjacent_to_coord(player_coord)
+                    {
+                        self.close_door(open_door_entity);
+                    }
+                    return None;
+                }
             }
             {
                 if let Some(&dungeon_index) = self.world.components.stairs_down.get(feature_entity)
@@ -1135,6 +1149,7 @@ impl Game {
             struct C<'a> {
                 components: &'a Components,
                 spatial_table: &'a SpatialTable,
+                flee: bool,
             }
             impl<'a> distance_map::CanEnter for C<'a> {
                 fn can_enter(&self, coord: Coord) -> bool {
@@ -1161,17 +1176,23 @@ impl Game {
                 }
             }
             if !self.is_sneak() {
-                let c = C {
-                    components: &self.world.components,
-                    spatial_table: &self.world.spatial_table,
-                };
                 self.ai_ctx.distance_map.clear();
                 self.ai_ctx.distance_map.add(self.player_coord());
                 if self.is_fear() {
+                    let c = C {
+                        components: &self.world.components,
+                        spatial_table: &self.world.spatial_table,
+                        flee: true,
+                    };
                     self.ai_ctx
                         .distance_map
-                        .populate_flee(&c, 20, &mut self.world.distance_map);
+                        .populate_flee(&c, 4, &mut self.world.distance_map);
                 } else {
+                    let c = C {
+                        components: &self.world.components,
+                        spatial_table: &self.world.spatial_table,
+                        flee: false,
+                    };
                     self.ai_ctx.distance_map.populate_approach(
                         &c,
                         20,
@@ -1219,6 +1240,7 @@ impl Game {
         let uses = npc.ability_uses();
         let meter = Meter::new(uses, uses);
         self.npc_actions.insert(npc, meter);
+        self.victory_stats.num_passengers += 1;
     }
 
     pub fn npc_action(&self, npc: Npc) -> Option<&Meter> {
@@ -1476,6 +1498,8 @@ impl Game {
                     .spatial_table
                     .update_coord(self.player_entity, target);
                 self.messages.push(format!("You blink."));
+            } else {
+                return Err(format!("Destination is not empty!"));
             }
         } else {
             let mut can_teleport = true;

@@ -645,6 +645,7 @@ pub struct World3 {
     pub island_coords: Vec<Coord>,
     pub inside_coords: Vec<Coord>,
     pub shop_coords: Vec<Coord>,
+    pub building_coords: Vec<Coord>,
 }
 
 impl World3 {
@@ -658,6 +659,7 @@ impl World3 {
         let mut inside_coords = Vec::new();
         let mut shop_coords = Vec::new();
         let mut island_coords_set = HashSet::new();
+        let mut building_coords_set = HashSet::new();
         let lake_bottom = {
             let mut c = world2.lake_centre;
             let c = loop {
@@ -916,7 +918,7 @@ impl World3 {
             let npc_coord = *npc_candidates.choose(rng).unwrap();
             npc_spawns.push(npc_coord);
         }
-        let _spawn = {
+        let spawn = {
             // city
             {
                 // gate
@@ -1027,7 +1029,15 @@ impl World3 {
                     coord + Coord::new(size.width() as i32 / 4, 3 * size.height() as i32 / 4),
                     coord + Coord::new(3 * size.width() as i32 / 4, 3 * size.height() as i32 / 4),
                 ];
-                stairs_candidates.push(*stairs_candidates_here.choose(rng).unwrap());
+                let stair_coord = *stairs_candidates_here.choose(rng).unwrap();
+                stairs_candidates.push(stair_coord);
+                for c in g.coord_iter() {
+                    let cell = *grid.get_checked(c + coord);
+                    if cell == WorldCell3::Floor {
+                        building_coords_set.insert(c + coord);
+                    }
+                }
+                building_coords_set.remove(&stair_coord);
             }
             stairs_candidates.shuffle(rng);
             for c in stairs_candidates.into_iter().take(4) {
@@ -1065,7 +1075,7 @@ impl World3 {
                 }
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let inn_centre = building_coord + Coord::new(2, 4);
-                //*grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
+                *grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
                 inn_centre
             }
         };
@@ -1085,6 +1095,7 @@ impl World3 {
             inside_coords,
             shop_coords,
             island_coords: island_coords_set.into_iter().collect(),
+            building_coords: building_coords_set.into_iter().collect(),
         })
     }
 }

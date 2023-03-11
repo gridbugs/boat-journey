@@ -22,10 +22,10 @@ pub fn help(width: u32) -> AppCF<()> {
     text_component(
         width,
         vec![
-            b("Help\n\n"),
+            b("Controls:\n\n"),
             b("General\n"),
             t("Wait: Space\n"),
-            t("Ability: 1-8\n"),
+            t("Ability: 1-9\n"),
             t("\n"),
             b("On Foot\n"),
             t("Walk: Arrow Keys\n"),

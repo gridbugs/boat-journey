@@ -198,6 +198,24 @@ impl Terrain {
                 world.spawn_beast(c);
             }
         }
+        let mut building_coords = g
+            .world3
+            .building_coords
+            .iter()
+            .cloned()
+            .filter(|&c| world.spatial_table.layers_at_checked(c).feature.is_none())
+            .collect::<Vec<_>>();
+        for _ in 0..10 {
+            if let Some(c) = building_coords.pop() {
+                world.spawn_junk(c, *all_junk.choose(rng).unwrap());
+            }
+        }
+        for _ in 0..20 {
+            if let Some(c) = building_coords.pop() {
+                world.spawn_beast(c);
+            }
+        }
+        building_coords.shuffle(rng);
         Self {
             world,
             player_entity,
