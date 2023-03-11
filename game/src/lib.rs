@@ -12,7 +12,7 @@ use rand::{seq::SliceRandom, Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     time::Duration,
 };
 use vector::{Cartesian, Radial, Radians};
@@ -224,6 +224,7 @@ pub struct Game {
     num_seats: u32,
     seat_rng_seed: u64,
     ai_ctx: AiCtx,
+    npc_actions: HashMap<Npc, Meter>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -276,10 +277,14 @@ impl Game {
             night_turn_count: 0,
             messages: Vec::new(),
             victory_stats: VictoryStats::new(),
-            passengers: vec![Npc::Soldier, Npc::Physicist],
-            num_seats: 2,
+            passengers: vec![],
+            num_seats: 1,
             ai_ctx: Default::default(),
+            npc_actions: Default::default(),
         };
+        /*
+        game.add_npc_to_passengers_(Npc::Soldier);
+        game.add_npc_to_passengers_(Npc::Physicist); */
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
         if !game.try_rasterize_boat(boat_entity, boat.clone(), boat_coord) {
@@ -306,6 +311,9 @@ impl Game {
         for entity in ghosts {
             self.world.components.remove_entity(entity);
             self.world.spatial_table.remove(entity);
+        }
+        for meter in self.npc_actions.values_mut() {
+            meter.fill();
         }
     }
 
@@ -1125,11 +1133,35 @@ impl Game {
         self.messages.push(format!("The beast deals you 1 damage."));
     }
 
+    fn add_npc_to_passengers_(&mut self, npc: Npc) {
+        self.passengers.push(npc);
+        let uses = npc.ability_uses();
+        let meter = Meter::new(uses, uses);
+        self.npc_actions.insert(npc, meter);
+    }
+
+    pub fn npc_action(&self, npc: Npc) -> Option<&Meter> {
+        self.npc_actions.get(&npc)
+    }
+
+    fn npc_has_action(&self, npc: Npc) -> bool {
+        self.npc_actions
+            .get(&npc)
+            .map(|m| !m.is_empty())
+            .unwrap_or(false)
+    }
+
+    fn npc_spend_action(&mut self, npc: Npc) {
+        if let Some(meter) = self.npc_actions.get_mut(&npc) {
+            meter.decrease(1);
+        }
+    }
+
     fn add_npc_to_passengers(&mut self, entity: Entity) {
         let entity_data = self.world.components.remove_entity_data(entity);
         self.world.spatial_table.remove(entity);
         let npc = entity_data.npc.unwrap();
-        self.passengers.push(npc);
+        self.add_npc_to_passengers_(npc);
     }
 
     #[must_use]
@@ -1155,12 +1187,20 @@ impl Game {
     fn handle_ability(&mut self, index: u8) -> Option<GameControlFlow> {
         let passenger_index = index as usize - 1;
         if let Some(&npc) = self.passengers.get(passenger_index) {
-            let aim_needed = match npc {
-                Npc::Physicist | Npc::Soldier => true,
-            };
-            if aim_needed {
-                return Some(GameControlFlow::Aim(npc));
+            if self.npc_has_action(npc) {
+                let aim_needed = match npc {
+                    Npc::Physicist | Npc::Soldier => true,
+                };
+                if aim_needed {
+                    return Some(GameControlFlow::Aim(npc));
+                }
+            } else {
+                self.messages
+                    .push(format!("{} has no remaining actions today.", npc.name()));
             }
+        } else {
+            self.messages
+                .push(format!("There is no passenger in position {}.", index));
         }
         None
     }
@@ -1298,6 +1338,10 @@ impl Game {
             }
         }
         for e in to_remove {
+            if self.world.components.beast.contains(e) {
+                self.messages
+                    .push(format!("The beast is destroyed by the blast."));
+            }
             self.world.components.remove_entity(e);
             self.world.spatial_table.remove(e);
         }
@@ -1305,10 +1349,21 @@ impl Game {
     }
     fn ability_physicist(&mut self, target: Coord) -> Result<Option<GameControlFlow>, String> {
         if self.driving {
+            let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
+            let moved_boat = self.try_rasterize_boat(boat_entity, boat.clone(), target);
+            if moved_boat {
+                let _ = self
+                    .world
+                    .spatial_table
+                    .update_coord(self.player_entity, target);
+                self.messages.push(format!("You blink."));
+            }
         } else {
             let mut can_teleport = true;
             if let Some(&layers) = self.world.spatial_table.layers_at(target) {
-                if !(layers.water.is_none() && layers.character.is_none()) {
+                if !((layers.water.is_none() || layers.floor.is_some())
+                    && layers.character.is_none())
+                {
                     can_teleport = false;
                 }
                 if let Some(feature) = layers.feature {
@@ -1324,6 +1379,7 @@ impl Game {
                     .world
                     .spatial_table
                     .update_coord(self.player_entity, target);
+                self.messages.push(format!("You blink."));
             } else {
                 return Err(format!("Destination is not empty!"));
             }
@@ -1340,6 +1396,7 @@ impl Game {
             };
             match result {
                 Ok(maybe_cf) => {
+                    self.npc_spend_action(npc);
                     self.pass_time();
                     self.npc_turn();
                     self.update_visibility();

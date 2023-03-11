@@ -464,7 +464,7 @@ impl GameInstance {
     fn render_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         use text::*;
         if !self.game.inner_ref().has_been_on_boat() {
-            //     return;
+            return;
         }
         let stats = self.game.inner_ref().stats();
         let activity = if self.game.inner_ref().is_driving() {
@@ -536,21 +536,27 @@ impl GameInstance {
 
     pub fn render_side_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         use text::*;
-        if !self.game.inner_ref().has_talked_to_npc() {
-            //return;
+        let game = self.game.inner_ref();
+        if !game.has_talked_to_npc() {
+            return;
         }
         let mut text_parts = vec![StyledString {
             string: format!("Passengers:\n\n"),
-            style: Style::plain_text().with_bold(true),
+            style: Style::plain_text(),
         }];
-        let passengers = self.game.inner_ref().passengers();
+        let passengers = game.passengers();
         for (i, &npc) in passengers.iter().enumerate() {
             let i = i + 1;
             let name = npc.name();
             let ability_name = npc.ability_name();
+            let usage = game.npc_action(npc).unwrap();
             text_parts.push(StyledString {
-                string: format!("{i}. {name}\n   ({ability_name})\n\n"),
+                string: format!("{i}. {name}\n"),
                 style: Style::plain_text(),
+            });
+            text_parts.push(StyledString {
+                string: format!("   {ability_name} {}/{}\n\n", usage.current(), usage.max()),
+                style: Style::plain_text().with_bold(true),
             });
         }
         for i in passengers.len()..(self.game.inner_ref().num_seats() as usize) {
@@ -577,7 +583,7 @@ impl GameInstance {
             fb,
         );
         self.render_side_ui(
-            ctx.add_xy(ctx.bounding_box.size().width() as i32 - 15, 1)
+            ctx.add_xy(ctx.bounding_box.size().width() as i32 - 16, 1)
                 .add_depth(20),
             fb,
         );

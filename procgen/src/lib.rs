@@ -906,7 +906,7 @@ impl World3 {
                 return None;
             }
         }
-        let spawn = {
+        let _spawn = {
             // city
             {
                 // gate

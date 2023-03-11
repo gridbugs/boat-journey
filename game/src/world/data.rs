@@ -218,6 +218,12 @@ impl Npc {
             Self::Physicist => format!("Blink"),
         }
     }
+    pub fn ability_uses(self) -> u32 {
+        match self {
+            Self::Soldier => 2,
+            Self::Physicist => 3,
+        }
+    }
     pub fn text(self) -> String {
         let name = self.name();
         match self {

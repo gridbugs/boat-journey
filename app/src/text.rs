@@ -102,6 +102,7 @@ fn sleep_text(width: u32, i: u32) -> CF<(), State> {
     let text = vec![t(
         "Your passengers come in from the cold and you rest in the inn until morning.\n\n\
         The ghosts disappear and your health is restored.\n\n\
+        Passenger actions are refreshed.\n\n\
         Press any key...",
     )];
     text_component(width, text)
