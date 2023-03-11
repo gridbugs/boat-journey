@@ -294,7 +294,7 @@ impl Game {
             npc_actions: Default::default(),
             effect_timeouts: Default::default(),
         };
-        let debug = true;
+        let debug = false;
         if debug {
             game.has_crossed_threshold = true;
             game.has_talked_to_npc = true;

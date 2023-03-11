@@ -35,6 +35,10 @@ pub fn help(width: u32) -> AppCF<()> {
             t("Move: Forward/Backward\n"),
             t("Turn: Left/Right\n"),
             t("Leave Boat: e\n"),
+            b("\n\nTips:\n\n"),
+            t("- Walk into a door (+) to open it\n"),
+            t("- Walk into the wall next to a door to close the door\n"),
+            t("- Head to the inn when it gets dark\n"),
         ],
     )
     .press_any_key()

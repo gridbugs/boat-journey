@@ -597,9 +597,24 @@ impl GameInstance {
         }
         Text::new(text_parts).render(&(), ctx, fb);
     }
-    pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+
+    fn render_aim_hint(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        use text::*;
+        let s = "AIMING\n\nUse the mouse or arrow keys to move the cursor.\n\nPress enter or left mouse button to commit.\n\nPress escape to cancel.";
+        let ss = StyledString {
+            string: s.to_string(),
+            style: Style::plain_text().with_bold(true),
+        };
+        ss.render(&(), ctx, fb);
+    }
+
+    pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer, aim_hint: bool) {
         let tiles = self.render_game(ctx, fb);
-        self.render_hints(ctx.add_xy(1, 1).add_depth(20), fb, &tiles);
+        if aim_hint {
+            self.render_aim_hint(ctx.add_xy(1, 1).add_depth(20), fb);
+        } else {
+            self.render_hints(ctx.add_xy(1, 1).add_depth(20), fb, &tiles);
+        }
         self.render_messages(
             ctx.add_xy(1, ctx.bounding_box.size().height() as i32 - 7)
                 .add_depth(20),

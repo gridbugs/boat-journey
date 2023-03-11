@@ -366,7 +366,7 @@ impl GameLoopData {
 
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
-        instance.render(ctx, fb);
+        instance.render(ctx, fb, self.cursor.is_some());
         if let Some(cursor) = self.cursor {
             let cursor_colour = Rgba32::new(255, 255, 255, 127);
             let render_cell = RenderCell::default().with_background(cursor_colour);

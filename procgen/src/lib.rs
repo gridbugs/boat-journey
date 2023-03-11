@@ -918,7 +918,7 @@ impl World3 {
             let npc_coord = *npc_candidates.choose(rng).unwrap();
             npc_spawns.push(npc_coord);
         }
-        let spawn = {
+        let _spawn = {
             // city
             {
                 // gate
@@ -1075,7 +1075,9 @@ impl World3 {
                 }
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let inn_centre = building_coord + Coord::new(2, 4);
-                *grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
+                let npc_coord = platform_coord + Coord::new(-8, 4);
+                npc_spawns.push(npc_coord);
+                //*grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
                 inn_centre
             }
         };
