@@ -1,4 +1,6 @@
-use gridbugs::{coord_2d::Size, entity_table::EntityAllocator};
+use gridbugs::{
+    coord_2d::Size, entity_table::EntityAllocator, grid_search_cardinal::distance_map::DistanceMap,
+};
 use serde::{Deserialize, Serialize};
 
 pub mod spatial;
@@ -14,6 +16,7 @@ pub struct World {
     pub entity_allocator: EntityAllocator,
     pub components: Components,
     pub spatial_table: SpatialTable,
+    pub distance_map: DistanceMap,
 }
 
 impl World {
@@ -25,6 +28,7 @@ impl World {
             entity_allocator,
             components,
             spatial_table,
+            distance_map: DistanceMap::new(size),
         }
     }
 }

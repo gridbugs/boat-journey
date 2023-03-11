@@ -279,6 +279,7 @@ pub struct GameLoopData {
     rng_seed_source: RngSeedSource,
     config: Config,
     images: Images,
+    cursor: Option<Coord>,
 }
 
 impl GameLoopData {
@@ -327,9 +328,17 @@ impl GameLoopData {
                 rng_seed_source,
                 config,
                 images: Images::new(),
+                cursor: None,
             },
             state,
         )
+    }
+
+    fn screen_coord_to_game_coord(&self, screen_coord: Coord, screen_size: Size) -> Coord {
+        let instance = self.instance.as_ref().unwrap();
+        let player_coord = instance.game.inner_ref().player_coord();
+        let mid = screen_size.to_coord().unwrap() / 2;
+        (screen_coord - mid) + player_coord
     }
 
     fn save_instance(&mut self, running: witness::Running) -> witness::Running {
@@ -358,6 +367,11 @@ impl GameLoopData {
     fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let instance = self.instance.as_ref().unwrap();
         instance.render(ctx, fb);
+        if let Some(cursor) = self.cursor {
+            let cursor_colour = Rgba32::new(255, 255, 255, 127);
+            let render_cell = RenderCell::default().with_background(cursor_colour);
+            fb.set_cell_relative_to_ctx(ctx, cursor, 50, render_cell);
+        }
     }
 
     fn update(&mut self, event: Event, running: witness::Running) -> GameLoopState {
@@ -372,6 +386,9 @@ impl GameLoopData {
                         AppInput::Wait => running.wait(&mut instance.game, &self.game_config),
                         AppInput::DriveToggle => {
                             running.drive_toggle(&mut instance.game, &self.game_config)
+                        }
+                        AppInput::Ability(i) => {
+                            running.ability(&mut instance.game, &self.game_config, i)
                         }
                     };
                     witness
@@ -429,6 +446,77 @@ impl Component for GameInstanceComponent {
             GameLoopState::Paused(running)
         } else {
             state.update(event, running)
+        }
+    }
+
+    fn size(&self, _state: &Self::State, ctx: Ctx) -> Size {
+        ctx.bounding_box.size()
+    }
+}
+
+struct GameInstanceComponentAim;
+
+enum AimResult {
+    Coord(Coord),
+    Cancel,
+}
+
+impl Component for GameInstanceComponentAim {
+    type Output = Option<AimResult>;
+    type State = GameLoopData;
+
+    fn render(&self, state: &Self::State, ctx: Ctx, fb: &mut FrameBuffer) {
+        state.render(ctx, fb);
+    }
+
+    fn update(&mut self, state: &mut Self::State, ctx: Ctx, event: Event) -> Self::Output {
+        let running = witness::Running::cheat(); // XXX
+        let cursor = if let Some(cursor) = state.cursor.as_mut() {
+            cursor
+        } else {
+            state.cursor = Some(ctx.bounding_box.size().to_coord().unwrap() / 2);
+            state.cursor.as_mut().unwrap()
+        };
+        match event {
+            Event::Tick(_) | Event::Peek => {
+                state.update(event, running);
+                None
+            }
+            Event::Input(input) => {
+                use chargrid::input::*;
+                match input {
+                    Input::Keyboard(key) => match key {
+                        keys::RETURN => {
+                            let ret = *cursor;
+                            state.cursor = None;
+                            let ret =
+                                state.screen_coord_to_game_coord(ret, ctx.bounding_box.size());
+                            return Some(AimResult::Coord(ret));
+                        }
+                        keys::ESCAPE => {
+                            state.cursor = None;
+                            return Some(AimResult::Cancel);
+                        }
+                        KeyboardInput::Left => *cursor += Coord::new(-1, 0),
+                        KeyboardInput::Right => *cursor += Coord::new(1, 0),
+                        KeyboardInput::Up => *cursor += Coord::new(0, -1),
+                        KeyboardInput::Down => *cursor += Coord::new(0, 1),
+                        _ => (),
+                    },
+                    Input::Mouse(mouse) => match mouse {
+                        MouseInput::MouseMove { button: _, coord } => *cursor = coord,
+                        MouseInput::MousePress { button: _, coord } => {
+                            state.cursor = None;
+                            let coord =
+                                state.screen_coord_to_game_coord(coord, ctx.bounding_box.size());
+                            return Some(AimResult::Coord(coord));
+                        }
+                        _ => (),
+                    },
+                    Input::Gamepad(_) => (),
+                }
+                None
+            }
         }
     }
 
@@ -619,6 +707,10 @@ fn game_instance_component(running: witness::Running) -> AppCF<GameLoopState> {
     cf(GameInstanceComponent::new(running)).some().no_peek()
 }
 
+fn game_instance_component_aim() -> AppCF<AimResult> {
+    cf(GameInstanceComponentAim)
+}
+
 fn win(win_: witness::Win) -> AppCF<()> {
     use chargrid::{
         text::{StyledString, Text},
@@ -795,6 +887,19 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
     })
 }
 
+fn aim(aim_: witness::Aim) -> AppCF<Witness> {
+    game_instance_component_aim().map_side_effect(|result, state: &mut State| match result {
+        AimResult::Cancel => aim_.cancel(),
+        AimResult::Coord(coord) => {
+            if let Some(instance) = state.instance.as_mut() {
+                aim_.commit(&mut instance.game, coord)
+            } else {
+                aim_.cancel()
+            }
+        }
+    })
+}
+
 pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
     use GameLoopState::*;
     loop_(initial_state, |state| match state {
@@ -803,6 +908,7 @@ pub fn game_loop_component(initial_state: GameLoopState) -> AppCF<()> {
             Witness::GameOver(reason) => game_over(reason).map_val(|| MainMenu).continue_(),
             Witness::Win(win_) => win(win_).map_val(|| MainMenu).continue_(),
             Witness::Menu(menu_) => game_menu(menu_).map(Playing).continue_(),
+            Witness::Aim(aim_) => aim(aim_).map(Playing).continue_(),
         },
         Paused(running) => pause(running).map(|pause_output| match pause_output {
             PauseOutput::ContinueGame { running } => {

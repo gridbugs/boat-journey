@@ -391,7 +391,7 @@ pub struct Blob {
     pub inside: Vec<Coord>,
 }
 
-fn blob<R: Rng>(coord: Coord, size: Size, rng: &mut R) -> Blob {
+pub fn blob<R: Rng>(coord: Coord, size: Size, rng: &mut R) -> Blob {
     let n = 400;
     let radius = 0.5;
     let mut points = Vec::new();

@@ -2,6 +2,7 @@ pub use gridbugs::{
     direction::{CardinalDirection, Direction},
     entity_table::ComponentTable,
     grid_2d::{Coord, Grid, Size},
+    grid_search_cardinal::distance_map,
     line_2d::{coords_between, coords_between_cardinal},
     rgb_int::Rgb24,
     shadowcast::Context as ShadowcastContext,
@@ -28,8 +29,8 @@ pub use gridbugs::{
 };
 pub use world::data::{Boat, Layer, Location, Meter, Npc, Tile};
 use world::{
-    data::{DoorState, EntityData, EntityUpdate},
-    spatial::{LayerTable, Layers},
+    data::{Components, DoorState, EntityData, EntityUpdate},
+    spatial::{LayerTable, Layers, SpatialTable},
     World,
 };
 
@@ -94,6 +95,7 @@ pub enum GameOverReason {
     KilledByGhost,
     KilledByBeast,
     Abandoned,
+    KilledBySoldier,
 }
 
 #[derive(Debug, Clone)]
@@ -131,6 +133,7 @@ pub enum GameControlFlow {
     GameOver(GameOverReason),
     Win,
     Menu(Menu),
+    Aim(Npc),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -138,6 +141,7 @@ pub enum Input {
     Walk(CardinalDirection),
     Wait,
     DriveToggle,
+    Ability(u8),
 }
 
 enum RotateDirection {
@@ -150,7 +154,7 @@ enum MoveDirection {
     Backward,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct VisibleCellData {
     pub tiles: LayerTable<Option<Tile>>,
 }
@@ -195,6 +199,11 @@ struct DungeonState {
     visibility_grid: VisibilityGrid<VisibleCellData>,
 }
 
+#[derive(Serialize, Deserialize, Default)]
+struct AiCtx {
+    distance_map: distance_map::PopulateContext,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Game {
     world: World,
@@ -214,6 +223,7 @@ pub struct Game {
     passengers: Vec<Npc>,
     num_seats: u32,
     seat_rng_seed: u64,
+    ai_ctx: AiCtx,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -247,7 +257,7 @@ impl Game {
             player_entity,
             num_dungeons,
         } = Terrain::generate(world::spawn::make_player(), victories, &mut rng);
-        let dungeons = (0..num_dungeons)
+        let dungeons = (0..=num_dungeons)
             .map(|_| Some(Dungeon::generate(&mut rng)))
             .collect::<Vec<_>>();
         let mut game = Self {
@@ -266,8 +276,9 @@ impl Game {
             night_turn_count: 0,
             messages: Vec::new(),
             victory_stats: VictoryStats::new(),
-            passengers: vec![],
-            num_seats: 1,
+            passengers: vec![Npc::Soldier, Npc::Physicist],
+            num_seats: 2,
+            ai_ctx: Default::default(),
         };
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
@@ -419,7 +430,9 @@ impl Game {
     }
 
     pub fn update_visibility(&mut self) {
-        let update_fn = |data: &mut VisibleCellData, coord| data.update(&self.world, coord);
+        let update_fn = |data: &mut VisibleCellData, coord| {
+            data.update(&self.world, coord);
+        };
         let distance = if self.stats.day.is_empty() {
             Circle::new_squared(150)
         } else {
@@ -680,7 +693,6 @@ impl Game {
         self.try_rasterize_boat(boat_entity, boat_next, boat_coord + delta);
         self.pass_time();
         self.spend_fuel();
-        println!("moved boat to {:?}", self.player_coord());
         None
     }
 
@@ -1050,6 +1062,56 @@ impl Game {
                 }
             }
         }
+        {
+            struct C<'a> {
+                components: &'a Components,
+                spatial_table: &'a SpatialTable,
+            }
+            impl<'a> distance_map::CanEnter for C<'a> {
+                fn can_enter(&self, coord: Coord) -> bool {
+                    if let Some(&Layers {
+                        feature: Some(feature),
+                        ..
+                    }) = self.spatial_table.layers_at(coord)
+                    {
+                        if self.components.solid.contains(feature) {
+                            return false;
+                        }
+                    }
+                    true
+                }
+            }
+            let c = C {
+                components: &self.world.components,
+                spatial_table: &self.world.spatial_table,
+            };
+            self.ai_ctx.distance_map.clear();
+            self.ai_ctx.distance_map.add(self.player_coord());
+            self.ai_ctx
+                .distance_map
+                .populate_approach(&c, 20, &mut self.world.distance_map);
+            let beasts = self.world.components.beast.entities().collect::<Vec<_>>();
+            for entity in beasts {
+                if let Some(coord) = self.world.spatial_table.coord_of(entity) {
+                    if let Some(direction) =
+                        self.world.distance_map.direction_to_best_neighbour(coord)
+                    {
+                        let destination = coord + direction.coord();
+                        if destination == self.player_coord() {
+                            self.take_damage();
+                            self.beast_message();
+                            if self.stats.health.is_empty() {
+                                return Some(GameControlFlow::GameOver(
+                                    GameOverReason::KilledByBeast,
+                                ));
+                            }
+                        } else {
+                            let _ = self.world.spatial_table.update_coord(entity, destination);
+                        }
+                    }
+                }
+            }
+        }
         None
     }
 
@@ -1090,6 +1152,19 @@ impl Game {
         None
     }
 
+    fn handle_ability(&mut self, index: u8) -> Option<GameControlFlow> {
+        let passenger_index = index as usize - 1;
+        if let Some(&npc) = self.passengers.get(passenger_index) {
+            let aim_needed = match npc {
+                Npc::Physicist | Npc::Soldier => true,
+            };
+            if aim_needed {
+                return Some(GameControlFlow::Aim(npc));
+            }
+        }
+        None
+    }
+
     #[must_use]
     pub(crate) fn handle_input(
         &mut self,
@@ -1110,6 +1185,7 @@ impl Game {
                     self.pass_time();
                     None
                 }
+                Input::Ability(i) => self.handle_ability(i),
             }
         } else {
             match input {
@@ -1124,6 +1200,7 @@ impl Game {
                     self.pass_time();
                     None
                 }
+                Input::Ability(i) => self.handle_ability(i),
             }
         };
         if game_control_flow.is_some() {
@@ -1185,6 +1262,98 @@ impl Game {
             "You trade {cost} junk for an additional passenger space."
         ));
         None
+    }
+
+    fn is_coord_visible(&self, coord: Coord) -> bool {
+        match self.cell_visibility_at_coord(coord) {
+            CellVisibility::Current { .. } => true,
+            CellVisibility::Previous(_) => true,
+            _ => false,
+        }
+    }
+
+    fn ability_soldier(&mut self, target: Coord) -> Result<Option<GameControlFlow>, String> {
+        let radius = 4;
+        let blob = procgen::blob(target, Size::new(radius, radius), &mut self.rng);
+        let player_coord = self.player_coord();
+        let mut to_remove = Vec::new();
+        for coord in blob.inside {
+            if coord == player_coord {
+                return Err(format!("Within minimum safe distance. Refusing to fire"));
+            }
+            if let Some(&layers) = self.world.spatial_table.layers_at(coord) {
+                if let Some(floor) = layers.floor {
+                    self.world.components.tile.insert(floor, Tile::BurntFloor);
+                }
+                if let Some(character) = layers.character {
+                    if self.world.components.destructible.contains(character) {
+                        to_remove.push(character);
+                    }
+                }
+                if let Some(feature) = layers.character {
+                    if self.world.components.destructible.contains(feature) {
+                        to_remove.push(feature);
+                    }
+                }
+            }
+        }
+        for e in to_remove {
+            self.world.components.remove_entity(e);
+            self.world.spatial_table.remove(e);
+        }
+        Ok(None)
+    }
+    fn ability_physicist(&mut self, target: Coord) -> Result<Option<GameControlFlow>, String> {
+        if self.driving {
+        } else {
+            let mut can_teleport = true;
+            if let Some(&layers) = self.world.spatial_table.layers_at(target) {
+                if !(layers.water.is_none() && layers.character.is_none()) {
+                    can_teleport = false;
+                }
+                if let Some(feature) = layers.feature {
+                    if self.world.components.solid.contains(feature) {
+                        can_teleport = false;
+                    }
+                }
+            } else {
+                can_teleport = false;
+            }
+            if can_teleport {
+                let _ = self
+                    .world
+                    .spatial_table
+                    .update_coord(self.player_entity, target);
+            } else {
+                return Err(format!("Destination is not empty!"));
+            }
+        }
+        Ok(None)
+    }
+
+    pub(crate) fn handle_aim(&mut self, npc: Npc, coord: Coord) -> Option<GameControlFlow> {
+        self.update_visibility();
+        if self.is_coord_visible(coord) {
+            let result = match npc {
+                Npc::Soldier => self.ability_soldier(coord),
+                Npc::Physicist => self.ability_physicist(coord),
+            };
+            match result {
+                Ok(maybe_cf) => {
+                    self.pass_time();
+                    self.npc_turn();
+                    self.update_visibility();
+                    maybe_cf
+                }
+                Err(message) => {
+                    self.messages.push(message);
+                    None
+                }
+            }
+        } else {
+            self.messages.push(format!("Can't see the target."));
+            None
+        }
     }
 
     pub(crate) fn handle_choice(&mut self, choice: MenuChoice) -> Option<GameControlFlow> {

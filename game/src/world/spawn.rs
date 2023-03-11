@@ -195,6 +195,7 @@ impl World {
                 tile: Tile::Tree,
                 solid: (),
                 opacity: 100,
+                destructible: (),
             },
         )
     }
@@ -235,6 +236,7 @@ impl World {
             entity_data! {
                 tile: Tile::Beast,
                 beast: (),
+                destructible: (),
             },
         )
     }

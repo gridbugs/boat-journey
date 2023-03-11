@@ -23,15 +23,17 @@ pub fn help(width: u32) -> AppCF<()> {
         width,
         vec![
             b("Help\n\n"),
+            b("General\n"),
+            t("Wait: Space\n"),
+            t("Ability: 1-8\n"),
+            t("\n"),
             b("On Foot\n"),
             t("Walk: Arrow Keys\n"),
-            t("Wait: Space\n"),
             t("Drive Boat: e\n"),
             t("\n"),
             b("Driving Boat\n"),
             t("Move: Forward/Backward\n"),
             t("Turn: Left/Right\n"),
-            t("Wait: Space\n"),
             t("Leave Boat: e\n"),
         ],
     )
@@ -76,6 +78,10 @@ fn game_over_text(width: u32, reason: GameOverReason) -> CF<(), State> {
         },
         GameOverReason::Abandoned => vec!{
             t("You fail to reach the ocean and decide to remain in the inn.\n\n"),
+        },
+        GameOverReason::KilledBySoldier => vec!{
+            t("You fail to reach the ocean.\n\n"),
+            t("You were caught in the soldier's blast.\n\n"),
         },
     };
     text_component(width, text)

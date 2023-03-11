@@ -26,6 +26,7 @@ declare_entity_module! {
         button: bool,
         gate: (),
         beast: (),
+        destructible: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -72,6 +73,7 @@ pub enum Tile {
     Water1,
     Water2,
     Floor,
+    BurntFloor,
     Wall,
     DoorClosed,
     DoorOpen,

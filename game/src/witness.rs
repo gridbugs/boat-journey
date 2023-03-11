@@ -1,5 +1,5 @@
-use crate::{ActionError, Config, GameControlFlow, GameOverReason, Input, Menu as GameMenu};
-use gridbugs::direction::CardinalDirection;
+use crate::{ActionError, Config, GameControlFlow, GameOverReason, Input, Menu as GameMenu, Npc};
+use gridbugs::{coord_2d::Coord, direction::CardinalDirection};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -47,11 +47,18 @@ pub struct Menu {
 }
 
 #[derive(Debug)]
+pub struct Aim {
+    private: Private,
+    pub npc: Npc,
+}
+
+#[derive(Debug)]
 pub enum Witness {
     Running(Running),
     GameOver(GameOverReason),
     Win(Win),
     Menu(Menu),
+    Aim(Aim),
 }
 
 impl Witness {
@@ -68,6 +75,17 @@ impl Menu {
     pub fn commit(self, game: &mut Game, choice: crate::MenuChoice) -> Witness {
         let Self { private, .. } = self;
         game.witness_handle_choice(choice, private)
+    }
+}
+
+impl Aim {
+    pub fn cancel(self) -> Witness {
+        let Self { private, .. } = self;
+        Witness::running(private)
+    }
+    pub fn commit(self, game: &mut Game, coord: Coord) -> Witness {
+        let Self { private, npc } = self;
+        game.witness_handle_aim(npc, coord, private)
     }
 }
 
@@ -135,6 +153,16 @@ impl Running {
         let Self(private) = self;
         game.witness_handle_input(Input::DriveToggle, config, private)
     }
+
+    pub fn ability(
+        self,
+        game: &mut Game,
+        config: &Config,
+        index: u8,
+    ) -> (Witness, Result<(), ActionError>) {
+        let Self(private) = self;
+        game.witness_handle_input(Input::Ability(index), config, private)
+    }
 }
 
 impl Game {
@@ -151,6 +179,7 @@ impl Game {
             Ok(Some(GameControlFlow::Menu(menu))) => {
                 (Witness::Menu(Menu { private, menu }), Ok(()))
             }
+            Ok(Some(GameControlFlow::Aim(npc))) => (Witness::Aim(Aim { private, npc }), Ok(())),
             Ok(Some(other)) => panic!("unhandled control flow {:?}", other),
         }
     }
@@ -165,6 +194,7 @@ impl Game {
             Some(GameControlFlow::GameOver(reason)) => Witness::GameOver(reason),
             Some(GameControlFlow::Win) => Witness::Win(Win(private)),
             Some(GameControlFlow::Menu(menu)) => Witness::Menu(Menu { private, menu }),
+            Some(GameControlFlow::Aim(npc)) => Witness::Aim(Aim { private, npc }),
         }
     }
 
@@ -180,6 +210,11 @@ impl Game {
 
     fn witness_handle_choice(&mut self, choice: crate::MenuChoice, private: Private) -> Witness {
         let control_flow = self.inner_game.handle_choice(choice);
+        self.handle_control_flow(control_flow, private)
+    }
+
+    fn witness_handle_aim(&mut self, npc: Npc, target: Coord, private: Private) -> Witness {
+        let control_flow = self.inner_game.handle_aim(npc, target);
         self.handle_control_flow(control_flow, private)
     }
 

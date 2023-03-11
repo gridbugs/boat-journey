@@ -207,6 +207,14 @@ impl GameInstance {
             }
             Tile::Water2 => ' ',
             Tile::Floor => '.',
+            Tile::BurntFloor => {
+                return RenderCell {
+                    character: Some('.'),
+                    style: Style::new()
+                        .with_foreground(Rgba32::new_grey(63))
+                        .with_background(Rgb24::new(0, 0, 0).to_rgba32(255)),
+                }
+            }
             Tile::Wall => '█',
             Tile::DoorClosed => '+',
             Tile::DoorOpen => '-',
@@ -529,7 +537,7 @@ impl GameInstance {
     pub fn render_side_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         use text::*;
         if !self.game.inner_ref().has_talked_to_npc() {
-            return;
+            //return;
         }
         let mut text_parts = vec![StyledString {
             string: format!("Passengers:\n\n"),
