@@ -92,6 +92,7 @@ impl VictoryStats {
 pub enum GameOverReason {
     OutOfFuel,
     KilledByGhost,
+    KilledByBeast,
     Abandoned,
 }
 
@@ -735,8 +736,12 @@ impl Game {
     fn player_walk(&mut self, direction: CardinalDirection) -> Option<GameControlFlow> {
         let player_coord = self.player_coord();
         let new_player_coord = player_coord + direction.coord();
-        let layers = self.world.spatial_table.layers_at(new_player_coord);
-        if let Some(&Layers {
+        let layers = self
+            .world
+            .spatial_table
+            .layers_at(new_player_coord)
+            .cloned();
+        if let Some(Layers {
             feature: Some(feature_entity),
             ..
         }) = layers
@@ -773,29 +778,43 @@ impl Game {
                 }
                 return None;
             }
-            if let Some(&dungeon_index) = self.world.components.stairs_down.get(feature_entity) {
-                if let Err(UpdateError::OccupiedBy(entity)) = self
-                    .world
-                    .spatial_table
-                    .update_coord(self.player_entity, new_player_coord)
+            {
+                if let Some(&dungeon_index) = self.world.components.stairs_down.get(feature_entity)
                 {
-                    if self.world.components.ghost.contains(entity) {
-                        self.take_damage();
-                        self.ghost_message();
-                        if self.stats.health.is_empty() {
-                            return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                    if let Err(UpdateError::OccupiedBy(entity)) = self
+                        .world
+                        .spatial_table
+                        .update_coord(self.player_entity, new_player_coord)
+                    {
+                        if self.world.components.ghost.contains(entity) {
+                            self.take_damage();
+                            self.ghost_message();
+                            if self.stats.health.is_empty() {
+                                return Some(GameControlFlow::GameOver(
+                                    GameOverReason::KilledByGhost,
+                                ));
+                            }
+                        }
+                        if self.world.components.beast.contains(entity) {
+                            self.take_damage();
+                            self.beast_message();
+                            if self.stats.health.is_empty() {
+                                return Some(GameControlFlow::GameOver(
+                                    GameOverReason::KilledByBeast,
+                                ));
+                            }
                         }
                     }
+                    self.enter_dungeon(dungeon_index);
+                    return None;
                 }
-                self.enter_dungeon(dungeon_index);
-                return None;
             }
             if self.world.components.stairs_up.contains(feature_entity) {
                 self.exit_dungeon();
                 return None;
             }
         }
-        if let Some(&Layers {
+        if let Some(Layers {
             water: Some(_),
             floor: None,
             feature: None,
@@ -804,10 +823,10 @@ impl Game {
         {
             return None;
         }
-        if let Some(&Layers { boat: Some(_), .. }) = layers {
+        if let Some(Layers { boat: Some(_), .. }) = layers {
             self.has_been_on_boat = true;
         }
-        if let Some(&Layers {
+        if let Some(Layers {
             feature: Some(feature),
             ..
         }) = layers
@@ -835,6 +854,14 @@ impl Game {
                     return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
                 }
             }
+            if self.world.components.beast.contains(entity) {
+                self.take_damage();
+                self.beast_message();
+                if self.stats.health.is_empty() {
+                    return Some(GameControlFlow::GameOver(GameOverReason::KilledByBeast));
+                }
+            }
+
             if self.world.components.unimportant_npc.contains(entity) {
                 let text_options = vec![
                     "I think you would be happier if you went to the ocean.",
@@ -1030,6 +1057,10 @@ impl Game {
         self.messages.push(format!(
             "A chill runs down your spine. The ghost deals you 1 damage."
         ));
+    }
+
+    fn beast_message(&mut self) {
+        self.messages.push(format!("The beast deals you 1 damage."));
     }
 
     fn add_npc_to_passengers(&mut self, entity: Entity) {

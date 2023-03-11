@@ -69,6 +69,11 @@ fn game_over_text(width: u32, reason: GameOverReason) -> CF<(), State> {
             t("At the icy touch of the ghost you lose your corporeal form.\n\n"),
             t("You lose sight of the boat as an unfamiliar figure drives it into the darkness."),
         },
+        GameOverReason::KilledByBeast => vec!{
+            t("You fail to reach the ocean.\n\n"),
+            t("You are wounded by the beast and unable to return to your boat.\n\n"),
+            t("Over time your wounds heal but you no longer wish to travel to the ocean and don't understand why anyone would."),
+        },
         GameOverReason::Abandoned => vec!{
             t("You fail to reach the ocean and decide to remain in the inn.\n\n"),
         },

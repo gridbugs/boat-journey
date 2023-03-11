@@ -229,6 +229,16 @@ impl World {
         )
     }
 
+    pub fn spawn_beast(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Character),
+            entity_data! {
+                tile: Tile::Beast,
+                beast: (),
+            },
+        )
+    }
+
     pub fn spawn_unimportant_npc(&mut self, coord: Coord) -> Entity {
         self.spawn_entity(
             (coord, Layer::Character),

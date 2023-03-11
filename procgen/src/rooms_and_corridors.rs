@@ -240,9 +240,9 @@ pub struct RoomsAndCorridorsLevel {
     pub map: Grid<RoomsAndCorridorsCell>,
     // Location where the player will start
     pub player_spawn: Coord,
-
     // Player's destination (e.g. stairs to next level)
     pub destination: Coord,
+    pub other_room_centres: Vec<Coord>,
 }
 
 impl RoomsAndCorridorsLevel {
@@ -282,10 +282,19 @@ impl RoomsAndCorridorsLevel {
             .unwrap()
             .rect
             .centre();
+
+        let other_room_centres = room_placement
+            .rooms
+            .iter()
+            .cloned()
+            .filter(|c| c.rect.centre() != player_spawn && c.rect.centre() != destination)
+            .map(|c| c.rect.centre())
+            .collect::<Vec<_>>();
         Self {
             map,
             player_spawn,
             destination,
+            other_room_centres,
         }
     }
 }

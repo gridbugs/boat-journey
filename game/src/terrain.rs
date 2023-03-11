@@ -202,6 +202,7 @@ impl Dungeon {
             grid,
             spawn,
             destination,
+            mut other_room_centres,
         } = generate_dungeon(size, rng);
         for (coord, &cell) in grid.enumerate() {
             match cell {
@@ -218,6 +219,11 @@ impl Dungeon {
         }
         world.spawn_stairs_up(spawn);
         world.spawn_button(destination);
+        let num_beasts = 3;
+        other_room_centres.shuffle(rng);
+        for coord in other_room_centres.into_iter().take(num_beasts) {
+            world.spawn_beast(coord);
+        }
         Self { world, spawn }
     }
 }

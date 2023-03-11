@@ -25,6 +25,7 @@ declare_entity_module! {
         shop: usize,
         button: bool,
         gate: (),
+        beast: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -88,6 +89,7 @@ pub enum Tile {
     Shop,
     Button,
     ButtonPressed,
+    Beast,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -159,6 +159,19 @@ impl GameInstance {
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
+            Tile::Beast => {
+                return RenderCell {
+                    character: Some('b'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(
+                            Rgba32::new_grey(255)
+                                .with_a(255)
+                                .alpha_composite(colour::MURKY_GREEN.to_rgba32(255)),
+                        )
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
             Tile::Ghost => {
                 return RenderCell {
                     character: Some('g'),
@@ -419,6 +432,12 @@ impl GameInstance {
                 style: Style::plain_text(),
             });
         }
+        if tiles.contains(&Tile::Beast) {
+            hints.push(StyledString {
+                string: format!("Beasts (b) move towards you on their turn.\n\n"),
+                style: Style::plain_text(),
+            });
+        }
         if tiles.contains(&Tile::Ghost) {
             hints.push(StyledString {
                 string: format!("Ghosts (g) can move diagonally.\n\n"),
@@ -437,7 +456,7 @@ impl GameInstance {
     fn render_ui(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         use text::*;
         if !self.game.inner_ref().has_been_on_boat() {
-            return;
+            //     return;
         }
         let stats = self.game.inner_ref().stats();
         let activity = if self.game.inner_ref().is_driving() {

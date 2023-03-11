@@ -906,7 +906,7 @@ impl World3 {
                 return None;
             }
         }
-        let _spawn = {
+        let spawn = {
             // city
             {
                 // gate
@@ -1055,7 +1055,7 @@ impl World3 {
                 }
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let inn_centre = building_coord + Coord::new(2, 4);
-                //*grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
+                *grid.get_checked_mut(inn_centre + Coord::new(0, 2)) = WorldCell3::StairsDown;
                 inn_centre
             }
         };
@@ -1144,6 +1144,7 @@ pub struct Dungeon {
     pub spawn: Coord,
     pub grid: Grid<DungeonCell>,
     pub destination: Coord,
+    pub other_room_centres: Vec<Coord>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1159,6 +1160,7 @@ pub fn generate_dungeon<R: Rng>(size: Size, rng: &mut R) -> Dungeon {
         map,
         player_spawn,
         destination,
+        other_room_centres,
     } = RoomsAndCorridorsLevel::generate(size, rng);
     let grid = map.map_ref(|cell| match cell {
         RoomsAndCorridorsCell::Door => DungeonCell::Door,
@@ -1169,5 +1171,6 @@ pub fn generate_dungeon<R: Rng>(size: Size, rng: &mut R) -> Dungeon {
         grid,
         spawn: player_spawn,
         destination,
+        other_room_centres,
     }
 }
