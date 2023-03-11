@@ -641,6 +641,7 @@ pub struct World3 {
     pub grave_pool: Vec<Coord>,
     pub npc_spawns: Vec<Coord>,
     pub junk_spawns: Vec<Coord>,
+    pub inside_coords: Vec<Coord>,
 }
 
 impl World3 {
@@ -651,6 +652,7 @@ impl World3 {
             WorldCell2::Water(w) => WorldCell3::Water(*w),
         });
         let mut junk_spawns = Vec::new();
+        let mut inside_coords = Vec::new();
         let lake_bottom = {
             let mut c = world2.lake_centre;
             let c = loop {
@@ -818,7 +820,11 @@ impl World3 {
                 let platform_size = Size::new(10, 10);
                 let platform_coord = coord - platform_size.to_coord().unwrap() / 2;
                 for c in platform_size.coord_iter_row_major() {
-                    *grid.get_checked_mut(c + platform_coord) = WorldCell3::Floor;
+                    let coord = c + platform_coord;
+                    *grid.get_checked_mut(coord) = WorldCell3::Floor;
+                    if c.x > 2 {
+                        inside_coords.push(coord);
+                    }
                 }
                 let building_size = platform_size - Size::new(2, 0);
                 let building_coord = platform_coord + Coord::new(2, 0);
@@ -827,7 +833,7 @@ impl World3 {
                     *grid.get_checked_mut(c + building_coord) = WorldCell3::Wall;
                 }
 
-                // in pier
+                // inn pier
                 for i in 1..10 {
                     let c = Coord::new(-i, 3) + platform_coord;
                     *grid.get_checked_mut(c) = WorldCell3::Floor;
@@ -1024,7 +1030,11 @@ impl World3 {
                 let platform_size = Size::new(10, 10);
                 let platform_coord = inn_coord - platform_size.to_coord().unwrap() / 2;
                 for c in platform_size.coord_iter_row_major() {
+                    let coord = c + platform_coord;
                     *grid.get_checked_mut(c + platform_coord) = WorldCell3::Floor;
+                    if c.x > 2 {
+                        inside_coords.push(coord);
+                    }
                 }
                 let building_size = platform_size - Size::new(2, 0);
                 let building_coord = platform_coord + Coord::new(2, 0);
@@ -1057,6 +1067,7 @@ impl World3 {
             grave_pool,
             npc_spawns,
             junk_spawns,
+            inside_coords,
         })
     }
 }

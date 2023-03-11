@@ -256,7 +256,7 @@ impl GameInstance {
 
     pub fn render_game(&self, ctx: Ctx, fb: &mut FrameBuffer) -> HashSet<Tile> {
         let mut tiles = HashSet::new();
-        let ctx = if self.game.inner_ref().stats().day.is_empty() {
+        let ctx = if self.game.inner_ref().is_player_outside_at_night() {
             ctx.with_tint(&NightTint)
         } else {
             ctx
@@ -275,7 +275,7 @@ impl GameInstance {
             } else {
                 self.mist.get(coord)
             };
-            if self.game.inner_ref().stats().day.is_empty() {
+            if self.game.inner_ref().is_player_outside_at_night() {
                 mist.a *= 4;
             }
 
@@ -347,13 +347,22 @@ impl GameInstance {
                 });
             }
         }
+        if tiles.contains(&Tile::Junk) {
+            hints.push(StyledString {
+                string: format!("Walk over junk (*) to pick it up.\n\n"),
+                style: Style::plain_text(),
+            });
+        }
         if tiles.contains(&Tile::UnimportantNpc) {
             hints.push(StyledString {
                 string: format!("Walk into friendly characters (@) to converse.\n\n"),
                 style: Style::plain_text(),
             });
         }
-        if stats.day.current() < 100 && stats.day.current() > 0 {
+        if stats.day.current() < 100
+            && stats.day.current() > 0
+            && !self.game.inner_ref().is_player_inside()
+        {
             hints.push(StyledString {
                     string: format!("\"We'd better get inside, 'cause it'll be dark soon, \nand they mostly come at night...mostly\"\n\n"),
                     style: Style::plain_text(),
@@ -377,7 +386,7 @@ impl GameInstance {
                 style: Style::plain_text(),
             });
         }
-        if stats.day.current() == 0 {
+        if self.game.inner_ref().is_player_outside_at_night() {
             hints.push(StyledString {
                 string: format!("GET INSIDE\n\n"),
                 style: Style::plain_text().with_bold(true),

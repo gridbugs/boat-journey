@@ -54,20 +54,6 @@ pub fn saving(width: u32) -> AppCF<()> {
     text_component(width, vec![t("Saving...")]).delay(Duration::from_millis(32))
 }
 
-fn win_text(width: u32) -> CF<(), State> {
-    let t = |s: &str| StyledString {
-        string: s.to_string(),
-        style: Style::plain_text(),
-    };
-    text_component(width, vec![t("The ocean welcomes your return.")])
-}
-pub fn win(width: u32) -> AppCF<()> {
-    // TODO: this is not ergonomic
-    win_text(width)
-        .delay(Duration::from_secs(2))
-        .then(move || win_text(width).press_any_key())
-}
-
 fn game_over_text(width: u32, reason: GameOverReason) -> CF<(), State> {
     let t = |s: &str| StyledString {
         string: s.to_string(),

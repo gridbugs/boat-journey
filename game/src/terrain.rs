@@ -1,7 +1,7 @@
 use crate::{
     world::{
         data::{Boat, EntityData, Junk, Npc},
-        spatial::{Layer, Location},
+        spatial::{Layer, Layers, Location},
         World,
     },
     Entity,
@@ -160,6 +160,14 @@ impl Terrain {
         let all_junk = Junk::all();
         for &coord in &g.world3.junk_spawns {
             world.spawn_junk(coord, *all_junk.choose(rng).unwrap());
+        }
+        for &coord in &g.world3.inside_coords {
+            if let Layers {
+                floor: Some(floor), ..
+            } = world.spatial_table.layers_at_checked(coord)
+            {
+                world.components.inside.insert(*floor, ());
+            }
         }
         Self {
             world,

@@ -213,7 +213,7 @@ pub struct Stats {
 impl Stats {
     fn new() -> Self {
         let day_max = 1000;
-        let first_day_skip = 50;
+        let first_day_skip = 700;
         Self {
             health: Meter::new(4, 4),
             fuel: Meter::new(400, 400),
@@ -290,7 +290,13 @@ impl Game {
             .to_cartesian()
             .to_coord_round_nearest()
             + self.player_coord();
-        self.world.spawn_ghost(coord);
+        if !self.is_coord_inside(coord) {
+            self.world.spawn_ghost(coord);
+        }
+    }
+
+    pub fn is_player_outside_at_night(&self) -> bool {
+        self.stats.day.is_empty() && !self.is_player_inside()
     }
 
     pub fn pass_time(&mut self) {
@@ -298,7 +304,7 @@ impl Game {
         if self.has_been_on_boat {
             self.stats.day.decrease(1);
         }
-        if self.stats.day.is_empty() {
+        if self.is_player_outside_at_night() {
             if self.night_turn_count % 20 == 0 {
                 self.spawn_ghost();
             }
@@ -318,6 +324,22 @@ impl Game {
 
     pub fn messages(&self) -> &[String] {
         &self.messages
+    }
+
+    pub fn is_coord_inside(&self, coord: Coord) -> bool {
+        if let Layers {
+            floor: Some(floor), ..
+        } = self.world.spatial_table.layers_at_checked(coord)
+        {
+            if self.world.components.inside.contains(*floor) {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn is_player_inside(&self) -> bool {
+        self.is_coord_inside(self.player_coord())
     }
 
     pub fn is_player_on_boat(&self) -> bool {
@@ -362,7 +384,7 @@ impl Game {
 
     pub fn update_visibility(&mut self) {
         let update_fn = |data: &mut VisibleCellData, coord| data.update(&self.world, coord);
-        let distance = if self.stats.day.is_empty() {
+        let distance = if self.is_player_outside_at_night() {
             Circle::new_squared(150)
         } else {
             Circle::new_squared(700)
@@ -899,19 +921,21 @@ impl Game {
     }
 
     fn npc_turn(&mut self) -> Option<GameControlFlow> {
-        let ghost_entities = self.world.components.ghost.entities().collect::<Vec<_>>();
-        let player_coord = self.player_coord();
-        for entity in ghost_entities {
-            let coord = self.world.spatial_table.coord_of(entity).unwrap();
-            if let Some(dest) = line_2d::coords_between(coord, player_coord).skip(1).next() {
-                if dest == player_coord {
-                    self.take_damage();
-                    self.ghost_message();
-                    if self.stats.health.is_empty() {
-                        return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+        if self.is_player_outside_at_night() {
+            let ghost_entities = self.world.components.ghost.entities().collect::<Vec<_>>();
+            let player_coord = self.player_coord();
+            for entity in ghost_entities {
+                let coord = self.world.spatial_table.coord_of(entity).unwrap();
+                if let Some(dest) = line_2d::coords_between(coord, player_coord).skip(1).next() {
+                    if dest == player_coord {
+                        self.take_damage();
+                        self.ghost_message();
+                        if self.stats.health.is_empty() {
+                            return Some(GameControlFlow::GameOver(GameOverReason::KilledByGhost));
+                        }
+                    } else {
+                        let _ = self.world.spatial_table.update_coord(entity, dest);
                     }
-                } else {
-                    let _ = self.world.spatial_table.update_coord(entity, dest);
                 }
             }
         }

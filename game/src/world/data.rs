@@ -21,6 +21,7 @@ declare_entity_module! {
         grave: crate::Victory,
         npc: Npc,
         junk: Junk,
+        inside: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
