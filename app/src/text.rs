@@ -69,6 +69,9 @@ fn game_over_text(width: u32, reason: GameOverReason) -> CF<(), State> {
             t("At the icy touch of the ghost you lose your corporeal form.\n\n"),
             t("You lose sight of the boat as an unfamiliar figure drives it into the darkness."),
         },
+        GameOverReason::Abandoned => vec!{
+            t("You fail to reach the ocean and decide to remain in the inn.\n\n"),
+        },
     };
     text_component(width, text)
 }
@@ -77,4 +80,24 @@ pub fn game_over(width: u32, reason: GameOverReason) -> AppCF<()> {
     game_over_text(width, reason)
         .delay(Duration::from_secs(2))
         .then(move || game_over_text(width, reason).press_any_key())
+}
+
+fn sleep_text(width: u32, i: u32) -> CF<(), State> {
+    let t = |s: &str| StyledString {
+        string: s.to_string(),
+        style: Style::plain_text(),
+    };
+    let _ = i;
+    let text = vec![t(
+        "Your passengers come in from the cold and you rest in the inn until morning.\n\n\
+        The ghosts disappear and your health is restored.\n\n\
+        Press any key...",
+    )];
+    text_component(width, text)
+}
+
+pub fn sleep(width: u32, i: u32) -> AppCF<()> {
+    sleep_text(width, i)
+        .delay(Duration::from_secs(1))
+        .then(move || sleep_text(width, i).press_any_key())
 }

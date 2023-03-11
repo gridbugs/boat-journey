@@ -235,6 +235,24 @@ impl GameInstance {
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
+            Tile::Button => {
+                return RenderCell {
+                    character: Some('/'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
+            Tile::ButtonPressed => {
+                return RenderCell {
+                    character: Some('\\'),
+                    style: Style::new()
+                        .with_bold(true)
+                        .with_foreground(Rgba32::new_grey(255))
+                        .with_background(colour::MURKY_GREEN.to_rgba32(255)),
+                };
+            }
             Tile::Shop => {
                 return RenderCell {
                     character: Some('$'),
@@ -247,7 +265,7 @@ impl GameInstance {
             Tile::Npc(_npc) => {
                 return RenderCell {
                     character: Some('@'),
-                    style: Style::new()
+                    style: Style::plain_text()
                         .with_foreground(Rgb24::new_grey(255).to_rgba32(player_opacity))
                         //.with_foreground(npc_colour(npc).to_rgba32(player_opacity))
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
@@ -374,6 +392,12 @@ impl GameInstance {
                 style: Style::plain_text(),
             });
         }
+        if tiles.contains(&Tile::Button) {
+            hints.push(StyledString {
+                string: format!("Walk into the gate lever (/) to open the gate.\n\n"),
+                style: Style::plain_text(),
+            });
+        }
         if stats.day.current() < 100
             && stats.day.current() > 0
             && !self.game.inner_ref().is_player_inside()
@@ -425,6 +449,10 @@ impl GameInstance {
             string: activity.to_string(),
             style: Style::plain_text().with_bold(true),
         };
+        let day_text = StyledString {
+            string: format!("Day {}  ", self.game.inner_ref().current_day()),
+            style: Style::plain_text().with_bold(true),
+        };
         fn meter_text(name: &str, meter: &Meter) -> Vec<StyledString> {
             vec![
                 StyledString {
@@ -438,10 +466,10 @@ impl GameInstance {
             ]
         }
         let text = vec![
-            vec![activity_text],
+            vec![activity_text, day_text],
             meter_text("Health", &stats.health),
             meter_text("Fuel", &stats.fuel),
-            meter_text("Day", &stats.day),
+            meter_text("Light", &stats.day),
             meter_text("Junk", &stats.junk),
         ];
         Text::new(text.concat()).render(&(), ctx, fb);
@@ -463,7 +491,6 @@ impl GameInstance {
             }
             messages.push((1, m.clone()));
         }
-        messages.reverse();
         for (i, (count, m)) in messages.into_iter().enumerate() {
             let string = if count == 1 {
                 m

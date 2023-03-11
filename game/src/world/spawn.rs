@@ -78,6 +78,18 @@ impl World {
         )
     }
 
+    pub fn spawn_gate(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Wall,
+                solid: (),
+                opacity: 255,
+                gate: (),
+            },
+        )
+    }
+
     pub fn spawn_floor(&mut self, coord: Coord) -> Entity {
         self.spawn_entity(
             (coord, Layer::Floor),
@@ -263,6 +275,16 @@ impl World {
             entity_data! {
                 tile: Tile::Shop,
                 shop: i,
+            },
+        )
+    }
+
+    pub fn spawn_button(&mut self, coord: Coord) -> Entity {
+        self.spawn_entity(
+            (coord, Layer::Feature),
+            entity_data! {
+                tile: Tile::Button,
+                button: false,
             },
         )
     }

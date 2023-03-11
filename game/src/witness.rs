@@ -66,9 +66,8 @@ impl Menu {
         Witness::running(private)
     }
     pub fn commit(self, game: &mut Game, choice: crate::MenuChoice) -> Witness {
-        game.inner_game.handle_choice(choice);
         let Self { private, .. } = self;
-        Witness::running(private)
+        game.witness_handle_choice(choice, private)
     }
 }
 
@@ -156,18 +155,32 @@ impl Game {
         }
     }
 
+    fn handle_control_flow(
+        &mut self,
+        control_flow: Option<GameControlFlow>,
+        private: Private,
+    ) -> Witness {
+        match control_flow {
+            None => Witness::running(private),
+            Some(GameControlFlow::GameOver(reason)) => Witness::GameOver(reason),
+            Some(GameControlFlow::Win) => Witness::Win(Win(private)),
+            Some(GameControlFlow::Menu(menu)) => Witness::Menu(Menu { private, menu }),
+        }
+    }
+
     fn witness_handle_tick(
         &mut self,
         since_last_tick: Duration,
         config: &Config,
         private: Private,
     ) -> Witness {
-        match self.inner_game.handle_tick(since_last_tick, config) {
-            None => Witness::running(private),
-            Some(GameControlFlow::GameOver(reason)) => Witness::GameOver(reason),
-            Some(GameControlFlow::Win) => Witness::Win(Win(private)),
-            Some(GameControlFlow::Menu(menu)) => Witness::Menu(Menu { private, menu }),
-        }
+        let control_flow = self.inner_game.handle_tick(since_last_tick, config);
+        self.handle_control_flow(control_flow, private)
+    }
+
+    fn witness_handle_choice(&mut self, choice: crate::MenuChoice, private: Private) -> Witness {
+        let control_flow = self.inner_game.handle_choice(choice);
+        self.handle_control_flow(control_flow, private)
     }
 
     pub fn inner_ref(&self) -> &crate::Game {

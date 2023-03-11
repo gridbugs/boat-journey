@@ -144,6 +144,14 @@ impl Terrain {
                             world.spawn_floor(coord);
                         }
                     }
+                    WorldCell3::Gate => {
+                        if rng.gen::<f64>() < water_visible_chance {
+                            world.spawn_water1(coord);
+                        } else {
+                            world.spawn_water2(coord);
+                        }
+                        world.spawn_gate(coord);
+                    }
                 }
             }
         }
@@ -190,7 +198,11 @@ impl Dungeon {
     pub fn generate<R: Rng>(rng: &mut R) -> Self {
         let size = Size::new(30, 30);
         let mut world = World::new(size);
-        let DungeonGen { grid, spawn } = generate_dungeon(size, rng);
+        let DungeonGen {
+            grid,
+            spawn,
+            destination,
+        } = generate_dungeon(size, rng);
         for (coord, &cell) in grid.enumerate() {
             match cell {
                 DungeonCell::Door => {
@@ -205,6 +217,7 @@ impl Dungeon {
             }
         }
         world.spawn_stairs_up(spawn);
+        world.spawn_button(destination);
         Self { world, spawn }
     }
 }

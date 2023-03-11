@@ -662,7 +662,7 @@ fn win(win_: witness::Win) -> AppCF<()> {
                 .with_title_vertical(
                     Text::new(vec![StyledString {
                         string:
-                            "The ocean welcomes your return.\n\nType your name (enter to confirm):"
+                            "The ocean welcomes your return.\n\nWhat was your name? (enter to confirm):"
                                 .to_string(),
                         style: Style::plain_text(),
                     }])
@@ -721,11 +721,27 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
                 format!("Buy {amount} fuel ({cost} junk)"),
                 ch,
             ),
-            GameMenuChoice::SleepUntilMorning => add_item(
+            GameMenuChoice::SleepUntilMorning(_) => add_item(
                 choice.clone(),
                 "Rest until morning (no charge)".to_string(),
                 ch,
             ),
+            GameMenuChoice::StayAtInnForever => add_item(
+                choice.clone(),
+                "Stay at inn forever (abandon run)".to_string(),
+                ch,
+            ),
+            GameMenuChoice::AbandonQuest => add_item(
+                choice.clone(),
+                "Yes, I've made up my mind (end the game)".to_string(),
+                ch,
+            ),
+            GameMenuChoice::ChangeMind => add_item(
+                choice.clone(),
+                "No, I still want to go to the ocean".to_string(),
+                ch,
+            ),
+            GameMenuChoice::Okay => add_item(choice.clone(), "Okay".to_string(), ch),
         }
     }
     let title = {
@@ -736,7 +752,7 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
         }])
         .wrap_word()
         .cf::<State>()
-        .set_width(30)
+        .set_width(36)
     };
     let menu_cf = builder
         .build_cf()
@@ -757,15 +773,25 @@ fn game_menu(menu_witness: witness::Menu) -> AppCF<Witness> {
             }),
             1,
         );
-    menu_cf.map_side_effect(|result, state: &mut State| match result {
-        Err(Close) => menu_witness.cancel(),
-        Ok(choice) => {
-            if let Some(instance) = state.instance.as_mut() {
-                menu_witness.commit(&mut instance.game, choice)
-            } else {
-                menu_witness.cancel()
+    menu_cf.and_then_side_effect(|result, state: &mut State| {
+        let witness = match result {
+            Err(Close) => menu_witness.cancel(),
+            Ok(choice) => {
+                if let Some(instance) = state.instance.as_mut() {
+                    let witness = menu_witness.commit(&mut instance.game, choice.clone());
+                    if let GameMenuChoice::SleepUntilMorning(i) = choice {
+                        return text::sleep(MAIN_MENU_TEXT_WIDTH, i)
+                            .centre()
+                            .overlay(background(), 1)
+                            .map_val(|| witness);
+                    }
+                    witness
+                } else {
+                    menu_witness.cancel()
+                }
             }
-        }
+        };
+        val_once(witness)
     })
 }
 

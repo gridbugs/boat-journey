@@ -67,8 +67,8 @@ pub struct Victory {
 impl Victory {
     fn text(&self) -> String {
         format!(
-            "Here lies {}.\n\n\nThey reached the ocean after {} turns.",
-            self.name, self.stats.num_turns
+            "Here lies {}.\n\n\nThey reached the ocean after {} turns over {} days.",
+            self.name, self.stats.num_turns, self.stats.num_days
         )
     }
 }
@@ -76,11 +76,15 @@ impl Victory {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VictoryStats {
     pub num_turns: u64,
+    pub num_days: u64,
 }
 
 impl VictoryStats {
     pub fn new() -> Self {
-        Self { num_turns: 0 }
+        Self {
+            num_turns: 0,
+            num_days: 1,
+        }
     }
 }
 
@@ -88,6 +92,7 @@ impl VictoryStats {
 pub enum GameOverReason {
     OutOfFuel,
     KilledByGhost,
+    Abandoned,
 }
 
 #[derive(Debug, Clone)]
@@ -98,7 +103,11 @@ pub enum MenuChoice {
     DontAddNpcToPassengers,
     BuyFuel { cost: u32, amount: u32 },
     BuyCrewCapacity(u32),
-    SleepUntilMorning,
+    SleepUntilMorning(u32),
+    StayAtInnForever,
+    AbandonQuest,
+    ChangeMind,
+    Okay,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -217,10 +226,10 @@ pub struct Stats {
 impl Stats {
     fn new() -> Self {
         let day_max = 1000;
-        let first_day_skip = 700;
+        let first_day_skip = 100;
         Self {
             health: Meter::new(4, 4),
-            fuel: Meter::new(400, 400),
+            fuel: Meter::new(400, 800),
             day: Meter::new(day_max - first_day_skip, day_max),
             junk: Meter::new(0, 10),
         }
@@ -271,6 +280,23 @@ impl Game {
         game
     }
 
+    pub fn current_day(&self) -> u32 {
+        self.victory_stats.num_days as u32
+    }
+
+    fn start_day(&mut self) {
+        self.victory_stats.num_days += 1;
+        self.stats.day.fill();
+        self.stats.health.fill();
+        self.night_turn_count = 0;
+        self.messages.clear();
+        let ghosts = self.world.components.ghost.entities().collect::<Vec<_>>();
+        for entity in ghosts {
+            self.world.components.remove_entity(entity);
+            self.world.spatial_table.remove(entity);
+        }
+    }
+
     pub fn num_seats(&self) -> u32 {
         self.num_seats
     }
@@ -300,7 +326,7 @@ impl Game {
     }
 
     pub fn is_player_outside_at_night(&self) -> bool {
-        self.stats.day.is_empty() && !self.is_player_inside()
+        !self.is_in_dungeon() && self.stats.day.is_empty() && !self.is_player_inside()
     }
 
     pub fn pass_time(&mut self) {
@@ -313,6 +339,11 @@ impl Game {
                 self.spawn_ghost();
             }
             self.night_turn_count += 1;
+            let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
+            let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
+            if !self.try_rasterize_boat(boat_entity, boat.clone(), boat_coord) {
+                panic!("failed to create the boat");
+            }
         } else {
             self.night_turn_count = 0;
         }
@@ -388,7 +419,7 @@ impl Game {
 
     pub fn update_visibility(&mut self) {
         let update_fn = |data: &mut VisibleCellData, coord| data.update(&self.world, coord);
-        let distance = if self.is_player_outside_at_night() {
+        let distance = if self.stats.day.is_empty() {
             Circle::new_squared(150)
         } else {
             Circle::new_squared(700)
@@ -710,6 +741,24 @@ impl Game {
             ..
         }) = layers
         {
+            if let Some(state) = self.world.components.button.get_mut(feature_entity) {
+                if !*state {
+                    self.messages
+                        .push(format!("You hear the sound of a distant gate opening"));
+                }
+                *state = true;
+                self.world
+                    .components
+                    .tile
+                    .insert(feature_entity, Tile::ButtonPressed);
+                let world = &mut self.dungeon_state.as_mut().unwrap().world_tmp;
+                let to_remove = world.components.gate.entities().collect::<Vec<_>>();
+                for e in to_remove {
+                    world.components.remove_entity(e);
+                    world.spatial_table.remove(e);
+                }
+                return None;
+            }
             // If the player bumps into a door, open the door
             if let Some(DoorState::Closed) = self.world.components.door_state.get(feature_entity) {
                 self.open_door(feature_entity);
@@ -813,12 +862,12 @@ impl Game {
                         } else {
                             let text = if num_empty_seats == 1 {
                                 format!(
-                                    "{}\n\nThere is currently 1 empty seat on your boat.\n\n",
+                                    "{}\n\n\nThere is currently 1 empty seat on your boat.\n\n",
                                     npc.text()
                                 )
                             } else {
                                 format!(
-                                    "{}\n\nThere are currently {} empty seats on your boat.\n\n",
+                                    "{}\n\n\nThere are currently {} empty seats on your boat.\n\n",
                                     npc.text(),
                                     num_empty_seats
                                 )
@@ -850,15 +899,16 @@ impl Game {
                 };
                 let junk = self.stats.junk.current();
                 let text =
-                    format!("Innkeeper:\n\n{description}\n\nYou currently have {junk} junk.");
+                    format!("Innkeeper:\n\n{description}\n\n\nYou currently have {junk} junk.");
                 let image = MenuImage::Shop;
                 let choices = vec![
                     MenuChoice::BuyFuel {
                         cost: 2,
                         amount: 200,
                     },
-                    MenuChoice::BuyCrewCapacity(self.passengers.len() as u32),
-                    MenuChoice::SleepUntilMorning,
+                    MenuChoice::BuyCrewCapacity(self.num_seats),
+                    MenuChoice::SleepUntilMorning(shop_i as u32),
+                    MenuChoice::StayAtInnForever,
                     MenuChoice::Leave,
                 ];
                 return Some(GameControlFlow::Menu(Menu {
@@ -878,7 +928,7 @@ impl Game {
                 self.world.spatial_table.remove(*item);
                 if let Some(junk) = entity_data.junk {
                     let name = junk.name();
-                    self.messages.push(format!("You pick up the {name}"));
+                    self.messages.push(format!("You pick up the {name}."));
                 }
             }
         }
@@ -1056,17 +1106,87 @@ impl Game {
         Ok(self.check_control_flow())
     }
 
-    pub(crate) fn handle_choice(&mut self, choice: MenuChoice) {
+    fn stay_at_inn_forever(&self) -> GameControlFlow {
+        let text = "Innkeeper:\n\n\
+            So you find yourself wishing to remain at the inn and abandon your quest \
+            to reach the ocean?\n\nAre you sure?"
+            .to_string();
+        let choices = vec![MenuChoice::AbandonQuest, MenuChoice::ChangeMind];
+        let image = MenuImage::Shop;
+        GameControlFlow::Menu(Menu {
+            text,
+            choices,
+            image,
+        })
+    }
+
+    fn cant_afford(&self) -> GameControlFlow {
+        let text = "Innkeeper:\n\n\
+            You can't afford that."
+            .to_string();
+        let choices = vec![MenuChoice::Okay];
+        let image = MenuImage::Shop;
+        GameControlFlow::Menu(Menu {
+            text,
+            choices,
+            image,
+        })
+    }
+
+    fn buy_fuel(&mut self, amount: u32, cost: u32) -> Option<GameControlFlow> {
+        if self.stats.junk.current() < cost {
+            return Some(self.cant_afford());
+        }
+        self.stats.junk.decrease(cost);
+        self.stats.fuel.increase(amount);
+        self.messages
+            .push(format!("You trade {cost} junk for {amount} fuel."));
+        None
+    }
+
+    fn buy_passenger_capacity(&mut self, cost: u32) -> Option<GameControlFlow> {
+        if self.stats.junk.current() < cost {
+            return Some(self.cant_afford());
+        }
+        self.stats.junk.decrease(cost);
+        self.num_seats += 1;
+        self.messages.push(format!(
+            "You trade {cost} junk for an additional passenger space."
+        ));
+        None
+    }
+
+    pub(crate) fn handle_choice(&mut self, choice: MenuChoice) -> Option<GameControlFlow> {
         match choice {
-            MenuChoice::DontAddNpcToPassengers | MenuChoice::Leave | MenuChoice::SayNothing => (),
+            MenuChoice::DontAddNpcToPassengers
+            | MenuChoice::Leave
+            | MenuChoice::SayNothing
+            | MenuChoice::ChangeMind => (),
             MenuChoice::AddNpcToPassengers(entity) => self.add_npc_to_passengers(entity),
+            MenuChoice::SleepUntilMorning(_) => self.start_day(),
+            MenuChoice::AbandonQuest => {
+                return Some(GameControlFlow::GameOver(GameOverReason::Abandoned));
+            }
+            MenuChoice::StayAtInnForever => return Some(self.stay_at_inn_forever()),
+            MenuChoice::BuyFuel { cost, amount } => {
+                if let Some(cf) = self.buy_fuel(amount, cost) {
+                    return Some(cf);
+                }
+            }
+            MenuChoice::BuyCrewCapacity(cost) => {
+                if let Some(cf) = self.buy_passenger_capacity(cost) {
+                    return Some(cf);
+                }
+            }
             _ => (),
         }
+        // TODO this should be a function
         let (boat_entity, boat) = self.world.components.boat.iter().next().unwrap();
         let boat_coord = self.world.spatial_table.coord_of(boat_entity).unwrap();
         if !self.try_rasterize_boat(boat_entity, boat.clone(), boat_coord) {
             panic!("failed to create the boat");
         }
         self.update_visibility();
+        None
     }
 }

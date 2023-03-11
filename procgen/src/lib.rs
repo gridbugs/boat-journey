@@ -625,6 +625,7 @@ pub enum WorldCell3 {
     Floor,
     Water(WaterType),
     Wall,
+    Gate,
     Door,
     StairsDown,
     StairsUp,
@@ -828,7 +829,7 @@ impl World3 {
                         inside_coords.push(coord);
                     }
                 }
-                shop_coords.push(Coord::new(8, 8) + platform_coord);
+                shop_coords.push(Coord::new(7, 7) + platform_coord);
                 let building_size = platform_size - Size::new(2, 0);
                 let building_coord = platform_coord + Coord::new(2, 0);
                 let building_grid = Grid::new_copy(building_size, ());
@@ -843,8 +844,8 @@ impl World3 {
                     let c = Coord::new(-i, 4) + platform_coord;
                     *grid.get_checked_mut(c) = WorldCell3::Floor;
                 }
-                let junk_coord = building_coord + Coord::new(-1, 5);
-                junk_spawns.push(junk_coord);
+                junk_spawns.push(building_coord + Coord::new(-1, 5));
+                junk_spawns.push(building_coord + Coord::new(-1, 6));
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
             }
             // swamp
@@ -912,7 +913,7 @@ impl World3 {
                 for &c in &world2.gate {
                     let cell = grid.get_checked_mut(c);
                     if *cell == WorldCell3::Water(WaterType::River) {
-                        *cell = WorldCell3::Wall;
+                        *cell = WorldCell3::Gate;
                     }
                 }
             }
@@ -1039,7 +1040,7 @@ impl World3 {
                         inside_coords.push(coord);
                     }
                 }
-                shop_coords.push(Coord::new(8, 8) + platform_coord);
+                shop_coords.push(Coord::new(7, 7) + platform_coord);
                 let building_size = platform_size - Size::new(2, 0);
                 let building_coord = platform_coord + Coord::new(2, 0);
                 let building_grid = Grid::new_copy(building_size, ());
@@ -1060,7 +1061,7 @@ impl World3 {
         };
         //let spawn = world2.swamp_centre;
         //let spawn = Coord { x: 567, y: 274 };
-        //let boat_spawn = spawn; // + Coord::new(-10, -4);
+        //let boat_spawn = spawn + Coord::new(-10, -4);
         Some(Self {
             grid,
             spawn,
@@ -1142,6 +1143,7 @@ pub fn generate<R: Rng>(spec: &Spec, rng: &mut R) -> Terrain {
 pub struct Dungeon {
     pub spawn: Coord,
     pub grid: Grid<DungeonCell>,
+    pub destination: Coord,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1153,7 +1155,11 @@ pub enum DungeonCell {
 
 pub fn generate_dungeon<R: Rng>(size: Size, rng: &mut R) -> Dungeon {
     use rooms_and_corridors::*;
-    let RoomsAndCorridorsLevel { map, player_spawn } = RoomsAndCorridorsLevel::generate(size, rng);
+    let RoomsAndCorridorsLevel {
+        map,
+        player_spawn,
+        destination,
+    } = RoomsAndCorridorsLevel::generate(size, rng);
     let grid = map.map_ref(|cell| match cell {
         RoomsAndCorridorsCell::Door => DungeonCell::Door,
         RoomsAndCorridorsCell::Wall => DungeonCell::Wall,
@@ -1162,5 +1168,6 @@ pub fn generate_dungeon<R: Rng>(size: Size, rng: &mut R) -> Dungeon {
     Dungeon {
         grid,
         spawn: player_spawn,
+        destination,
     }
 }

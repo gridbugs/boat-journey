@@ -23,6 +23,8 @@ declare_entity_module! {
         junk: Junk,
         inside: (),
         shop: usize,
+        button: bool,
+        gate: (),
     }
 }
 pub use components::{Components, EntityData, EntityUpdate};
@@ -84,6 +86,8 @@ pub enum Tile {
     Npc(Npc),
     Junk,
     Shop,
+    Button,
+    ButtonPressed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -182,6 +186,9 @@ impl Meter {
     }
     pub fn is_full(&self) -> bool {
         self.current == self.max
+    }
+    pub fn fill(&mut self) {
+        self.current = self.max;
     }
 }
 

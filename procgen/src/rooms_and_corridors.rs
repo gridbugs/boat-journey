@@ -240,6 +240,9 @@ pub struct RoomsAndCorridorsLevel {
     pub map: Grid<RoomsAndCorridorsCell>,
     // Location where the player will start
     pub player_spawn: Coord,
+
+    // Player's destination (e.g. stairs to next level)
+    pub destination: Coord,
 }
 
 impl RoomsAndCorridorsLevel {
@@ -270,6 +273,19 @@ impl RoomsAndCorridorsLevel {
         }
         // The player will start in the centre of a randomly-chosen room
         let player_spawn = room_placement.rooms.choose(rng).unwrap().rect.centre();
-        Self { map, player_spawn }
+
+        // The destination will be in centre of the room furthest from the player spawn
+        let destination = room_placement
+            .rooms
+            .iter()
+            .max_by_key(|room| (room.rect.centre() - player_spawn).magnitude2())
+            .unwrap()
+            .rect
+            .centre();
+        Self {
+            map,
+            player_spawn,
+            destination,
+        }
     }
 }
