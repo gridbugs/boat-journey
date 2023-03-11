@@ -240,10 +240,10 @@ pub struct Stats {
 
 impl Stats {
     fn new() -> Self {
-        let day_max = 1000;
+        let day_max = 1200;
         let first_day_skip = 50;
         Self {
-            health: Meter::new(4, 4),
+            health: Meter::new(8, 8),
             fuel: Meter::new(400, 800),
             day: Meter::new(day_max - first_day_skip, day_max),
             junk: Meter::new(0, 10),
@@ -1149,7 +1149,6 @@ impl Game {
             struct C<'a> {
                 components: &'a Components,
                 spatial_table: &'a SpatialTable,
-                flee: bool,
             }
             impl<'a> distance_map::CanEnter for C<'a> {
                 fn can_enter(&self, coord: Coord) -> bool {
@@ -1182,20 +1181,18 @@ impl Game {
                     let c = C {
                         components: &self.world.components,
                         spatial_table: &self.world.spatial_table,
-                        flee: true,
                     };
                     self.ai_ctx
                         .distance_map
-                        .populate_flee(&c, 4, &mut self.world.distance_map);
+                        .populate_flee(&c, 6, &mut self.world.distance_map);
                 } else {
                     let c = C {
                         components: &self.world.components,
                         spatial_table: &self.world.spatial_table,
-                        flee: false,
                     };
                     self.ai_ctx.distance_map.populate_approach(
                         &c,
-                        20,
+                        12,
                         &mut self.world.distance_map,
                     );
                 }

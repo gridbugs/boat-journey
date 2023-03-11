@@ -1,7 +1,7 @@
 use crate::{colour, mist::Mist};
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
-    Config, Layer, Meter, Npc, Tile, Victory,
+    Config, Layer, Meter, Tile, Victory,
 };
 use gridbugs::{
     chargrid::{prelude::*, text},

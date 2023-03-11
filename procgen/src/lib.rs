@@ -303,7 +303,7 @@ fn make_towns<R: Rng>(
     let mut output = grid.clone();
     let mut town_positions = Vec::new();
     for (i, candidates) in town_candidate_positions.into_iter().enumerate() {
-        let &centre = if i == 0 {
+        let &_centre = if i == 0 {
             candidates.first().unwrap()
         } else {
             candidates.last().unwrap()
@@ -849,7 +849,6 @@ impl World3 {
                     *grid.get_checked_mut(c) = WorldCell3::Floor;
                 }
                 junk_spawns.push(building_coord + Coord::new(-1, 5));
-                junk_spawns.push(building_coord + Coord::new(-1, 6));
                 *grid.get_checked_mut(building_coord + Coord::new(0, 7)) = WorldCell3::Door;
                 let npc_coord = platform_coord + Coord::new(-8, 4);
                 npc_spawns.push(npc_coord);

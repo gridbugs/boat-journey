@@ -6,8 +6,7 @@ use crate::{
 };
 use boat_journey_game::{
     witness::{self, Witness},
-    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice, MenuImage, Victory,
-    VictoryStats,
+    Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice, Victory,
 };
 use gridbugs::{
     chargrid::{self, border::BorderStyle, control_flow::*, menu, prelude::*},
@@ -532,7 +531,7 @@ fn menu_style<T: 'static>(menu: AppCF<T>) -> AppCF<T> {
         .overlay_tint(
             render_state(|state: &State, ctx, fb| state.render(ctx, fb)),
             gridbugs::chargrid::core::TintDim(63),
-            10,
+            60,
         )
 }
 

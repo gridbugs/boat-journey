@@ -11,12 +11,10 @@ use gridbugs::{
     entity_table::entity_data,
 };
 use procgen::{
-    generate, generate_dungeon, Dungeon as DungeonGen, DungeonCell, Spec, WaterType, WorldCell2,
-    WorldCell3,
+    generate, generate_dungeon, Dungeon as DungeonGen, DungeonCell, Spec, WaterType, WorldCell3,
 };
 use rand::{seq::SliceRandom, Rng};
 use serde::{Deserialize, Serialize};
-use vector::Radians;
 
 pub struct Terrain {
     pub world: World,
@@ -188,7 +186,7 @@ impl Terrain {
             .filter(|&c| world.spatial_table.layers_at_checked(c).feature.is_none())
             .collect::<Vec<_>>();
         island_coords.shuffle(rng);
-        for _ in 0..10 {
+        for _ in 0..15 {
             if let Some(c) = island_coords.pop() {
                 world.spawn_junk(c, *all_junk.choose(rng).unwrap());
             }
@@ -205,7 +203,7 @@ impl Terrain {
             .cloned()
             .filter(|&c| world.spatial_table.layers_at_checked(c).feature.is_none())
             .collect::<Vec<_>>();
-        for _ in 0..10 {
+        for _ in 0..15 {
             if let Some(c) = building_coords.pop() {
                 world.spawn_junk(c, *all_junk.choose(rng).unwrap());
             }
@@ -257,8 +255,17 @@ impl Dungeon {
         world.spawn_button(destination);
         let num_beasts = 3;
         other_room_centres.shuffle(rng);
-        for coord in other_room_centres.into_iter().take(num_beasts) {
-            world.spawn_beast(coord);
+        for _ in 0..num_beasts {
+            if let Some(coord) = other_room_centres.pop() {
+                world.spawn_beast(coord);
+            }
+        }
+        let num_junk = 3;
+        let all_junk = Junk::all();
+        for _ in 0..num_junk {
+            if let Some(coord) = other_room_centres.pop() {
+                world.spawn_junk(coord, *all_junk.choose(rng).unwrap());
+            }
         }
         Self { world, spawn }
     }

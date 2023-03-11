@@ -1,12 +1,10 @@
 use gridbugs::{
     coord_2d::{Axis, Coord, Size},
-    direction::{CardinalDirection, Direction},
-    entity_table::Entity,
+    direction::CardinalDirection,
     grid_2d::Grid,
-    perlin2::Perlin2,
 };
 use rand::{seq::SliceRandom, Rng};
-use std::{collections::HashSet, mem};
+use std::collections::HashSet;
 
 // Will be used as cells in grids representing simple maps of levels during terrain generation
 #[derive(Clone, Copy, PartialEq, Eq)]

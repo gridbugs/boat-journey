@@ -99,16 +99,6 @@ impl World {
         )
     }
 
-    pub fn spawn_rock(&mut self, coord: Coord) -> Entity {
-        self.spawn_entity(
-            (coord, Layer::Feature),
-            entity_data! {
-                tile: Tile::Rock,
-                solid: (),
-            },
-        )
-    }
-
     pub fn spawn_door(&mut self, coord: Coord) -> Entity {
         self.spawn_entity(
             (coord, Layer::Feature),
