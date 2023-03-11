@@ -73,6 +73,10 @@ impl Images {
             MenuImage::Shop => &self.shop,
             MenuImage::Npc(Npc::Soldier) => &self.soldier,
             MenuImage::Npc(Npc::Physicist) => &self.physicist,
+            MenuImage::Npc(Npc::Beast) => &self.physicist,
+            MenuImage::Npc(Npc::Ghost) => &self.physicist,
+            MenuImage::Npc(Npc::Surgeon) => &self.physicist,
+            MenuImage::Npc(Npc::Thief) => &self.physicist,
         }
     }
 }

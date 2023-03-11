@@ -49,14 +49,6 @@ pub struct GameInstance {
     pub fade_state: FadeState,
 }
 
-fn npc_colour(npc: Npc) -> Rgb24 {
-    let hex = match npc {
-        Npc::Physicist => 0x5bcdcd, // cyan
-        Npc::Soldier => 0x628139,
-    };
-    Rgb24::hex(hex)
-}
-
 impl GameInstance {
     pub fn new<R: Rng>(
         config: &Config,
@@ -288,7 +280,6 @@ impl GameInstance {
                     character: Some('@'),
                     style: Style::plain_text()
                         .with_foreground(Rgb24::new_grey(255).to_rgba32(player_opacity))
-                        //.with_foreground(npc_colour(npc).to_rgba32(player_opacity))
                         .with_background(colour::MURKY_GREEN.to_rgba32(255)),
                 };
             }
@@ -569,6 +560,43 @@ impl GameInstance {
         Text::new(text_parts).render(&(), ctx, fb);
     }
 
+    pub fn render_side_ui2(&self, ctx: Ctx, fb: &mut FrameBuffer) {
+        use text::*;
+        let game = self.game.inner_ref();
+        if !game.has_talked_to_npc() {
+            return;
+        }
+        let mut text_parts = vec![StyledString {
+            string: format!("Effects:\n\n"),
+            style: Style::plain_text(),
+        }];
+        let effects = game.effect_timeouts();
+        if effects.fear > 0 {
+            text_parts.push(StyledString {
+                string: format!("Fear: {}\n\n", effects.fear),
+                style: Style::plain_text().with_bold(true),
+            });
+        }
+        if effects.phase > 0 {
+            text_parts.push(StyledString {
+                string: format!("Phase: {}\n\n", effects.phase),
+                style: Style::plain_text().with_bold(true),
+            });
+        }
+        if effects.sneak > 0 {
+            text_parts.push(StyledString {
+                string: format!("Sneak: {}\n\n", effects.sneak),
+                style: Style::plain_text().with_bold(true),
+            });
+        }
+        if text_parts.len() == 1 {
+            text_parts.push(StyledString {
+                string: format!("(none)"),
+                style: Style::plain_text(),
+            });
+        }
+        Text::new(text_parts).render(&(), ctx, fb);
+    }
     pub fn render(&self, ctx: Ctx, fb: &mut FrameBuffer) {
         let tiles = self.render_game(ctx, fb);
         self.render_hints(ctx.add_xy(1, 1).add_depth(20), fb, &tiles);
@@ -584,6 +612,11 @@ impl GameInstance {
         );
         self.render_side_ui(
             ctx.add_xy(ctx.bounding_box.size().width() as i32 - 16, 1)
+                .add_depth(20),
+            fb,
+        );
+        self.render_side_ui2(
+            ctx.add_xy(ctx.bounding_box.size().width() as i32 - 16, 35)
                 .add_depth(20),
             fb,
         );

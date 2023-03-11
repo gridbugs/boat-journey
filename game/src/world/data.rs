@@ -200,35 +200,84 @@ impl Meter {
 pub enum Npc {
     Soldier,
     Physicist,
+    Beast,
+    Ghost,
+    Surgeon,
+    Thief,
 }
 
 impl Npc {
     pub fn all() -> Vec<Self> {
-        vec![Self::Soldier, Self::Physicist]
+        vec![
+            Self::Soldier,
+            Self::Physicist,
+            Self::Beast,
+            Self::Ghost,
+            Self::Surgeon,
+            Self::Thief,
+        ]
     }
     pub fn name(self) -> String {
         match self {
             Self::Soldier => format!("Soldier"),
             Self::Physicist => format!("Physicist"),
+            Self::Beast => format!("Beast"),
+            Self::Ghost => format!("Ghost"),
+            Self::Surgeon => format!("Surgeon"),
+            Self::Thief => format!("Thief"),
         }
     }
     pub fn ability_name(self) -> String {
         match self {
             Self::Soldier => format!("Destroy"),
             Self::Physicist => format!("Blink"),
+            Self::Beast => format!("Fear"),
+            Self::Ghost => format!("Phase"),
+            Self::Surgeon => format!("Heal"),
+            Self::Thief => format!("Sneak"),
         }
     }
     pub fn ability_uses(self) -> u32 {
         match self {
             Self::Soldier => 2,
-            Self::Physicist => 3,
+            Self::Physicist => 2,
+            Self::Beast => 2,
+            Self::Ghost => 2,
+            Self::Surgeon => 2,
+            Self::Thief => 2,
         }
     }
     pub fn text(self) -> String {
         let name = self.name();
         match self {
-            Self::Soldier => format!("{name}:\n\nDuty has called me to the ocean. Will you take me there? I can help you defeat your enemies or clear a path through the trees."),
-            Self::Physicist => format!("{name}:\n\nMy studies necessitate that I visit the ocean. Will you take me? If you take me on your boat I will let you borrow my experimental teleportation device."),
+            Self::Soldier => format!(
+                "{name}:\n\nDuty has called me to the ocean. \
+                Will you take me there? \
+                I can help you defeat your enemies or clear a path through the trees."),
+            Self::Physicist => format!(
+                "{name}:\n\nMy studies necessitate that I visit the ocean. \
+                Will you take me? \
+                If you take me on your boat I will let you borrow my experimental teleportation device."),
+            Self::Beast => format!(
+                "{name}:\n\n\
+                One of those...things...bit me, but jokes on them because it didn't seem to work. \
+                Take me to the ocean? \
+                I can scare away other beasts that get in your way."),
+            Self::Ghost => format!(
+                "{name}:\n\n\
+                Not all ghosts are scary. \
+                I just want to go to the ocean. Will you take me? \
+                I can briefly make you incorporeal."),
+            Self::Surgeon => format!(
+                "{name}:\n\n\
+                My skills are needed ad the ocean. \
+                Take me there? \
+                I can heal you if you get injured."),
+            Self::Thief => format!(
+                "{name}:\n\n\
+                I'm trying to escape to the ocean. \
+                Will you help me get there? \
+                With me you can sneak past your enemies."),
         }
     }
 }

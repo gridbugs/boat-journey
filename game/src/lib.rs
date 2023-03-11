@@ -225,6 +225,7 @@ pub struct Game {
     seat_rng_seed: u64,
     ai_ctx: AiCtx,
     npc_actions: HashMap<Npc, Meter>,
+    effect_timeouts: EffectTimeouts,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -249,6 +250,13 @@ impl Stats {
 }
 
 pub enum ActionError {}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct EffectTimeouts {
+    pub sneak: u32,
+    pub phase: u32,
+    pub fear: u32,
+}
 
 impl Game {
     pub fn new<R: Rng>(_config: &Config, victories: Vec<Victory>, base_rng: &mut R) -> Self {
@@ -281,10 +289,20 @@ impl Game {
             num_seats: 1,
             ai_ctx: Default::default(),
             npc_actions: Default::default(),
+            effect_timeouts: Default::default(),
         };
-        /*
-        game.add_npc_to_passengers_(Npc::Soldier);
-        game.add_npc_to_passengers_(Npc::Physicist); */
+        let debug = true;
+        if debug {
+            game.has_crossed_threshold = true;
+            game.has_talked_to_npc = true;
+            game.has_been_on_boat = true;
+            game.add_npc_to_passengers_(Npc::Soldier);
+            game.add_npc_to_passengers_(Npc::Physicist);
+            game.add_npc_to_passengers_(Npc::Beast);
+            game.add_npc_to_passengers_(Npc::Ghost);
+            game.add_npc_to_passengers_(Npc::Surgeon);
+            game.add_npc_to_passengers_(Npc::Thief);
+        }
         let (boat_entity, boat) = game.world.components.boat.iter().next().unwrap();
         let boat_coord = game.world.spatial_table.coord_of(boat_entity).unwrap();
         if !game.try_rasterize_boat(boat_entity, boat.clone(), boat_coord) {
@@ -295,6 +313,19 @@ impl Game {
             game.driving = true;
         }
         game
+    }
+
+    pub fn effect_timeouts(&self) -> &EffectTimeouts {
+        &self.effect_timeouts
+    }
+    fn is_sneak(&self) -> bool {
+        self.effect_timeouts.sneak > 0
+    }
+    fn is_fear(&self) -> bool {
+        self.effect_timeouts.fear > 0
+    }
+    fn is_phase(&self) -> bool {
+        self.effect_timeouts.phase > 0
     }
 
     pub fn current_day(&self) -> u32 {
@@ -349,7 +380,26 @@ impl Game {
         !self.is_in_dungeon() && self.stats.day.is_empty() && !self.is_player_inside()
     }
 
+    fn tick_effects(&mut self) {
+        if self.effect_timeouts.phase == 1 {
+            self.messages
+                .push(format!("You can no longer walk through walls."));
+        }
+        if self.effect_timeouts.fear == 1 {
+            self.messages
+                .push(format!("Beasts no longer flee from you."));
+        }
+        if self.effect_timeouts.sneak == 1 {
+            self.messages
+                .push(format!("You are no longer undetectable by beasts."));
+        }
+        self.effect_timeouts.phase = self.effect_timeouts.phase.saturating_sub(1);
+        self.effect_timeouts.fear = self.effect_timeouts.fear.saturating_sub(1);
+        self.effect_timeouts.sneak = self.effect_timeouts.sneak.saturating_sub(1);
+    }
+
     pub fn pass_time(&mut self) {
+        self.tick_effects();
         self.victory_stats.num_turns += 1;
         if self.has_been_on_boat {
             self.stats.day.decrease(1);
@@ -979,7 +1029,6 @@ impl Game {
                 }
             }
         }
-        self.pass_time();
         None
     }
 
@@ -1089,32 +1138,42 @@ impl Game {
                     true
                 }
             }
-            let c = C {
-                components: &self.world.components,
-                spatial_table: &self.world.spatial_table,
-            };
-            self.ai_ctx.distance_map.clear();
-            self.ai_ctx.distance_map.add(self.player_coord());
-            self.ai_ctx
-                .distance_map
-                .populate_approach(&c, 20, &mut self.world.distance_map);
-            let beasts = self.world.components.beast.entities().collect::<Vec<_>>();
-            for entity in beasts {
-                if let Some(coord) = self.world.spatial_table.coord_of(entity) {
-                    if let Some(direction) =
-                        self.world.distance_map.direction_to_best_neighbour(coord)
-                    {
-                        let destination = coord + direction.coord();
-                        if destination == self.player_coord() {
-                            self.take_damage();
-                            self.beast_message();
-                            if self.stats.health.is_empty() {
-                                return Some(GameControlFlow::GameOver(
-                                    GameOverReason::KilledByBeast,
-                                ));
+            if !self.is_sneak() {
+                let c = C {
+                    components: &self.world.components,
+                    spatial_table: &self.world.spatial_table,
+                };
+                self.ai_ctx.distance_map.clear();
+                self.ai_ctx.distance_map.add(self.player_coord());
+                if self.is_fear() {
+                    self.ai_ctx
+                        .distance_map
+                        .populate_flee(&c, 20, &mut self.world.distance_map);
+                } else {
+                    self.ai_ctx.distance_map.populate_approach(
+                        &c,
+                        20,
+                        &mut self.world.distance_map,
+                    );
+                }
+                let beasts = self.world.components.beast.entities().collect::<Vec<_>>();
+                for entity in beasts {
+                    if let Some(coord) = self.world.spatial_table.coord_of(entity) {
+                        if let Some(direction) =
+                            self.world.distance_map.direction_to_best_neighbour(coord)
+                        {
+                            let destination = coord + direction.coord();
+                            if destination == self.player_coord() {
+                                self.take_damage();
+                                self.beast_message();
+                                if self.stats.health.is_empty() {
+                                    return Some(GameControlFlow::GameOver(
+                                        GameOverReason::KilledByBeast,
+                                    ));
+                                }
+                            } else {
+                                let _ = self.world.spatial_table.update_coord(entity, destination);
                             }
-                        } else {
-                            let _ = self.world.spatial_table.update_coord(entity, destination);
                         }
                     }
                 }
@@ -1184,16 +1243,45 @@ impl Game {
         None
     }
 
+    fn action_beast(&mut self) {
+        let turns = 30;
+        self.effect_timeouts.fear += turns + 1;
+        self.messages.push(format!(
+            "Beasts will flee from you for the next {turns} turns."
+        ));
+    }
+    fn action_ghost(&mut self) {
+        let turns = 30;
+        self.effect_timeouts.phase += turns + 1;
+        self.messages.push(format!(
+            "You can walk through walls (but not enemies) for the next {turns} turns."
+        ));
+    }
+    fn action_surgeon(&mut self) {
+        self.stats.health.fill();
+        self.messages.push(format!("Your wounds are fully healed."));
+    }
+    fn action_thief(&mut self) {
+        let turns = 30;
+        self.effect_timeouts.sneak += turns + 1;
+        self.messages.push(format!(
+            "Enemies will not react to you for the next {turns} turns."
+        ));
+    }
+
     fn handle_ability(&mut self, index: u8) -> Option<GameControlFlow> {
         let passenger_index = index as usize - 1;
         if let Some(&npc) = self.passengers.get(passenger_index) {
             if self.npc_has_action(npc) {
-                let aim_needed = match npc {
-                    Npc::Physicist | Npc::Soldier => true,
+                match npc {
+                    Npc::Physicist | Npc::Soldier => return Some(GameControlFlow::Aim(npc)),
+                    Npc::Beast => self.action_beast(),
+                    Npc::Ghost => self.action_ghost(),
+                    Npc::Surgeon => self.action_surgeon(),
+                    Npc::Thief => self.action_thief(),
                 };
-                if aim_needed {
-                    return Some(GameControlFlow::Aim(npc));
-                }
+                self.npc_spend_action(npc);
+                self.pass_time();
             } else {
                 self.messages
                     .push(format!("{} has no remaining actions today.", npc.name()));
@@ -1246,6 +1334,7 @@ impl Game {
         if game_control_flow.is_some() {
             return Ok(game_control_flow);
         }
+        self.pass_time();
         let game_control_flow = self.npc_turn();
         if game_control_flow.is_some() {
             return Ok(game_control_flow);
@@ -1393,12 +1482,15 @@ impl Game {
             let result = match npc {
                 Npc::Soldier => self.ability_soldier(coord),
                 Npc::Physicist => self.ability_physicist(coord),
+                _ => return None, // shouldn't get here
             };
             match result {
                 Ok(maybe_cf) => {
                     self.npc_spend_action(npc);
                     self.pass_time();
-                    self.npc_turn();
+                    if let Some(cf) = self.npc_turn() {
+                        return Some(cf);
+                    }
                     self.update_visibility();
                     maybe_cf
                 }
