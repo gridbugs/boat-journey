@@ -12,6 +12,7 @@ members = [
     "web",
     "ggez",
     "wgpu",
+    "sdl2",
     "util/vector",
     "util/rand-range",
     "util/rational",
