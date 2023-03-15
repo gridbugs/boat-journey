@@ -11,7 +11,7 @@ native = ["gridbugs/storage_backend_file", "gridbugs/audio_backend_native"]
 web = ["getrandom/js", "gridbugs/storage_backend_web", "gridbugs/audio_backend_web"]
 
 [dependencies]
-gridbugs = { version = "0.9", features = [
+gridbugs = { version = "0.10", features = [
     "storage_format_json",
     "storage_format_bincode",
     "audio",

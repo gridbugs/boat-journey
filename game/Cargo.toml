@@ -5,7 +5,7 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-gridbugs = { version = "0.9", features = [ "backend_serialize", "rgb_int_rand" ] }
+gridbugs = { version = "0.10", features = [ "backend_serialize", "rgb_int_rand" ] }
 log = "0.4"
 serde = { version = "1.0", features = ["serde_derive"] }
 rand = "0.8"

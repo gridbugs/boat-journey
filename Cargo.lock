@@ -250,7 +250,7 @@ dependencies = [
  "boat_journey_app",
  "boat_journey_native",
  "env_logger",
- "gridbugs 0.10.0",
+ "gridbugs",
  "meap",
  "rand",
 ]
@@ -262,7 +262,7 @@ dependencies = [
  "bincode",
  "boat_journey_game",
  "getrandom",
- "gridbugs 0.9.1",
+ "gridbugs",
  "log",
  "maplit",
  "rand",
@@ -275,7 +275,7 @@ dependencies = [
 name = "boat_journey_game"
 version = "0.1.0"
 dependencies = [
- "gridbugs 0.9.1",
+ "gridbugs",
  "log",
  "procgen",
  "rand",
@@ -293,7 +293,7 @@ dependencies = [
  "boat_journey_app",
  "boat_journey_native",
  "env_logger",
- "gridbugs 0.10.0",
+ "gridbugs",
 ]
 
 [[package]]
@@ -301,7 +301,7 @@ name = "boat_journey_native"
 version = "0.1.0"
 dependencies = [
  "boat_journey_app",
- "gridbugs 0.9.1",
+ "gridbugs",
  "log",
  "meap",
 ]
@@ -313,7 +313,7 @@ dependencies = [
  "boat_journey_app",
  "boat_journey_native",
  "env_logger",
- "gridbugs 0.10.0",
+ "gridbugs",
 ]
 
 [[package]]
@@ -322,7 +322,7 @@ version = "0.1.0"
 dependencies = [
  "boat_journey_app",
  "console_error_panic_hook",
- "gridbugs 0.10.0",
+ "gridbugs",
  "log",
  "wasm-bindgen",
  "wasm-logger",
@@ -335,7 +335,7 @@ dependencies = [
  "boat_journey_app",
  "boat_journey_native",
  "env_logger",
- "gridbugs 0.10.0",
+ "gridbugs",
 ]
 
 [[package]]
@@ -1734,12 +1734,16 @@ dependencies = [
 
 [[package]]
 name = "gridbugs"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efb107ae3b273b22559e161c18be4cc988ff35593ba7cd3e88f54aa93c7613c4"
+checksum = "9ea5bbb879152f37f04b35f0bf159ed338be0fb2b5a1c3c92cf06fe11a8265a0"
 dependencies = [
  "chargrid",
  "chargrid_ansi_terminal",
+ "chargrid_ggez",
+ "chargrid_sdl2",
+ "chargrid_web",
+ "chargrid_wgpu",
  "coord_2d",
  "direction",
  "entity_table",
@@ -1754,21 +1758,6 @@ dependencies = [
  "shadowcast",
  "spatial_table",
  "visible_area_detection",
-]
-
-[[package]]
-name = "gridbugs"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ea5bbb879152f37f04b35f0bf159ed338be0fb2b5a1c3c92cf06fe11a8265a0"
-dependencies = [
- "chargrid_ansi_terminal",
- "chargrid_ggez",
- "chargrid_sdl2",
- "chargrid_web",
- "chargrid_wgpu",
- "general_audio_static",
- "general_storage_static",
 ]
 
 [[package]]
@@ -2760,7 +2749,7 @@ dependencies = [
 name = "procgen"
 version = "0.1.0"
 dependencies = [
- "gridbugs 0.9.1",
+ "gridbugs",
  "meap",
  "rand",
  "rand_isaac",

@@ -5,7 +5,7 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-gridbugs = { version = "0.9", features = [
+gridbugs = { version = "0.10", features = [
     "perlin2",
     "coord_2d",
     "grid_2d",
@@ -16,7 +16,7 @@ rand = "0.8"
 vector = { path = "../util/vector" }
 
 [dev-dependencies]
-gridbugs = { version = "0.9", features = [
+gridbugs = { version = "0.10", features = [
     "chargrid",
     "chargrid_ansi_terminal",
     "rgb_int",
