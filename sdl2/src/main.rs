@@ -3,8 +3,6 @@ use boat_journey_app::{app, AppArgs};
 use boat_journey_native::{meap, NativeCommon};
 use gridbugs::chargrid_sdl2::*;
 
-const CELL_SIZE: f64 = 12.;
-
 fn main() {
     use meap::Parser;
     env_logger::init();
@@ -28,8 +26,8 @@ fn main() {
             height: 720.,
         },
         cell_dimensions_px: Dimensions {
-            width: CELL_SIZE,
-            height: CELL_SIZE,
+            width: 12.,
+            height: 12.,
         },
         font_point_size: 12,
         underline_width_cell_ratio: 0.1,
