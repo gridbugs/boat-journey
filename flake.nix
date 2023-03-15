@@ -56,6 +56,8 @@
             libpng
             expat
             brotli
+            SDL2
+            SDL2_ttf
 
             # JS/Wasm Deps
             nodejs
