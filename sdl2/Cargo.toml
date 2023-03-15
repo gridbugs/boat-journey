@@ -5,7 +5,7 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-gridbugs = { version = "0.9", features = [ "chargrid_sdl2_gamepad" ] }
+gridbugs = { version = "0.10", features = [ "chargrid_sdl2_gamepad" ] }
 env_logger = "0.10"
 boat_journey_app = { path = "../app" }
 boat_journey_native = { path = "../native" }

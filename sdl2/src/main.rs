@@ -30,6 +30,10 @@ fn main() {
             height: 12.,
         },
         font_point_size: 12,
+        character_cell_offset: Dimensions {
+            width: 0.,
+            height: -1.,
+        },
         underline_width_cell_ratio: 0.1,
         underline_top_offset_cell_ratio: 0.8,
         resizable: false,
