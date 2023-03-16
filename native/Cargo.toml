@@ -5,11 +5,8 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-gridbugs = { version = "0.10", features = [
-    "storage_backend_file",
-    "audio_backend_native",
-    "audio_format_native_vorbis",
-] }
+general_storage_file = "0.3"
+general_storage_static = { version = "0.3", features = ["file"] }
 log = "0.4"
 boat_journey_app = { path = "../app", features = ["native"] }
 meap = "0.5"

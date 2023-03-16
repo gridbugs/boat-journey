@@ -1,8 +1,6 @@
-use boat_journey_app::{AppAudioPlayer, AppStorage, InitialRngSeed};
-use gridbugs::{
-    audio::{AudioPlayer, NativeAudioError, NativeAudioPlayer},
-    storage::{FileStorage, IfDirectoryMissing, Storage},
-};
+use boat_journey_app::{AppStorage, InitialRngSeed};
+use general_storage_file::{FileStorage, IfDirectoryMissing};
+use general_storage_static::StaticStorage;
 pub use meap;
 
 const DEFAULT_SAVE_FILE: &str = "save";
@@ -13,7 +11,6 @@ const DEFAULT_CONTROLS_FILE: &str = "controls.json";
 pub struct NativeCommon {
     pub storage: AppStorage,
     pub initial_rng_seed: InitialRngSeed,
-    pub audio_player: AppAudioPlayer,
     pub omniscient: bool,
     pub new_game: bool,
 }
@@ -36,10 +33,9 @@ impl NativeCommon {
                 delete_controls = flag("delete-controls").desc("delete controls file");
                 new_game = flag("new-game").desc("start a new game, skipping the menu");
                 omniscient = flag("omniscient").desc("enable omniscience");
-                mute = flag('m').name("mute").desc("mute audio");
             } in {{
                 let initial_rng_seed = rng_seed.map(InitialRngSeed::U64).unwrap_or(InitialRngSeed::Random);
-                let mut file_storage = Storage::new(
+                let mut file_storage = StaticStorage::new(
                     FileStorage::next_to_exe(storage_dir, IfDirectoryMissing::Create)
                     .expect("failed to open directory"),
                 );
@@ -67,21 +63,9 @@ impl NativeCommon {
                     config_key: config_file,
                     controls_key: controls_file,
                 };
-                let audio_player = if mute {
-                    None
-                } else {
-                    match NativeAudioPlayer::try_new_default_device() {
-                        Ok(audio_player) => Some(AudioPlayer::new(audio_player)),
-                        Err(NativeAudioError::FailedToCreateOutputStream) => {
-                            log::warn!("no output audio device - continuing without audio");
-                            None
-                        }
-                    }
-                };
                 Self {
                     initial_rng_seed,
                     storage,
-                    audio_player,
                     omniscient,
                     new_game,
                 }

@@ -1,14 +1,11 @@
 use crate::{colour, mist::Mist};
 use boat_journey_game::{
     witness::{self, Game, RunningGame},
-    Config, Layer, Meter, Tile, Victory,
+    CellVisibility, Config, Layer, Meter, Tile, Victory,
 };
-use gridbugs::{
-    chargrid::{prelude::*, text},
-    rgb_int::{rgb24, Rgb24},
-    visible_area_detection::CellVisibility,
-};
+use chargrid::{prelude::*, text};
 use rand::Rng;
+use rgb_int::{rgb24, Rgb24};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 

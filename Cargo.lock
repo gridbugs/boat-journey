@@ -36,17 +36,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ahash"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
-dependencies = [
- "cfg-if",
- "once_cell",
- "version_check",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -65,18 +54,6 @@ dependencies = [
  "bitflags",
  "libc",
  "nix 0.23.2",
-]
-
-[[package]]
-name = "alsa"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8512c9117059663fb5606788fbca3619e2a91dac0e3fe516242eab1fa6be5e44"
-dependencies = [
- "alsa-sys",
- "bitflags",
- "libc",
- "nix 0.24.3",
 ]
 
 [[package]]
@@ -176,12 +153,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cbbc9d0964165b47557570cce6c952866c2678457aca742aafc9fb771d30270"
 
 [[package]]
-name = "base64"
-version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
-
-[[package]]
 name = "bincode"
 version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -249,8 +220,8 @@ version = "0.1.0"
 dependencies = [
  "boat_journey_app",
  "boat_journey_native",
+ "chargrid_ansi_terminal",
  "env_logger",
- "gridbugs",
  "meap",
  "rand",
 ]
@@ -261,13 +232,19 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "boat_journey_game",
+ "chargrid",
+ "coord_2d",
+ "direction",
+ "general_storage_static",
  "getrandom",
- "gridbugs",
+ "grid_2d",
  "log",
  "maplit",
+ "perlin2",
  "rand",
  "rand_isaac",
  "rand_xorshift",
+ "rgb_int",
  "serde",
 ]
 
@@ -301,8 +278,8 @@ version = "0.1.0"
 dependencies = [
  "boat_journey_app",
  "boat_journey_native",
+ "chargrid_ggez",
  "env_logger",
- "gridbugs",
 ]
 
 [[package]]
@@ -310,7 +287,8 @@ name = "boat_journey_native"
 version = "0.1.0"
 dependencies = [
  "boat_journey_app",
- "gridbugs",
+ "general_storage_file",
+ "general_storage_static",
  "log",
  "meap",
 ]
@@ -321,8 +299,8 @@ version = "0.1.0"
 dependencies = [
  "boat_journey_app",
  "boat_journey_native",
+ "chargrid_sdl2",
  "env_logger",
- "gridbugs",
 ]
 
 [[package]]
@@ -330,8 +308,10 @@ name = "boat_journey_web"
 version = "0.1.0"
 dependencies = [
  "boat_journey_app",
+ "chargrid_web",
  "console_error_panic_hook",
- "gridbugs",
+ "general_storage_static",
+ "general_storage_web",
  "log",
  "wasm-bindgen",
  "wasm-logger",
@@ -343,8 +323,8 @@ version = "0.1.0"
 dependencies = [
  "boat_journey_app",
  "boat_journey_native",
+ "chargrid_wgpu",
  "env_logger",
- "gridbugs",
 ]
 
 [[package]]
@@ -508,7 +488,6 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6726c94fa5d119346f4904698e84878cf6ed123e95393529276a72e34c39f80"
 dependencies = [
- "chargrid_gamepad",
  "chargrid_input",
  "chargrid_runtime",
  "grid_2d",
@@ -538,17 +517,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chargrid_gamepad"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94b7315ea59d4a81215f17cecaa323070b9a849fe3b679a041d3521d0ede58c5"
-dependencies = [
- "chargrid_input",
- "gilrs",
- "log",
-]
-
-[[package]]
 name = "chargrid_ggez"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -557,7 +525,6 @@ dependencies = [
  "chargrid_input",
  "chargrid_runtime",
  "ggez",
- "hashbrown 0.13.2",
  "log",
 ]
 
@@ -586,7 +553,6 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d596fd1139220ab2b32e5eda709dbcb4f4df1817ddde388e6298abb7980fed2"
 dependencies = [
- "chargrid_gamepad",
  "chargrid_input",
  "chargrid_runtime",
  "sdl2",
@@ -613,7 +579,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ee712e123df9f85c529d245911ce03ec5ff9769b794579ecc48adeecd70debd"
 dependencies = [
  "async-executor",
- "chargrid_gamepad",
  "chargrid_input",
  "chargrid_runtime",
  "grid_2d",
@@ -742,15 +707,9 @@ version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "194a7a9e6de53fa55116934067c844d9d749312f75c6f6d0980e8c252f8c2146"
 dependencies = [
- "core-foundation-sys 0.8.3",
+ "core-foundation-sys",
  "libc",
 ]
-
-[[package]]
-name = "core-foundation-sys"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7ca8a5221364ef15ce201e8ed2f609fc312682a8f4e0e3d4aa5879764e0fa3b"
 
 [[package]]
 name = "core-foundation-sys"
@@ -806,17 +765,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "coreaudio-rs"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb17e2d1795b1996419648915df94bc7103c28f7b48062d7acf4652fc371b2ff"
-dependencies = [
- "bitflags",
- "core-foundation-sys 0.6.2",
- "coreaudio-sys",
-]
-
-[[package]]
 name = "coreaudio-sys"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -831,47 +779,22 @@ version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f342c1b63e185e9953584ff2199726bf53850d96610a310e3aca09e9405a2d0b"
 dependencies = [
- "alsa 0.6.0",
- "core-foundation-sys 0.8.3",
- "coreaudio-rs 0.10.0",
- "jni 0.19.0",
+ "alsa",
+ "core-foundation-sys",
+ "coreaudio-rs",
+ "jni",
  "js-sys",
  "libc",
  "mach",
  "ndk 0.7.0",
  "ndk-context",
- "oboe 0.4.6",
+ "oboe",
  "once_cell",
  "parking_lot",
  "stdweb",
  "thiserror",
  "web-sys",
  "windows 0.37.0",
-]
-
-[[package]]
-name = "cpal"
-version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1241019dec4a73f874bdf6fe3467a8478b47cecaf79435f7acb01f107ab41b1"
-dependencies = [
- "alsa 0.7.0",
- "core-foundation-sys 0.8.3",
- "coreaudio-rs 0.11.2",
- "dasp_sample",
- "jni 0.19.0",
- "js-sys",
- "libc",
- "mach2",
- "ndk 0.7.0",
- "ndk-context",
- "oboe 0.5.0",
- "once_cell",
- "parking_lot",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "windows 0.44.0",
 ]
 
 [[package]]
@@ -956,7 +879,7 @@ checksum = "21fd3add36ea31aba1520aa5288714dd63be506106753226d0eb387a93bc9c45"
 dependencies = [
  "cocoa",
  "core-foundation",
- "core-foundation-sys 0.8.3",
+ "core-foundation-sys",
  "core-graphics",
  "core-text",
  "dwrote",
@@ -1030,19 +953,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "dasp_sample"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
-
-[[package]]
 name = "direction"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c56672976b806b6fe8e41998c6d0503cd02479c6059c47451ce8addc7871271"
 dependencies = [
  "coord_2d",
- "rand",
  "serde",
 ]
 
@@ -1387,46 +1303,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "general_audio"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de3f21897782645949f12eef57b365e90db09c43c61009f4929a20933106150f"
-
-[[package]]
-name = "general_audio_native"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6d1d98dd153e60f9ca92f3b2ed82c0dcf0b49536169cf5b25c1a9aa3d8afb6e"
-dependencies = [
- "general_audio",
- "log",
- "rodio 0.17.1",
-]
-
-[[package]]
-name = "general_audio_static"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06c3b3f42402273152f4bb3c12d0ae358a430432fa143062df680a889f4e6520"
-dependencies = [
- "general_audio",
- "general_audio_native",
- "general_audio_web",
-]
-
-[[package]]
-name = "general_audio_web"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32908c5732e83bd5bed93bd5803bc23ba56db77b6bbf2d3574f58af75e0ef5a6"
-dependencies = [
- "base64",
- "general_audio",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "general_storage"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1505,7 +1381,7 @@ dependencies = [
  "mint",
  "ordered-float",
  "pollster",
- "rodio 0.16.0",
+ "rodio",
  "serde",
  "skeptic",
  "smart-default",
@@ -1651,7 +1527,7 @@ checksum = "0b0c02e1ba0bdb14e965058ca34e09c020f8e507a760df1121728e0aef68d57a"
 dependencies = [
  "bitflags",
  "gpu-descriptor-types",
- "hashbrown 0.12.3",
+ "hashbrown",
 ]
 
 [[package]]
@@ -1732,28 +1608,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gridbugs"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ea5bbb879152f37f04b35f0bf159ed338be0fb2b5a1c3c92cf06fe11a8265a0"
-dependencies = [
- "chargrid",
- "chargrid_ansi_terminal",
- "chargrid_ggez",
- "chargrid_sdl2",
- "chargrid_web",
- "chargrid_wgpu",
- "coord_2d",
- "direction",
- "general_audio_static",
- "general_storage_static",
- "grid_2d",
- "perlin2",
- "rgb_int",
- "visible_area_detection",
-]
-
-[[package]]
 name = "half"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1768,16 +1622,7 @@ version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
- "ahash 0.7.6",
-]
-
-[[package]]
-name = "hashbrown"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
-dependencies = [
- "ahash 0.8.3",
+ "ahash",
 ]
 
 [[package]]
@@ -1853,7 +1698,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
 dependencies = [
  "autocfg",
- "hashbrown 0.12.3",
+ "hashbrown",
 ]
 
 [[package]]
@@ -1874,7 +1719,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7789f7f3c9686f96164f5109d69152de759e76e284f736bd57661c6df5091919"
 dependencies = [
- "core-foundation-sys 0.8.3",
+ "core-foundation-sys",
  "mach",
 ]
 
@@ -1911,20 +1756,6 @@ name = "jni"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c6df18c2e3db7e453d3c6ac5b3e9d5182664d28788126d39b91f2d1e22b017ec"
-dependencies = [
- "cesu8",
- "combine",
- "jni-sys",
- "log",
- "thiserror",
- "walkdir",
-]
-
-[[package]]
-name = "jni"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "039022cdf4d7b1cf548d31f60ae783138e5fd42013f6271049d7df7afadef96c"
 dependencies = [
  "cesu8",
  "combine",
@@ -2139,15 +1970,6 @@ name = "mach"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "mach2"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d0d1830bcd151a6fc4aea1369af235b36c1528fe976b8ff678683c9995eade8"
 dependencies = [
  "libc",
 ]
@@ -2529,26 +2351,12 @@ version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27f63c358b4fa0fbcfefd7c8be5cfc39c08ce2389f5325687e7762a48d30a5c1"
 dependencies = [
- "jni 0.19.0",
+ "jni",
  "ndk 0.6.0",
  "ndk-context",
  "num-derive",
  "num-traits",
- "oboe-sys 0.4.5",
-]
-
-[[package]]
-name = "oboe"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8868cc237ee02e2d9618539a23a8d228b9bb3fc2e7a5b11eed3831de77c395d0"
-dependencies = [
- "jni 0.20.0",
- "ndk 0.7.0",
- "ndk-context",
- "num-derive",
- "num-traits",
- "oboe-sys 0.5.0",
+ "oboe-sys",
 ]
 
 [[package]]
@@ -2556,15 +2364,6 @@ name = "oboe-sys"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3370abb7372ed744232c12954d920d1a40f1c4686de9e79e800021ef492294bd"
-dependencies = [
- "cc",
-]
-
-[[package]]
-name = "oboe-sys"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f44155e7fb718d3cfddcf70690b2b51ac4412f347cd9e4fbe511abe9cd7b5f2"
 dependencies = [
  "cc",
 ]
@@ -2951,20 +2750,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb10b653d5ec0e9411a2e7d46e2c7f4046fd87d35b9955bd73ba4108d69072b5"
 dependencies = [
  "claxon",
- "cpal 0.14.2",
+ "cpal",
  "hound",
  "lewton",
  "minimp3",
-]
-
-[[package]]
-name = "rodio"
-version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdf1d4dea18dff2e9eb6dca123724f8b60ef44ad74a9ad283cdfe025df7e73fa"
-dependencies = [
- "cpal 0.15.1",
- "lewton",
 ]
 
 [[package]]
@@ -3955,15 +3744,6 @@ dependencies = [
  "windows_x86_64_gnu 0.42.2",
  "windows_x86_64_gnullvm",
  "windows_x86_64_msvc 0.42.2",
-]
-
-[[package]]
-name = "windows"
-version = "0.44.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e745dab35a0c4c77aa3ce42d595e13d2003d6902d6b08c9ef5fc326d08da12b"
-dependencies = [
- "windows-targets",
 ]
 
 [[package]]

@@ -8,11 +8,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gridbugs = { version = "0.10", features = [
-    "chargrid_web",
-    "storage_backend_web",
-    "audio_backend_web",
-] }
+chargrid_web = "0.4"
+general_storage_web = "0.3"
+general_storage_static = "0.3"
 boat_journey_app = { path = "../app", features = ["web", "print_log"]}
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"

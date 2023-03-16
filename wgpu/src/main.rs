@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
-use gridbugs::chargrid_wgpu::*;
 use boat_journey_app::{app, AppArgs};
 use boat_journey_native::{meap, NativeCommon};
+use chargrid_wgpu::*;
 
 const CELL_SIZE: f64 = 12.;
 
@@ -31,7 +31,6 @@ fn main() {
             NativeCommon {
                 storage,
                 initial_rng_seed,
-                audio_player,
                 omniscient,
                 new_game,
             },
@@ -63,7 +62,6 @@ fn main() {
     context.run(app(AppArgs {
         storage,
         initial_rng_seed,
-        audio_player,
         omniscient,
         new_game,
     }));

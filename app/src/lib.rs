@@ -1,11 +1,5 @@
 use boat_journey_game::Config;
-use gridbugs::{
-    audio::{AudioHandle, AudioPlayer},
-    chargrid::{control_flow::*, core::*},
-};
-
-pub type AppAudioPlayer = Option<AudioPlayer>;
-pub type AppHandle = Option<AudioHandle>;
+use chargrid::{control_flow::*, core::*};
 
 mod colour;
 mod controls;
@@ -26,7 +20,6 @@ pub struct AppArgs {
     pub initial_rng_seed: InitialRngSeed,
     pub omniscient: bool,
     pub new_game: bool,
-    pub audio_player: AppAudioPlayer,
 }
 
 pub fn app(
@@ -35,7 +28,6 @@ pub fn app(
         initial_rng_seed,
         omniscient,
         new_game,
-        audio_player: _,
     }: AppArgs,
 ) -> impl Component<Output = app::Output, State = ()> {
     let config = Config {

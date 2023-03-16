@@ -1,6 +1,6 @@
-use gridbugs::chargrid_ansi_terminal::{col_encode, Context};
 use boat_journey_app::{app, AppArgs, InitialRngSeed};
 use boat_journey_native::NativeCommon;
+use chargrid_ansi_terminal::{col_encode, Context};
 use rand::Rng;
 
 enum ColEncodeChoice {
@@ -48,7 +48,6 @@ fn main() {
             NativeCommon {
                 storage,
                 initial_rng_seed,
-                audio_player,
                 omniscient,
                 new_game,
             },
@@ -66,7 +65,6 @@ fn main() {
     let app = app(AppArgs {
         storage,
         initial_rng_seed: InitialRngSeed::U64(initial_rng_seed),
-        audio_player,
         omniscient,
         new_game,
     });

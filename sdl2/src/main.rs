@@ -1,7 +1,7 @@
 #![windows_subsystem = "windows"]
 use boat_journey_app::{app, AppArgs};
 use boat_journey_native::{meap, NativeCommon};
-use gridbugs::chargrid_sdl2::*;
+use chargrid_sdl2::*;
 
 fn main() {
     use meap::Parser;
@@ -9,7 +9,6 @@ fn main() {
     let NativeCommon {
         storage,
         initial_rng_seed,
-        audio_player,
         omniscient,
         new_game,
     } = NativeCommon::parser()
@@ -41,7 +40,6 @@ fn main() {
     context.run(app(AppArgs {
         storage,
         initial_rng_seed,
-        audio_player,
         omniscient,
         new_game,
     }));

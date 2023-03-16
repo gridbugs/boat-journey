@@ -1,5 +1,7 @@
-use gridbugs::{grid_2d::Coord, perlin2::Perlin2, rgb_int::Rgba32};
+use coord_2d::Coord;
+use perlin2::Perlin2;
 use rand::Rng;
+use rgb_int::Rgba32;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

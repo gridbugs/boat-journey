@@ -1,6 +1,6 @@
 use crate::game_loop::{AppCF, State};
 use boat_journey_game::GameOverReason;
-use gridbugs::chargrid::{
+use chargrid::{
     control_flow::*,
     prelude::*,
     text::{StyledString, Text},

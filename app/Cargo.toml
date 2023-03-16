@@ -7,24 +7,17 @@ edition = "2021"
 [features]
 print_stdout = []
 print_log = []
-native = ["gridbugs/storage_backend_file", "gridbugs/audio_backend_native"]
-web = ["getrandom/js", "gridbugs/storage_backend_web", "gridbugs/audio_backend_web"]
+native = ["general_storage_static/file"]
+web = ["getrandom/js", "general_storage_static/web"]
 
 [dependencies]
-gridbugs = { version = "0.10", features = [
-    "storage_format_json",
-    "storage_format_bincode",
-    "audio",
-    "direction",
-    "direction_rand",
-    "rgb_int",
-    "coord_2d",
-    "chargrid_serialize",
-    "chargrid_gamepad",
-    "perlin2_serialize",
-    "visible_area_detection",
-    "grid_2d",
-] }
+general_storage_static = { version = "0.3", features = ["bincode", "json"] }
+direction = "0.18"
+chargrid = { version = "0.10", features = ["serialize"] }
+rgb_int = "0.1"
+perlin2 = { version = "0.1", features = ["serialize"] }
+coord_2d = "0.3"
+grid_2d = "0.15"
 boat_journey_game = { path = "../game" }
 log = "0.4"
 serde = { version = "1.0", features = ["serde_derive"] }

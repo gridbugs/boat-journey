@@ -8,10 +8,8 @@ use boat_journey_game::{
     witness::{self, Witness},
     Config as GameConfig, GameOverReason, MenuChoice as GameMenuChoice, Victory,
 };
-use gridbugs::{
-    chargrid::{self, border::BorderStyle, control_flow::*, menu, prelude::*},
-    storage::{format, Storage},
-};
+use chargrid::{self, border::BorderStyle, control_flow::*, menu, prelude::*};
+use general_storage_static::{self as storage, format, StaticStorage as Storage};
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
 use serde::{Deserialize, Serialize};
@@ -131,7 +129,7 @@ impl AppStorage {
             Self::SAVE_GAME_STORAGE_FORMAT,
         );
         if let Err(e) = result {
-            use gridbugs::storage::{StoreError, StoreRawError};
+            use storage::{StoreError, StoreRawError};
             match e {
                 StoreError::FormatError(e) => log::error!("Failed to format save file: {}", e),
                 StoreError::Raw(e) => match e {
@@ -150,7 +148,7 @@ impl AppStorage {
         );
         match result {
             Err(e) => {
-                use gridbugs::storage::{LoadError, LoadRawError};
+                use storage::{LoadError, LoadRawError};
                 match e {
                     LoadError::FormatError(e) => log::error!("Failed to parse save file: {}", e),
                     LoadError::Raw(e) => match e {
@@ -169,7 +167,7 @@ impl AppStorage {
     fn clear_game(&mut self) {
         if self.handle.exists(&self.save_game_key) {
             if let Err(e) = self.handle.remove(&self.save_game_key) {
-                use gridbugs::storage::RemoveError;
+                use storage::RemoveError;
                 match e {
                     RemoveError::IoError(e) => {
                         log::error!("Error while removing data: {}", e)
@@ -185,7 +183,7 @@ impl AppStorage {
             .handle
             .store(&self.config_key, &config, Self::CONFIG_STORAGE_FORMAT);
         if let Err(e) = result {
-            use gridbugs::storage::{StoreError, StoreRawError};
+            use storage::{StoreError, StoreRawError};
             match e {
                 StoreError::FormatError(e) => log::error!("Failed to format config: {}", e),
                 StoreError::Raw(e) => match e {
@@ -203,7 +201,7 @@ impl AppStorage {
             .load::<_, Config, _>(&self.config_key, Self::CONFIG_STORAGE_FORMAT);
         match result {
             Err(e) => {
-                use gridbugs::storage::{LoadError, LoadRawError};
+                use storage::{LoadError, LoadRawError};
                 match e {
                     LoadError::FormatError(e) => log::error!("Failed to parse config file: {}", e),
                     LoadError::Raw(e) => match e {
@@ -224,7 +222,7 @@ impl AppStorage {
             self.handle
                 .store(&self.controls_key, &controls, Self::CONTROLS_STORAGE_FORMAT);
         if let Err(e) = result {
-            use gridbugs::storage::{StoreError, StoreRawError};
+            use storage::{StoreError, StoreRawError};
             match e {
                 StoreError::FormatError(e) => log::error!("Failed to format controls: {}", e),
                 StoreError::Raw(e) => match e {
@@ -242,7 +240,7 @@ impl AppStorage {
             .load::<_, Controls, _>(&self.controls_key, Self::CONTROLS_STORAGE_FORMAT);
         match result {
             Err(e) => {
-                use gridbugs::storage::{LoadError, LoadRawError};
+                use storage::{LoadError, LoadRawError};
                 match e {
                     LoadError::FormatError(e) => {
                         log::error!("Failed to parse controls file: {}", e)
@@ -441,7 +439,7 @@ impl Component for GameInstanceComponent {
 
     fn update(&mut self, state: &mut Self::State, _ctx: Ctx, event: Event) -> Self::Output {
         let running = witness::Running::cheat(); // XXX
-        if event.is_escape_or_start() {
+        if event.is_escape() {
             GameLoopState::Paused(running)
         } else {
             state.update(event, running)
@@ -512,7 +510,6 @@ impl Component for GameInstanceComponentAim {
                         }
                         _ => (),
                     },
-                    Input::Gamepad(_) => (),
                 }
                 None
             }
@@ -530,7 +527,7 @@ fn menu_style<T: 'static>(menu: AppCF<T>) -> AppCF<T> {
         .centre()
         .overlay_tint(
             render_state(|state: &State, ctx, fb| state.render(ctx, fb)),
-            gridbugs::chargrid::core::TintDim(63),
+            chargrid::core::TintDim(63),
             60,
         )
 }
@@ -545,7 +542,7 @@ enum MainMenuEntry {
 fn title_decorate<T: 'static>(cf: AppCF<T>) -> AppCF<T> {
     let decoration = {
         let style = Style::plain_text();
-        gridbugs::chargrid::many![styled_string(
+        chargrid::many![styled_string(
             "Boat Journey".to_string(),
             style.with_bold(true)
         )]

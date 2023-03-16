@@ -1,7 +1,5 @@
-use gridbugs::{
-    chargrid::input::{Input, KeyboardInput},
-    direction::CardinalDirection,
-};
+use chargrid::input::{Input, KeyboardInput};
+use direction::CardinalDirection;
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -45,7 +43,7 @@ impl Controls {
     pub fn get(&self, input: Input) -> Option<AppInput> {
         match input {
             Input::Keyboard(keyboard_input) => self.keys.get(&keyboard_input).cloned(),
-            Input::Gamepad(_) | Input::Mouse(_) => None,
+            Input::Mouse(_) => None,
         }
     }
 }

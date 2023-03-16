@@ -1,5 +1,6 @@
 use boat_journey_game::{MenuImage, Npc};
-use gridbugs::{chargrid::prelude::*, grid_2d::Grid};
+use chargrid::prelude::*;
+use grid_2d::Grid;
 
 pub struct Image {
     pub grid: Grid<RenderCell>,
