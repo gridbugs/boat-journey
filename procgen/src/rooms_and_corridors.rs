@@ -1,8 +1,6 @@
-use gridbugs::{
-    coord_2d::{Axis, Coord, Size},
-    direction::CardinalDirection,
-    grid_2d::Grid,
-};
+use coord_2d::{Axis, Coord, Size};
+use direction::CardinalDirection;
+use grid_2d::Grid;
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashSet;
 

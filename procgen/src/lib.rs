@@ -1,10 +1,7 @@
-use gridbugs::{
-    coord_2d::{Coord, Size},
-    direction::{CardinalDirection, Direction},
-    grid_2d::Grid,
-    line_2d,
-    perlin2::Perlin2,
-};
+use coord_2d::{Coord, Size};
+use direction::{CardinalDirection, Direction};
+use grid_2d::Grid;
+use perlin2::Perlin2;
 use rand::{seq::SliceRandom, Rng};
 use std::{
     cmp::Ordering,

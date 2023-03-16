@@ -5,22 +5,17 @@ authors = ["Stephen Sherratt <stephen@sherra.tt>"]
 edition = "2021"
 
 [dependencies]
-gridbugs = { version = "0.10", features = [
-    "perlin2",
-    "coord_2d",
-    "grid_2d",
-    "line_2d",
-    "entity_table",
-]}
+coord_2d = "0.3"
+grid_2d = "0.15"
+direction = "0.18"
+line_2d = "0.5"
+perlin2 = "0.1"
 rand = "0.8"
 vector = { path = "../util/vector" }
 
 [dev-dependencies]
-gridbugs = { version = "0.10", features = [
-    "chargrid",
-    "chargrid_ansi_terminal",
-    "rgb_int",
-    "direction",
-] }
+chargrid_ansi_terminal = "0.4"
+chargrid = "0.10"
+rgb_int = "0.1"
 meap = "0.5"
 rand_isaac = "0.3"

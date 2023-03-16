@@ -1,16 +1,14 @@
-pub use gridbugs::{
-    direction::{CardinalDirection, Direction},
-    entity_table::ComponentTable,
-    grid_2d::{Coord, Grid, Size},
-    grid_search_cardinal::distance_map,
-    line_2d::{coords_between, coords_between_cardinal},
-    rgb_int::Rgb24,
-    shadowcast::Context as ShadowcastContext,
-    spatial_table::UpdateError,
-};
+pub use direction::{CardinalDirection, Direction};
+pub use entity_table::{entity_data, entity_update, ComponentTable, Entity};
+pub use grid_2d::{Coord, Grid, Size};
+pub use grid_search_cardinal::distance_map;
+pub use line_2d::{self, coords_between, coords_between_cardinal};
 use rand::{seq::SliceRandom, Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
+pub use rgb_int::Rgb24;
 use serde::{Deserialize, Serialize};
+pub use shadowcast::Context as ShadowcastContext;
+pub use spatial_table::UpdateError;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     time::Duration,
@@ -20,12 +18,8 @@ use vector::{Cartesian, Radial, Radians};
 pub mod witness;
 mod world;
 
-pub use gridbugs::{
-    entity_table::{entity_data, entity_update, Entity},
-    line_2d,
-    visible_area_detection::{
-        vision_distance::Circle, CellVisibility, VisibilityGrid, World as VisibleWorld,
-    },
+pub use visible_area_detection::{
+    vision_distance::Circle, CellVisibility, VisibilityGrid, World as VisibleWorld,
 };
 pub use world::data::{Boat, Layer, Location, Meter, Npc, Tile};
 use world::{

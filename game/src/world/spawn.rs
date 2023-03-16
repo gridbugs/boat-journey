@@ -5,7 +5,8 @@ use crate::{
     },
     Entity,
 };
-use gridbugs::{coord_2d::Coord, entity_table::entity_data};
+use coord_2d::Coord;
+use entity_table::entity_data;
 
 pub fn make_player() -> EntityData {
     EntityData {

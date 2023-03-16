@@ -1,12 +1,10 @@
-use gridbugs::{
-    chargrid::{control_flow::*, core::*},
-    chargrid_ansi_terminal::{col_encode, Context},
-    grid_2d::Size,
-    rgb_int::Rgba32,
-};
+use chargrid::{control_flow::*, core::*};
+use chargrid_ansi_terminal::{col_encode, Context};
+use grid_2d::Size;
 use procgen::{generate, Spec, Terrain};
 use rand::{Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;
+use rgb_int::Rgba32;
 
 struct Args {
     size: Size,

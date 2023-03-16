@@ -6,10 +6,8 @@ use crate::{
     },
     Entity,
 };
-use gridbugs::{
-    coord_2d::{Coord, Size},
-    entity_table::entity_data,
-};
+use coord_2d::{Coord, Size};
+use entity_table::entity_data;
 use procgen::{
     generate, generate_dungeon, Dungeon as DungeonGen, DungeonCell, Spec, WaterType, WorldCell3,
 };

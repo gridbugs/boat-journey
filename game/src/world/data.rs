@@ -1,5 +1,7 @@
 pub use crate::world::spatial::{Layer, Location};
-use gridbugs::{coord_2d::Coord, entity_table::declare_entity_module, line_2d::InfiniteStepIter};
+use coord_2d::Coord;
+use entity_table::declare_entity_module;
+use line_2d::InfiniteStepIter;
 use serde::{Deserialize, Serialize};
 use vector::{Radial, Radians};
 

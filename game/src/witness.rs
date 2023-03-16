@@ -1,5 +1,6 @@
 use crate::{ActionError, Config, GameControlFlow, GameOverReason, Input, Menu as GameMenu, Npc};
-use gridbugs::{coord_2d::Coord, direction::CardinalDirection};
+use coord_2d::Coord;
+use direction::CardinalDirection;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
