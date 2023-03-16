@@ -1,7 +1,7 @@
 pub use direction::{CardinalDirection, Direction};
 pub use entity_table::{entity_data, entity_update, ComponentTable, Entity};
 pub use grid_2d::{Coord, Grid, Size};
-pub use grid_search_cardinal::distance_map;
+pub use grid_search_cardinal_distance_map as distance_map;
 pub use line_2d::{self, coords_between, coords_between_cardinal};
 use rand::{seq::SliceRandom, Rng, SeedableRng};
 use rand_isaac::Isaac64Rng;

@@ -1,6 +1,6 @@
 use coord_2d::Size;
 use entity_table::EntityAllocator;
-use grid_search_cardinal::distance_map::DistanceMap;
+use grid_search_cardinal_distance_map::DistanceMap;
 use serde::{Deserialize, Serialize};
 
 pub mod spatial;

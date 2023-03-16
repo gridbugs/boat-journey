@@ -12,7 +12,7 @@ spatial_table = { version = "0.4", features = ["serialize"] }
 grid_2d = "0.15"
 line_2d = { version = "0.5", features = ["serialize"] }
 rgb_int = "0.1"
-grid_search_cardinal = { version = "0.3", features = ["serialize"] }
+grid_search_cardinal_distance_map = { version = "0.3", features = ["serialize"] }
 shadowcast = { version = "0.8", features = ["serialize"] }
 visible_area_detection = { version = "0.2", features = ["serialize"] }
 log = "0.4"
